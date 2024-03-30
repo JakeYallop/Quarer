@@ -3,7 +3,8 @@
   <PropertyGroup>
     <TargetFramework>$(NetVersion)</TargetFramework>
 
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!--TODO: Enable generate documentation file -->
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
   </PropertyGroup>
 
 </Project>

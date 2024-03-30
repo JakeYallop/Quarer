@@ -1,0 +1,10 @@
+<Project>
+  <Import Project="../Directory.Build.props" />
+
+  <PropertyGroup>
+      <!-- Trimming -->
+      <!-- TODO: Move to nested file in src - we don't need trimmability for test projects -->
+      <IsTrimmable>true</IsTrimmable>
+      <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
+  </PropertyGroup>
+</Project>
