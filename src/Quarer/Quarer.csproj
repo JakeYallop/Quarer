@@ -1,10 +1,18 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>$(NetVersion)</TargetFramework>
+    <PropertyGroup>
+        <TargetFramework>$(NetVersion)</TargetFramework>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 
-    <!--TODO: Enable generate documentation file -->
-    <GenerateDocumentationFile>false</GenerateDocumentationFile>
-  </PropertyGroup>
+        <!--TODO: Enable generate documentation file -->
+        <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    </PropertyGroup>
 
+    <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
+        <CheckForOverflowUnderflow>true</CheckForOverflowUnderflow>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <InternalsVisibleTo Include="Quarer.Tests" />
+    </ItemGroup>
 </Project>

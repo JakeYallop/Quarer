@@ -30,9 +30,8 @@ public class QrVersionTests
     [Fact]
     public void Equals_op_Inequality()
     {
-        var version = (byte)Random.Shared.Next(1, 41);
-        var v1 = new QrVersion(version);
-        var v2 = new QrVersion(version);
+        var v1 = new QrVersion(1);
+        var v2 = new QrVersion(2);
         Assert.True(v1 != v2);
     }
 
