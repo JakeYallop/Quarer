@@ -39,40 +39,49 @@ public class QrCode
         }
 
         var bitWriter = new BitWriter();
-
-        var encoder = new NumericModeEncoder(numericData);
-        encoder.WriteData(bitWriter);
-
+        var numericEncoder = new NumericModeEncoder(bitWriter);
+        numericEncoder.Encode(numericData);
         return bitWriter.UnsafeGetRawBuffer();
     }
 }
 
-internal ref struct NumericModeEncoder
+internal readonly ref struct NumericModeEncoder(BitWriter writer)
 {
-    private int _position;
-    private readonly ReadOnlySpan<byte> _data;
+    private readonly BitWriter _writer = writer;
 
-    public NumericModeEncoder(ReadOnlySpan<byte> data)
+    public void Encode(ReadOnlySpan<byte> data)
     {
-        if (data.Length % 3 != 0)
+        var position = 0;
+        for (; position + 3 <= data.Length; position += 3)
         {
-            throw new InvalidOperationException("Currently remainder is not handled. Ensure numeric data is an extact multiple of 3.");
+            ReadOnlySpan<byte> digits = data[position..(position + 3)];
+            var v = GetDigitsAsValue(digits);
+            _writer.WriteBits(v, 10);
         }
 
-        _position = 0;
-        _data = data;
+        if (data.Length != position)
+        {
+            var remaining = data.Length - position;
+            ReadOnlySpan<byte> remainingDigits = data[position..(position + remaining)];
+            var numberOfBits = remaining switch
+            {
+                1 => 4,
+                2 => 7,
+                _ => throw new InvalidOperationException("Expected only 1 or 2 digits as a remainder after encoding all other 10 bit triples.")
+            };
+
+            _writer.WriteBits(GetDigitsAsValue(remainingDigits), numberOfBits);
+        }
     }
 
-    public unsafe void WriteData(BitWriter writer)
+    private static ushort GetDigitsAsValue(ReadOnlySpan<byte> slicedDigits)
     {
-        for (; _position < _data.Length; _position += 3)
+        return slicedDigits.Length switch
         {
-            ReadOnlySpan<byte> digits = _data.Slice(_position, _position + 3);
-            var v = (ushort)((digits[0] * 100) + (digits[1] * 10) + digits[2]);
-
-            writer.WriteBits(v, 10);
-        }
-
-        //TODO: handle remainder
+            3 => (ushort)((slicedDigits[0] * 100) + (slicedDigits[1] * 10) + slicedDigits[2]),
+            2 => (ushort)((slicedDigits[0] * 10) + slicedDigits[1]),
+            1 => slicedDigits[0],
+            _ => throw new InvalidOperationException($"Expected 1, 2 or 3 digits, found '{slicedDigits.Length}' digits instead.")
+        };
     }
 }

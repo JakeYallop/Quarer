@@ -7,7 +7,7 @@ internal static class CharacterCountIndicator
     internal static ReadOnlySpan<short> CharacterCountByte => [8, 16, 16];
     internal static ReadOnlySpan<short> CharacterCountKanji => [8, 10, 12];
 
-    public static short GetCharacterCount(QrModeIndicator mode, QrVersion version)
+    public static short GetCharacterCount(QrVersion version, QrModeIndicator mode)
     {
         var offset = version.Version switch
         {
@@ -27,5 +27,20 @@ internal static class CharacterCountIndicator
             _ => throw new NotSupportedException($"Unexpected QrModeIndicator '{mode}'. Character counts are only required by {QrModeIndicator.Numeric}, {QrModeIndicator.Alphanumeric}, {QrModeIndicator.Byte}, {QrModeIndicator.Kanji} modes."),
         };
 #pragma warning restore IDE0072 // Add missing cases
+    }
+}
+
+internal readonly ref struct HeaderEncoder
+{
+    private readonly BitWriter _bitWriter;
+
+    public HeaderEncoder(BitWriter bitWriter)
+    {
+        _bitWriter = bitWriter;
+    }
+
+    public void WriteHeader(QrVersion version, QrModeIndicator qrModeIndicator)
+    {
+
     }
 }

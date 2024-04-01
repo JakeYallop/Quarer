@@ -1,77 +1,112 @@
 ﻿using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Numerics;
 using System.Runtime.InteropServices;
 
 namespace Quarer;
 
-internal sealed class BitWriter
+internal class BitWriter
 {
     private const byte PrimitiveSize = sizeof(byte) * 8;
 
     private int _position;
     private int _bitsWritten;
-    //TODO: use bigger element, e.g int or long. Maybe create Value builder and use a stackalloc'd buffer
-    //TODO: Allow presizing the list or passing in existing buffer to use.
-    //TODO: Allow non-contiguous memory, e.g ReadOnlySequence
-    private readonly List<byte> _buffer = new(10);
+    //TODO: use bigger element, e.g int or long.
+    //TODO: Allowing using a pre-allocated buffer, maybe add a value builder and use a stackalloc'd buffer.
+    protected readonly List<byte> Buffer = new(16);
 
     public BitWriter()
     {
-        _buffer.Add(0);
     }
 
     //TODO: Replace with some kind of complete method? Items cannot be written to the list once this is done
     public ReadOnlySpan<byte> UnsafeGetRawBuffer()
     {
-        if (_buffer.Capacity != _buffer.Count)
+        if (Buffer.Capacity != Buffer.Count)
         {
-            _buffer.TrimExcess();
+            Buffer.TrimExcess();
         }
-        return CollectionsMarshal.AsSpan(_buffer);
+        return CollectionsMarshal.AsSpan(Buffer);
     }
 
-    public void WriteBits(ushort value, int lowBitsToUse)
+    public virtual void WriteBits<T>(T value, int lowBitsToUse) where T : IBinaryInteger<T>
     {
         ThrowForInvalidValue(value, lowBitsToUse);
-        var unwrittenBits = lowBitsToUse;
-        while (unwrittenBits > 0)
+        int remainingBitsInValue = lowBitsToUse;
+        while (remainingBitsInValue > 0)
         {
-            var remainingBits = PrimitiveSize - _bitsWritten;
-            var bitsWritten = Math.Min(unwrittenBits, remainingBits);
+            EnsureSpace();
+            int remainingBitsForCurrentPosition = PrimitiveSize - _bitsWritten;
+            int bitsToWrite = Math.Min(remainingBitsInValue, remainingBitsForCurrentPosition);
 
-            _buffer[_position] = (byte)((byte)(_buffer[_position] << remainingBits) | (value & GetBitMask(bitsWritten)));
+            remainingBitsInValue -= bitsToWrite;
 
-            Advance(bitsWritten);
-            unwrittenBits -= bitsWritten;
+            Buffer[_position] = (byte)((byte)(Buffer[_position] << remainingBitsForCurrentPosition) | GetBitsFromValue(value, bitsToWrite, remainingBitsInValue));
+            Advance(bitsToWrite);
         }
     }
 
-    [DoesNotReturn]
-    private static void ThrowForInvalidValue(ushort value, int lowBitsToUse)
+    private static byte GetBitsFromValue<T>(T value, int bits, int remainingBitsInValue) where T : IBinaryInteger<T>
+    => byte.CreateChecked((value >> remainingBitsInValue) & GetBitMask<T>(bits));
+    private static T GetBitMask<T>(int bits) where T : IBinaryInteger<T>
+        => (T.One << bits) - T.One;
+
+    private static void ThrowForInvalidValue<T>(T value, int lowBitsToUse) where T : IBinaryInteger<T>
     {
-        var maxValue = 1 << (lowBitsToUse - 1);
-        if (value > maxValue)
+        T maxValue = T.One << lowBitsToUse;
+        if (value >= maxValue || T.PopCount(value) > T.CreateSaturating(lowBitsToUse))
         {
             throw new ArgumentOutOfRangeException(nameof(value), $"Expected value to be less than or equal to {maxValue}, to fit within {lowBitsToUse}-bits.");
         }
     }
+
+
+    //public virtual void WriteBits(ushort value, int lowBitsToUse)
+    //{
+    //    ThrowForInvalidValue(value, lowBitsToUse);
+    //    int remainingBitsInValue = lowBitsToUse;
+    //    while (remainingBitsInValue > 0)
+    //    {
+    //        EnsureSpace();
+    //        int remainingBitsForCurrentPosition = PrimitiveSize - _bitsWritten;
+    //        int bitsToWrite = Math.Min(remainingBitsInValue, remainingBitsForCurrentPosition);
+
+    //        remainingBitsInValue -= bitsToWrite;
+
+    //        _buffer[_position] = (byte)((byte)(_buffer[_position] << remainingBitsForCurrentPosition) | GetBitsFromValue(value, bitsToWrite, remainingBitsInValue));
+    //        Advance(bitsToWrite);
+    //    }
+    //}
 
     private void Advance(int bitsWritten)
     {
         Debug.Assert(bitsWritten is >= 0 and <= PrimitiveSize);
         Debug.Assert(_bitsWritten + bitsWritten is >= 0 and <= PrimitiveSize);
         _bitsWritten += bitsWritten;
-        if (bitsWritten is PrimitiveSize)
+        if (_bitsWritten is PrimitiveSize)
         {
             _bitsWritten = 0;
             _position++;
-            _buffer.Add(0);
-        }
-        else
-        {
-            Debug.Assert(_bitsWritten + bitsWritten <= PrimitiveSize);
-            _bitsWritten += bitsWritten;
         }
     }
-    private static int GetBitMask(int bitsToWrite) => (1 << bitsToWrite) - 1;
+
+    private void EnsureSpace()
+    {
+        if (_position + 1 > Buffer.Count)
+        {
+            Buffer.Add(0);
+        }
+    }
+    //private static byte GetBitsFromValue(ushort value, int bits, int remainingBitsInValue)
+    //    => (byte)((value >> remainingBitsInValue) & GetBitMask(bits));
+    //private static int GetBitMask(int bits) => (1 << bits) - 1;
+
+    //private static void ThrowForInvalidValue(ushort value, int lowBitsToUse)
+    //{
+    //    int maxValue = 1 << lowBitsToUse;
+    //    if (value >= maxValue)
+    //    {
+    //        throw new ArgumentOutOfRangeException(nameof(value), $"Expected value to be less than or equal to {maxValue}, to fit within {lowBitsToUse}-bits.");
+    //    }
+    //}
 }
