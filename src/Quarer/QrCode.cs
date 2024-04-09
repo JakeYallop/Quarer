@@ -42,11 +42,11 @@ public class QrCode
             b = (byte)(b - '0');
         }
 
-        var bitWriter = new BitWriter();
-        var header = QrHeader.Create(in version, in mode, utf8Data.Length);
-        var numericEncoder = new NumericModeEncoder(bitWriter);
-        header.WriteHeader(bitWriter);
-        numericEncoder.Encode(utf8Data);
-        return bitWriter.GetBitStream().ToArray();
+        var writer = new BitWriter();
+        var header = QrDataHeader.Create(in version, in mode, utf8Data.Length);
+        header.WriteHeader(writer);
+        ReadOnlySpan<byte> roData = utf8Data;
+        NumericEncoder.Encode(writer, in roData);
+        return writer.GetBitStream().ToArray();
     }
 }

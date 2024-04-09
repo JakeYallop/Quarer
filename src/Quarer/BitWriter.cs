@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 
 namespace Quarer;
 
-//TODO: Make this a stream? Might be useful for Read scenarios (e.g read a block of data)
+//TODO: Add ReadX APIs, maybe rename to BitStream
 internal sealed class BitWriter
 {
     private const int BitsPerElement = 32;
