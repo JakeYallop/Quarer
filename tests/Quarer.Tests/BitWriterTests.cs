@@ -1,4 +1,5 @@
 ﻿namespace Quarer.Tests;
+
 public class BitWriterTests
 {
     [Fact]
@@ -11,16 +12,35 @@ public class BitWriterTests
 
     [Theory]
     [InlineData(1024, 10)]
-    [InlineData(128, 7)]
+    [InlineData(256, 8)]
     [InlineData(16, 4)]
-    public void WriteBits_ValueLargerThanSpecifiedBits_ShouldThrowArgumentOutOfRangeException(ushort value, int bitsToUse)
+    public void WriteBits_ValueLargerThanSpecifiedBits_ShouldThrowArgumentOutOfRangeException(ushort value, int bitCount)
     {
         var bitWriter = new BitWriter();
-        Assert.Throws<ArgumentOutOfRangeException>(() => bitWriter.WriteBits(value, bitsToUse));
+        Assert.Throws<ArgumentOutOfRangeException>(() => bitWriter.WriteBits(value, bitCount));
     }
 
     [Fact]
     public void WriteBits_WritesCorrectValues()
+    {
+        var bitWriter = new BitWriter();
+        ushort value1 = 0b1000_0000_00;
+        ushort value2 = 0b0100_0000_00;
+        ushort value3 = 0b0010_0000_01;
+        ushort value4 = 0b0010_0101_01;
+
+        bitWriter.WriteBits(value1, 10);
+        bitWriter.WriteBits(value2, 10);
+        bitWriter.WriteBits(value3, 10);
+        bitWriter.WriteBits(value4, 10);
+
+        var bitStream = bitWriter.GetBitStream();
+
+        AssertExtensions.BitsEqual($"{value1:B10}{value2:B10}{value3:B10}{value4:B10}", bitStream);
+    }
+
+    [Fact]
+    public void WriteBits_HasCorrectBitCountAfterAddingMultipleValues()
     {
         var bitWriter = new BitWriter();
         ushort value1 = 0b1000_0000_00;
@@ -31,14 +51,6 @@ public class BitWriterTests
         bitWriter.WriteBits(value2, 10);
         bitWriter.WriteBits(value3, 10);
 
-        // Get the raw buffer
-        ReadOnlySpan<byte> bufferSpan = bitWriter.UnsafeGetRawBuffer();
-
-        //|10000000|00
-        //010000|0000
-        //0010|000000
-        //00| (trailing bits)
-        var expectedBitPattern = new byte[] { 0b1000_0000, 0b0001_0000, 0b0000_0010, 0b0000_0000 };
-        Assert.Equal(expectedBitPattern, bufferSpan.ToArray());
+        Assert.Equal(30, bitWriter.Count);
     }
 }

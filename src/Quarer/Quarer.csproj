@@ -2,8 +2,6 @@
 
     <PropertyGroup>
         <TargetFramework>$(NetVersion)</TargetFramework>
-        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-
         <!--TODO: Enable generate documentation file -->
         <GenerateDocumentationFile>false</GenerateDocumentationFile>
     </PropertyGroup>

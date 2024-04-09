@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 
 namespace Quarer;
 
@@ -44,5 +45,7 @@ public readonly struct QrVersion : IEquatable<QrVersion>, IComparable<QrVersion>
     /// <returns><see langword="true" /> if the current object is equal to <paramref name="other"/>; otherwise, <see langword="false" />.</returns>
     public bool Equals(QrVersion other) => Version == other.Version;
     public override int GetHashCode() => Version.GetHashCode();
+
+    public override string ToString() => Version.ToString(CultureInfo.InvariantCulture);
 
 }

@@ -1,6 +1,6 @@
 ﻿namespace Quarer;
 #pragma warning disable CA1027 // Mark enums with FlagsAttribute
-public enum QrModeIndicator
+public enum ModeIndicator
 #pragma warning restore CA1027 // Mark enums with FlagsAttribute
 {
     Terminator = 0,
@@ -15,7 +15,7 @@ public enum QrModeIndicator
     /// 8.3.8 - FNC1 mode is used for messages containing data formatted either in accordance with the UCC/EAN Application Identifiers standard or in accordance with a specific industry standard previously agreed with AIM International
     /// </summary>
     Fnc1FirstPosition = 5,
-    ECI = 7,
+    Eci = 7,
     Kanji = 8,
     Fnc1SecondPosition = 9,
     /// <summary>

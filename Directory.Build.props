@@ -3,7 +3,10 @@
     <NetVersion>net8.0</NetVersion>
     
     <ImplicitUsings>enable</ImplicitUsings>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <NoWarn>$(NoWarn);NU1701</NoWarn>
+
+    <WarningsAsErrors>nullable</WarningsAsErrors>
     
     <!-- Central package management: https://learn.microsoft.com/en-gb/nuget/consume-packages/central-package-management -->
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>

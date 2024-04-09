@@ -1,57 +1,40 @@
-﻿using System.Numerics;
+﻿namespace Quarer.Tests;
 
-namespace Quarer.Tests;
-
-public sealed class NumericModeEncoderTests
+public sealed partial class NumericModeEncoderTests
 {
-    private class TestBitWriter : BitWriter
-    {
-        public List<(ushort value, int bitCount)> WrittenBits { get; } = new List<(ushort, int)>();
-
-        public override void WriteBits<T>(T value, int bitCount)
-        {
-            if (typeof(T) == typeof(ushort))
-            {
-                WrittenBits.Add((ushort.CreateChecked(value), bitCount));
-                return;
-            }
-            throw new InvalidOperationException($"Expected '{nameof(UInt16)}', found '{typeof(T).Name}'");
-        }
-    }
-
     [Fact]
     public void Encode_WithNoRemainder_WritesCorrectValues()
     {
-        var writer = new TestBitWriter();
+        var writer = new BitWriter();
         var encoder = new NumericModeEncoder(writer);
         encoder.Encode([1, 2, 3, 4, 5, 6]);
 
-        Assert.Equal(2, writer.WrittenBits.Count);
-        Assert.Equal((123, 10), writer.WrittenBits[0]);
-        Assert.Equal((456, 10), writer.WrittenBits[1]);
+        //2 triples of 10 bits each, for 20 bits total
+        Assert.Equal(20, writer.Count);
+
+        var bitStream = writer.GetBitStream();
+        AssertExtensions.BitsEqual($"{123:B10}{456:B10}", bitStream);
     }
 
     [Fact]
     public void Encode_WithOneRemainder_WritesCorrectValues()
     {
-        var writer = new TestBitWriter();
+        var writer = new BitWriter();
         var encoder = new NumericModeEncoder(writer);
         encoder.Encode([1, 2, 3, 4]);
 
-        Assert.Equal(2, writer.WrittenBits.Count);
-        Assert.Equal((123, 10), writer.WrittenBits[0]);
-        Assert.Equal((4, 4), writer.WrittenBits[1]);
+        Assert.Equal(14, writer.Count);
+        AssertExtensions.BitsEqual($"{123:B10}{4:B4}", writer.GetBitStream());
     }
 
     [Fact]
     public void Encode_WithTwoRemainders_WritesCorrectValues()
     {
-        var writer = new TestBitWriter();
+        var writer = new BitWriter();
         var encoder = new NumericModeEncoder(writer);
         encoder.Encode([1, 2, 3, 4, 5]);
 
-        Assert.Equal(2, writer.WrittenBits.Count);
-        Assert.Equal((123, 10), writer.WrittenBits[0]);
-        Assert.Equal((45, 7), writer.WrittenBits[1]);
+        Assert.Equal(17, writer.Count);
+        AssertExtensions.BitsEqual($"{123:B10}{45:B7}", writer.GetBitStream());
     }
 }
