@@ -1,7 +1,7 @@
 ﻿using System.Globalization;
 
 namespace Quarer.Tests;
-public sealed class QrHeaderTests
+public sealed class QrDataHeaderTests
 {
     [Fact]
     public void WriteHeader_ThrowsExceptionForUnsupportedMode()

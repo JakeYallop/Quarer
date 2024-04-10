@@ -1,5 +1,6 @@
 ﻿namespace Quarer;
 
+//TODO: Consider making this a class (or struct) with instance methods (even though it has no state) for a tiny bit of extra perf
 internal static class NumericEncoder
 {
     public static void Encode(BitWriter writer, scoped in ReadOnlySpan<byte> data)
@@ -23,7 +24,7 @@ internal static class NumericEncoder
                 _ => throw new InvalidOperationException("Expected only 1 or 2 digits as a remainder after encoding all other 10 bit triples.")
             };
 
-            writer.WriteBits(GetDigitsAsValue(in remainingDigits), numberOfBits);
+            writer.WriteBits(GetDigitsAsValue(in remainingDigits), in numberOfBits);
         }
     }
 

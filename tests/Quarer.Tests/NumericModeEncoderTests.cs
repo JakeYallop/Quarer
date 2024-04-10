@@ -1,6 +1,6 @@
 ﻿namespace Quarer.Tests;
 
-public sealed partial class NumericModeEncoderTests
+public sealed class NumericModeEncoderTests
 {
     [Fact]
     public void Encode_WithNoRemainder_WritesCorrectValues()

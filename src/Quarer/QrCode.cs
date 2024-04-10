@@ -9,7 +9,7 @@ public class QrCode
 {
     private const int StackAllocByteThreshold = 512;
 
-    private static readonly SearchValues<char> AlphanumericValues = SearchValues.Create("0123456789AABCDEFGHIJKLMNOPQRSTUVWXYZ $%*+-./:");
+    private static readonly SearchValues<char> AlphanumericValues = SearchValues.Create(AlphanumericEncoder.Characters);
 
     private QrCode()
     {
