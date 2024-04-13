@@ -1,4 +1,6 @@
-﻿namespace Quarer.Tests;
+﻿using System.Diagnostics;
+
+namespace Quarer.Tests;
 
 public class BitWriterTests
 {
@@ -14,6 +16,7 @@ public class BitWriterTests
     [InlineData(1024, 10)]
     [InlineData(256, 8)]
     [InlineData(16, 4)]
+    [Conditional("DEBUG")]
     public void WriteBits_ValueLargerThanSpecifiedBits_ShouldThrowArgumentOutOfRangeException(ushort value, int bitCount)
     {
         var bitWriter = new BitWriter();

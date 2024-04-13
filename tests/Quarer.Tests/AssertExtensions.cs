@@ -38,10 +38,9 @@ internal static class AssertExtensions
         var expectedBits = new List<char>(initialCount);
         foreach (var line in expected.EnumerateLines())
         {
-            var spaces = 0;
             for (var i = 0; i < line.Length; i++)
             {
-                var c = line[i - spaces];
+                var c = line[i];
                 if (c is not ('1' or '0' or ' '))
                 {
                     throw new InvalidOperationException($"Unexpected character '{c}' ({(int)c})");
@@ -49,17 +48,10 @@ internal static class AssertExtensions
 
                 if (c == ' ')
                 {
-                    spaces++;
                     continue;
                 }
 
-                var bitValue = c switch
-                {
-                    '1' => '1',
-                    '0' => '0',
-                    _ => throw new InvalidOperationException($"Unexpected character '{c}' ({(int)c})")
-                };
-                expectedBits.Add(bitValue);
+                expectedBits.Add(c);
             }
         }
 

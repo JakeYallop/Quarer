@@ -92,6 +92,7 @@ internal sealed class BitWriter
     private static T GetAllSetBitMask<T>(int bitCount) where T : IBinaryInteger<T>
         => (T.One << bitCount) - T.One;
 
+    [Conditional("DEBUG")]
     private static void ThrowForInvalidValue<T>(T value, int lowBitsToUse) where T : IBinaryInteger<T>
     {
         var maxValue = T.One << lowBitsToUse;
