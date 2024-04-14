@@ -34,7 +34,7 @@ internal static class NumericEncoder
     /// Gets the length of a numeric bitstream created from the provided data, excluding the mode and character count indicator bits.
     /// </summary>
     /// <returns></returns>
-    public static int GetBitStreamLength(scoped in ReadOnlySpan<byte> numericData) => (numericData.Length / 3 * 10) + GetRemainderBitCount(numericData.Length);
+    public static int GetBitStreamLength(scoped in ReadOnlySpan<byte> numericData) => (10 * (numericData.Length / 3)) + GetRemainderBitCount(numericData.Length);
     private static int GetRemainderBitCount(int length) => (length % 3) switch
     {
         0 => 0,

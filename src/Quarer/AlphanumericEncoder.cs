@@ -547,4 +547,11 @@ internal static class AlphanumericEncoder
             writer.WriteBits(in Character2Map[remainingCharacter], 6);
         }
     }
+
+    /// <summary>
+    /// Gets the length of an alphanumeric bitstream created from the provided data, excluding the mode and character count indicator bits.
+    /// </summary>
+    /// <returns></returns>
+    public static int GetBitStreamLength(scoped in ReadOnlySpan<byte> alphanumericData)
+        => (11 * (alphanumericData.Length / 2)) + (6 * (alphanumericData.Length % 2));
 }
