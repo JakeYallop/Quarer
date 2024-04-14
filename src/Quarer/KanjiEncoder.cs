@@ -21,4 +21,12 @@ internal static class KanjiEncoder
             writer.WriteBits(finalValue, 13);
         }
     }
+
+
+    /// <summary>
+    /// Gets the length of a kanji bitstream created from the provided data, excluding the mode and character count indicator bits.
+    /// </summary>
+    /// <returns></returns>
+    public static int GetBitStreamLength(scoped in ReadOnlySpan<char> kanjiData)
+        => kanjiData.Length * 13;
 }

@@ -51,4 +51,8 @@ public sealed class KanjiEncoderTests
     [InlineData("\uEBBFb", true )]
     public void ContainsAnyExceptKanji_ReturnsExpectedResult(string s, bool expected)
         => Assert.Equal(expected, KanjiEncoder.ContainsAnyExceptKanji(s));
+
+    [Fact]
+    public void GetBitStreamLength_ReturnsExpectedCount()
+        => Assert.Equal(39, KanjiEncoder.GetBitStreamLength("\u9FFC\u935F\uE4AA"));
 }
