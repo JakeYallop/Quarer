@@ -27,7 +27,7 @@ public sealed class QrDataHeaderTests
             foreach (var version in (ReadOnlySpan<QrVersion>)[(QrVersion)1, (QrVersion)10, (QrVersion)29])
             {
                 var inputDataLength = 0b100100;
-                var characterCount = CharacterCountIndicator.GetCharacterCountBitCount(in version, in mode);
+                var characterCount = CharacterCount.GetCharacterCountBitCount(in version, in mode);
                 var format = $"b{characterCount}";
                 var finalBits = string.Create(CultureInfo.InvariantCulture, $"{(int)mode:b4}{inputDataLength.ToString(format, CultureInfo.InvariantCulture)}");
                 theoryData.Add(version, mode, inputDataLength, finalBits);
@@ -42,7 +42,7 @@ public sealed class QrDataHeaderTests
     {
         var writer = new BitWriter();
         var header = QrDataSegmentHeader.Create(version, mode, inputDataCount);
-        var bitsForCharacterCount = CharacterCountIndicator.GetCharacterCountBitCount(version, mode);
+        var bitsForCharacterCount = CharacterCount.GetCharacterCountBitCount(version, mode);
 
         header.WriteHeader(writer);
 

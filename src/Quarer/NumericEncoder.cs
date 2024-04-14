@@ -1,4 +1,6 @@
-﻿namespace Quarer;
+﻿using System.Diagnostics;
+
+namespace Quarer;
 
 //TODO: Consider making this a class (or struct) with instance methods (even though it has no state) for a tiny bit of extra perf
 internal static class NumericEncoder
@@ -27,6 +29,19 @@ internal static class NumericEncoder
             writer.WriteBits(GetDigitsAsValue(in remainingDigits), in numberOfBits);
         }
     }
+
+    /// <summary>
+    /// Gets the length of a numeric bitstream created from the provided data, excluding the mode and character count indicator bits.
+    /// </summary>
+    /// <returns></returns>
+    public static int GetBitStreamLength(scoped in ReadOnlySpan<byte> numericData) => (numericData.Length / 3 * 10) + GetRemainderBitCount(numericData.Length);
+    private static int GetRemainderBitCount(int length) => (length % 3) switch
+    {
+        0 => 0,
+        1 => 4,
+        2 => 7,
+        _ => throw new UnreachableException()
+    };
 
     private static ushort GetDigitsAsValue(in ReadOnlySpan<byte> slicedDigits)
     {

@@ -1,6 +1,6 @@
 ﻿namespace Quarer;
 
-internal static class CharacterCountIndicator
+internal static class CharacterCount
 {
     internal static ReadOnlySpan<ushort> CharacterCountNumeric => [10, 12, 14];
     internal static ReadOnlySpan<ushort> CharacterCountAlphanumeric => [9, 11, 13];

@@ -16,7 +16,7 @@ internal readonly struct QrDataSegmentHeader
             throw new NotSupportedException($"Mode '{mode}' is not supported.");
         }
 
-        var characterBitCount = CharacterCountIndicator.GetCharacterCountBitCount(in version, in mode);
+        var characterBitCount = CharacterCount.GetCharacterCountBitCount(in version, in mode);
         return new QrDataSegmentHeader(in mode, in characterBitCount, in inputDataLength);
     }
 

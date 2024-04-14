@@ -34,4 +34,11 @@ public sealed class NumericModeEncoderTests
         Assert.Equal(17, writer.Count);
         AssertExtensions.BitsEqual($"{123:B10}{45:B7}", writer.GetBitStream());
     }
+
+    [Fact]
+    public void GetBitStreamLength_NoRemainder() => Assert.Equal(20, NumericEncoder.GetBitStreamLength("123456"u8));
+    [Fact]
+    public void GetBitStreamLength_OneRemainder() => Assert.Equal(24, NumericEncoder.GetBitStreamLength("1234567"u8));
+    [Fact]
+    public void GetBitStreamLength_TwoRemainder() => Assert.Equal(27, NumericEncoder.GetBitStreamLength("12345678"u8));
 }

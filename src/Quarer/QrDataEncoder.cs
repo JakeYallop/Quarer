@@ -15,11 +15,11 @@ public static class QrDataEncoder
         int dataLength = data.Length;
         if (data.ContainsAnyExcept(AlphanumericCharacters))
         {
-            //non ascii
-            if (KanjiEncoder.ContainsAnyExceptKanji(data))
+            if (KanjiEncoder.ContainsAnyExceptKanji(in data))
             {
                 mode = ModeIndicator.Byte;
                 //TOOD: Try convert to UTF-8 and get length
+                dataLength = dataLength * 2;
             }
             else
             {
@@ -29,16 +29,7 @@ public static class QrDataEncoder
         }
         else
         {
-            //ascii
-            if (data.ContainsAnyExcept(NumericCharacters))
-            {
-                //ascii
-                mode = ModeIndicator.Alphanumeric;
-            }
-            else
-            {
-                mode = ModeIndicator.Numeric;
-            }
+            mode = data.ContainsAnyExcept(NumericCharacters) ? ModeIndicator.Alphanumeric : ModeIndicator.Numeric;
         }
 
         return new QrDataEncoding(default!, default!);
