@@ -39,4 +39,21 @@ public sealed class KanjiEncoderTests
             1 1111 1111 1111
             """, bitStream);
     }
+
+    public static TheoryData<string, bool> MixedKanjiNonKanjiData => new()
+    {
+        { "\u9FFC", false },
+        { "\u9FFCa", true },
+        { "\u8140", false },
+        { "\u8140!", true },
+        { "\uE040", false },
+        { "\uE040 ", true},
+        { "\uEBBF", false },
+        { "\uEBBFb", true },
+    };
+
+    [Theory]
+    [MemberData(nameof(MixedKanjiNonKanjiData))]
+    public void ContainsAnyExceptKanji_ReturnsExpectedResult(string s, bool expected)
+        => Assert.Equal(expected, KanjiEncoder.ContainsAnyExceptKanji(s));
 }

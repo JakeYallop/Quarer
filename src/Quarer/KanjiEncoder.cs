@@ -1,8 +1,8 @@
 ﻿namespace Quarer;
 internal static class KanjiEncoder
 {
-    public static bool IsValidKanji(scoped in ReadOnlySpan<char> data)
-        => data.ContainsAnyInRange((char)0x8140, (char)0x9FFC) && data.ContainsAnyInRange((char)0xE040, (char)0xEBBF);
+    public static bool ContainsAnyExceptKanji(scoped in ReadOnlySpan<char> data)
+        => data.ContainsAnyExceptInRange((char)0x8140, (char)0x9FFC) && data.ContainsAnyExceptInRange((char)0xE040, (char)0xEBBF);
 
     public static void Encode(BitWriter writer, scoped in ReadOnlySpan<char> data)
     {

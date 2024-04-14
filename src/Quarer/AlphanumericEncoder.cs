@@ -4,8 +4,7 @@ namespace Quarer;
 
 internal static class AlphanumericEncoder
 {
-    //TODO: Check this encodes into the assembly correctly as constant.
-    public static ReadOnlySpan<char> Characters => "0123456789AABCDEFGHIJKLMNOPQRSTUVWXYZ $%*+-./:".AsSpan();
+    public const string Characters = "0123456789AABCDEFGHIJKLMNOPQRSTUVWXYZ $%*+-./:";
 
     public static ReadOnlySpan<short> Character2Map =>
     [

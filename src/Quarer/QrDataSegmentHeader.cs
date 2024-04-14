@@ -1,15 +1,15 @@
 ﻿namespace Quarer;
 
-internal readonly struct QrDataHeader
+internal readonly struct QrDataSegmentHeader
 {
-    private QrDataHeader(in ModeIndicator modeIndicator, in ushort characterCountBitCount, in int dataCharactersCount)
+    private QrDataSegmentHeader(in ModeIndicator modeIndicator, in ushort characterCountBitCount, in int dataCharactersCount)
     {
         ModeIndicator = modeIndicator;
         CharacterCountBitCount = characterCountBitCount;
         InputDataLength = dataCharactersCount;
     }
 
-    public static QrDataHeader Create(in QrVersion version, in ModeIndicator mode, in int inputDataLength)
+    public static QrDataSegmentHeader Create(in QrVersion version, in ModeIndicator mode, in int inputDataLength)
     {
         if (mode is ModeIndicator.Eci or ModeIndicator.Fnc1FirstPosition or ModeIndicator.Fnc1SecondPosition or ModeIndicator.StructuredAppend)
         {
@@ -17,7 +17,7 @@ internal readonly struct QrDataHeader
         }
 
         var characterBitCount = CharacterCountIndicator.GetCharacterCountBitCount(in version, in mode);
-        return new QrDataHeader(in mode, in characterBitCount, in inputDataLength);
+        return new QrDataSegmentHeader(in mode, in characterBitCount, in inputDataLength);
     }
 
     public ModeIndicator ModeIndicator { get; }

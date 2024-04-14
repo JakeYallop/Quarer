@@ -67,7 +67,7 @@ internal sealed class BitWriter
 
     public IEnumerable<bool> GetBitStream()
     {
-        //TODO: Return an enumerable that ICollection so that TryGetNonEnumeratedCount etc works
+        //TODO: Return an enumerable that implements ICollection so that TryGetNonEnumeratedCount etc works
         var current = 0;
         foreach (var i in _buffer)
         {
@@ -92,7 +92,6 @@ internal sealed class BitWriter
     private static T GetAllSetBitMask<T>(int bitCount) where T : IBinaryInteger<T>
         => (T.One << bitCount) - T.One;
 
-    [Conditional("DEBUG")]
     private static void ThrowForInvalidValue<T>(T value, int lowBitsToUse) where T : IBinaryInteger<T>
     {
         var maxValue = T.One << lowBitsToUse;

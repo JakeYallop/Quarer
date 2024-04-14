@@ -10,11 +10,11 @@ public sealed class QrDataHeaderTests
         {
             if (mode is not (ModeIndicator.Eci or ModeIndicator.Fnc1FirstPosition or ModeIndicator.Fnc1SecondPosition or ModeIndicator.StructuredAppend or ModeIndicator.Terminator))
             {
-                QrDataHeader.Create((QrVersion)1, mode, 0);
+                QrDataSegmentHeader.Create((QrVersion)1, mode, 0);
             }
             else
             {
-                Assert.Throws<NotSupportedException>(() => QrDataHeader.Create((QrVersion)1, mode, 0));
+                Assert.Throws<NotSupportedException>(() => QrDataSegmentHeader.Create((QrVersion)1, mode, 0));
             }
         }
     }
@@ -41,7 +41,7 @@ public sealed class QrDataHeaderTests
     public void WriteHeader_WritesCorrectData(QrVersion version, ModeIndicator mode, int inputDataCount, string expectedBitString)
     {
         var writer = new BitWriter();
-        var header = QrDataHeader.Create(version, mode, inputDataCount);
+        var header = QrDataSegmentHeader.Create(version, mode, inputDataCount);
         var bitsForCharacterCount = CharacterCountIndicator.GetCharacterCountBitCount(version, mode);
 
         header.WriteHeader(writer);

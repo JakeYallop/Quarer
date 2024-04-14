@@ -43,7 +43,7 @@ public class QrCode
         }
 
         var writer = new BitWriter();
-        var header = QrDataHeader.Create(in version, in mode, utf8Data.Length);
+        var header = QrDataSegmentHeader.Create(in version, in mode, utf8Data.Length);
         header.WriteHeader(writer);
         ReadOnlySpan<byte> roData = utf8Data;
         NumericEncoder.Encode(writer, in roData);
