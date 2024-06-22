@@ -7,6 +7,8 @@ public readonly struct QrVersion : IEquatable<QrVersion>, IComparable<QrVersion>
 {
     public const byte MinVersion = 1;
     public const byte MaxVersion = 40;
+    public static readonly QrVersion Max = new(40);
+    public static readonly QrVersion Min = new(1);
 
     public QrVersion() : this(MinVersion) { }
     public QrVersion(byte version)

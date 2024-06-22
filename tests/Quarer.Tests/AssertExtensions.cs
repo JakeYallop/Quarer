@@ -9,7 +9,7 @@ internal static class AssertExtensions
     private const int StackAllocCharThreshold = 256;
 
     public static void BitsEqual(ref DefaultInterpolatedStringHandler expected, IEnumerable<bool> actualBits) => BitsEqual(expected.ToStringAndClear(), actualBits);
-    public static unsafe void BitsEqual(scoped in ReadOnlySpan<char> expected, IEnumerable<bool> actualBits)
+    public static unsafe void BitsEqual(scoped ReadOnlySpan<char> expected, IEnumerable<bool> actualBits)
     {
         scoped ReadOnlySpan<char> actualBitsBuffer;
         if (actualBits.TryGetNonEnumeratedCount(out var count))

@@ -1,6 +1,5 @@
 ﻿using System.Diagnostics;
 using System.Numerics;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace Quarer;
@@ -25,7 +24,7 @@ internal sealed class BitWriter
     /// </summary>
     public int Count { get; set; }
 
-    public void WriteBits<T>(in T value, in int bitCount) where T : IBinaryInteger<T>
+    public void WriteBits<T>(T value, int bitCount) where T : IBinaryInteger<T>
     {
         ThrowForInvalidValue(value, bitCount);
         var remainingBitsInValue = bitCount;
@@ -35,28 +34,6 @@ internal sealed class BitWriter
         {
             var remainingBitsForCurrentPosition = BitsPerElement - _bitsWritten;
             var bitsToWrite = Math.Min(remainingBitsInValue, remainingBitsForCurrentPosition);
-
-
-            //This would need some serious testing + benchmarks
-            //May allow us to all the remaining bits in one go. Probably not worth the complexity as it would only be useful
-            //For very large numeric types, at the moment, that means 64bit or 128 bit values.
-            //Plus there is no reason we could not use a List<long> rather than List<int> and mitigate this even further
-#if NEVER
-            if (_bitsWritten == 0)
-            {
-                Debug.Assert(false, "This code should never be called at the moment");
-                var s = CollectionsMarshal.AsSpan(_buffer);
-                ref var valueAtPos = ref Unsafe.Add(ref MemoryMarshal.GetReference(s), _position);
-                var bits = GetAllRemainingBits(value, remainingBitsInValue, remainingBitsInValue);
-                var index = Unsafe.As<int, byte>(ref valueAtPos);
-                Unsafe.WriteUnaligned(
-                    ref index,
-                    bits
-                );
-
-                Advance(remainingBitsInValue);
-            }
-#endif
 
             remainingBitsInValue -= bitsToWrite;
             ref var segment = ref buffer[_position];

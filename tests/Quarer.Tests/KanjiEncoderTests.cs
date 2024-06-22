@@ -41,14 +41,18 @@ public sealed class KanjiEncoderTests
     }
 
     [Theory]
-    [InlineData("\u9FFC", false )]
-    [InlineData("\u9FFCa", true )]
-    [InlineData("\u8140", false )]
-    [InlineData("\u8140!", true )]
-    [InlineData("\uE040", false )]
+    [InlineData("abcd", true)]
+    [InlineData("\u9FFC", false)]
+    [InlineData("\u9FFCa", true)]
+    [InlineData("\u8140", false)]
+    [InlineData("\u8140!", true)]
+    [InlineData("\uE040", false)]
     [InlineData("\uE040 ", true)]
-    [InlineData("\uEBBF", false )]
-    [InlineData("\uEBBFb", true )]
+    [InlineData("\uEBBF", false)]
+    [InlineData("\uEBBFb", true)]
+    [InlineData("\u935F\uE4AA", false)]
+    [InlineData("\u935F\uE4AAA", true)]
+    [InlineData("\u935F\uE4AA\uE4AA\uE4AA\uE4AA\uE4AA", false)]
     public void ContainsAnyExceptKanji_ReturnsExpectedResult(string s, bool expected)
         => Assert.Equal(expected, KanjiEncoder.ContainsAnyExceptKanji(s));
 

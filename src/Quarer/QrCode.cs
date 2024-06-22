@@ -9,8 +9,6 @@ public class QrCode
 {
     private const int StackAllocByteThreshold = 512;
 
-    private static readonly SearchValues<char> AlphanumericValues = SearchValues.Create(AlphanumericEncoder.Characters);
-
     private QrCode()
     {
     }
@@ -23,8 +21,7 @@ public class QrCode
         }
 
         //TODO: Use array pool here?
-        //TODO: If we have multi-byte characters in the input, this will not be enough space. However, we should never actually get multibyte characters calling into this method whilst we do not support Kanji mode.
-        Span<byte> utf8Data = data.Length <= StackAllocByteThreshold ? stackalloc byte[data.Length] : new byte[data.Length];
+        Span<byte> utf8Data = data.Length <= StackAllocByteThreshold ? stackalloc byte[StackAllocByteThreshold].Slice(0, data.Length) : new byte[data.Length];
         var status = Utf8.FromUtf16(data, utf8Data, out _, out var bytesWritten, replaceInvalidSequences: true);
         if (status != OperationStatus.Done)
         {
@@ -43,10 +40,10 @@ public class QrCode
         }
 
         var writer = new BitWriter();
-        var header = QrDataSegmentHeader.Create(in version, in mode, utf8Data.Length);
+        var header = QrDataSegmentHeader.Create(version, mode, utf8Data.Length);
         header.WriteHeader(writer);
         ReadOnlySpan<byte> roData = utf8Data;
-        NumericEncoder.Encode(writer, in roData);
+        //NumericEncoder.Encode(writer, in roData);
         return writer.GetBitStream().ToArray();
     }
 }

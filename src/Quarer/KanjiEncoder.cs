@@ -1,10 +1,23 @@
 ﻿namespace Quarer;
-internal static class KanjiEncoder
+internal static partial class KanjiEncoder
 {
-    public static bool ContainsAnyExceptKanji(scoped in ReadOnlySpan<char> data)
-        => data.ContainsAnyExceptInRange((char)0x8140, (char)0x9FFC) && data.ContainsAnyExceptInRange((char)0xE040, (char)0xEBBF);
+    public static bool ContainsAnyExceptKanji(this scoped ReadOnlySpan<char> data)
+        => AnyExceptKanji(data);
 
-    public static void Encode(BitWriter writer, scoped in ReadOnlySpan<char> data)
+    private static bool AnyExceptKanji(this ReadOnlySpan<char> data)
+    {
+        for (var i = 0; i < data.Length; i++)
+        {
+            if (data[i] is (< (char)0x8140u or > (char)0x9FFCu) and (< (char)0xE040u or > (char)0xEBBFu))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public static void Encode(BitWriter writer, scoped ReadOnlySpan<char> data)
     {
         foreach (var c in data)
         {
@@ -22,11 +35,10 @@ internal static class KanjiEncoder
         }
     }
 
-
     /// <summary>
     /// Gets the length of a kanji bitstream created from the provided data, excluding the mode and character count indicator bits.
     /// </summary>
     /// <returns></returns>
-    public static int GetBitStreamLength(scoped in ReadOnlySpan<char> kanjiData)
+    public static int GetBitStreamLength(scoped ReadOnlySpan<char> kanjiData)
         => kanjiData.Length * 13;
 }

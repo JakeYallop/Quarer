@@ -1,7 +1,5 @@
 ﻿namespace Quarer;
-#pragma warning disable CA1027 // Mark enums with FlagsAttribute
 public enum ModeIndicator
-#pragma warning restore CA1027 // Mark enums with FlagsAttribute
 {
     Terminator = 0,
     Numeric = 1,

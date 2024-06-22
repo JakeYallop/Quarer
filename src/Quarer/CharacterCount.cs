@@ -7,7 +7,7 @@ internal static class CharacterCount
     internal static ReadOnlySpan<ushort> CharacterCountByte => [8, 16, 16];
     internal static ReadOnlySpan<ushort> CharacterCountKanji => [8, 10, 12];
 
-    public static ushort GetCharacterCountBitCount(in QrVersion version, in ModeIndicator mode)
+    public static ushort GetCharacterCountBitCount(QrVersion version, ModeIndicator mode)
     {
         var offset = version.Version switch
         {

@@ -2,22 +2,22 @@
 
 internal readonly struct QrDataSegmentHeader
 {
-    private QrDataSegmentHeader(in ModeIndicator modeIndicator, in ushort characterCountBitCount, in int dataCharactersCount)
+    private QrDataSegmentHeader(ModeIndicator modeIndicator, ushort characterCountBitCount, int dataCharactersCount)
     {
         ModeIndicator = modeIndicator;
         CharacterCountBitCount = characterCountBitCount;
         InputDataLength = dataCharactersCount;
     }
 
-    public static QrDataSegmentHeader Create(in QrVersion version, in ModeIndicator mode, in int inputDataLength)
+    public static QrDataSegmentHeader Create(QrVersion version, ModeIndicator mode, int inputDataLength)
     {
         if (mode is ModeIndicator.Eci or ModeIndicator.Fnc1FirstPosition or ModeIndicator.Fnc1SecondPosition or ModeIndicator.StructuredAppend)
         {
             throw new NotSupportedException($"Mode '{mode}' is not supported.");
         }
 
-        var characterBitCount = CharacterCount.GetCharacterCountBitCount(in version, in mode);
-        return new QrDataSegmentHeader(in mode, in characterBitCount, in inputDataLength);
+        var characterBitCount = CharacterCount.GetCharacterCountBitCount(version, mode);
+        return new QrDataSegmentHeader(mode, characterBitCount, inputDataLength);
     }
 
     public ModeIndicator ModeIndicator { get; }
@@ -31,4 +31,5 @@ internal readonly struct QrDataSegmentHeader
     }
 
     //TODO: Support ECI, FNC, StructuredAppend etc.
+    //TODO: Add IEquatable/Equality if this is used in dictionaries or searched for anywhere.
 }

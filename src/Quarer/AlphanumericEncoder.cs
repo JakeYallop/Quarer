@@ -528,7 +528,7 @@ internal static class AlphanumericEncoder
         -1  ,	// 255
     ];
 
-    public static void Encode(BitWriter writer, scoped in ReadOnlySpan<byte> data)
+    public static void Encode(BitWriter writer, scoped ReadOnlySpan<char> data)
     {
         var position = 0;
         for (; position + 2 <= data.Length; position += 2)
@@ -544,7 +544,7 @@ internal static class AlphanumericEncoder
             Debug.Assert(data.Length == position + 1, "Expected only 1 character remaining after encoding all other pairs.");
             var remainingCharacter = data[position];
 
-            writer.WriteBits(in Character2Map[remainingCharacter], 6);
+            writer.WriteBits(Character2Map[remainingCharacter], 6);
         }
     }
 
@@ -552,6 +552,6 @@ internal static class AlphanumericEncoder
     /// Gets the length of an alphanumeric bitstream created from the provided data, excluding the mode and character count indicator bits.
     /// </summary>
     /// <returns></returns>
-    public static int GetBitStreamLength(scoped in ReadOnlySpan<byte> alphanumericData)
+    public static int GetBitStreamLength(scoped ReadOnlySpan<char> alphanumericData)
         => (11 * (alphanumericData.Length / 2)) + (6 * (alphanumericData.Length % 2));
 }

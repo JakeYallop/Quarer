@@ -1,5 +1,5 @@
 ﻿namespace Quarer.Tests;
-public class CharacterCountIndicatorTests
+public class CharacterCountTests
 {
     [Theory]
     [InlineData(1, ModeIndicator.Numeric, 10)]

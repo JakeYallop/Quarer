@@ -1,6 +1,4 @@
-﻿using System.Diagnostics;
-
-namespace Quarer.Tests;
+﻿namespace Quarer.Tests;
 
 public class BitWriterTests
 {
