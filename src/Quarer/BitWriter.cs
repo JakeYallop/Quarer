@@ -62,8 +62,6 @@ internal sealed class BitWriter
         }
     }
 
-    //public int ReadBlock(int index, int count)
-
     private static int GetBitsFromValue<T>(T value, int bitCount, int remainingBitsInValue) where T : IBinaryInteger<T>
         => int.CreateChecked((value >> remainingBitsInValue) & GetAllSetBitMask<T>(bitCount));
     private static T GetAllSetBitMask<T>(int bitCount) where T : IBinaryInteger<T>

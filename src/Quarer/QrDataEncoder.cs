@@ -13,7 +13,7 @@ public static class QrDataEncoder
         //For now, just use a single mode for the full set of data.
         var mode = DeriveMode(data);
         var dataLength = GetBitStreamLength(mode, data);
-        if (!QrDataCapacityLookup.TryGetVersionForCapacity(dataLength, mode, requestedErrorCorrectionLevel, out var version))
+        if (!QrCapacityLookup.TryGetVersionForDataCapacity(dataLength, mode, requestedErrorCorrectionLevel, out var version))
         {
             return QrDataEncoding.Invalid(QrAnalysisResult.DataTooLarge);
         }
