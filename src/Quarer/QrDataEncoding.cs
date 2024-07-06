@@ -25,5 +25,4 @@ public sealed class QrDataEncoding
     public QrVersion Version { get; }
     public ImmutableArray<DataSegment> DataSegments { get; }
     public QrAnalysisResult Result { get; }
-
 }

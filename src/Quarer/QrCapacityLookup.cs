@@ -1,13 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 
 namespace Quarer;
-
-public readonly struct QrVersion2
-{
-    public const byte MinVersion = 1;
-    public const byte MaxVersion = 40;
-}
-
 internal static class QrCapacityLookup
 {
     private static readonly int[][][] VersionModeErrorLevelCapacityLookup =
@@ -379,7 +372,7 @@ internal static class QrCapacityLookup
             return false;
         }
 
-        version = new QrVersion((byte)(index + 1));
+        version = QrVersion.GetVersion((byte)(index + 1));
         return true;
     }
 
