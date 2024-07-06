@@ -6,7 +6,8 @@ namespace Quarer;
 
 public readonly struct QrVersion : IEquatable<QrVersion>, IComparable<QrVersion>
 {
-    private static readonly ImmutableArray<QrVersion> QrVersionsLookup = [
+    // TODO: Replace with ImmutableArray; https://github.com/xunit/xunit/issues/2970
+    private static readonly QrVersion[] QrVersionsLookup = [
             new QrVersion(1, 26, 0),
             new QrVersion(2, 44, 7),
             new QrVersion(3, 70, 7),
