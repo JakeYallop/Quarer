@@ -38,7 +38,5 @@ public class BinarySearcherTests
     [Theory]
     [MemberData(nameof(Data))]
     public void ReturnsExpectedResult2(int value, int[] array, int expected)
-    {
-        Assert.Equal(expected, BinarySearcher.BinarySearchUpperBound(array, value));
-    }
+        => Assert.Equal(expected, BinarySearcher.BinarySearchUpperBound(array, value));
 }

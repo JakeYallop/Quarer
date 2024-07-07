@@ -345,14 +345,12 @@ internal static class QrCapacityLookup
 
         var mappedMode = MapModeIndicator(mode);
 
-#pragma warning disable IDE0046 // Convert to conditional expression
         if ((int)errorLevel is < 1 or > 4)
         {
             ThrowOutOfRangeException(1, 4, "Error correction level");
         }
 
         return VersionModeErrorLevelCapacityLookup[version - 1][(int)errorLevel - 1][mappedMode];
-#pragma warning restore IDE0046 // Convert to conditional expression
     }
 
     public static bool TryGetVersionForDataCapacity(int requestedCapacityDataCharacters, ModeIndicator mode, ErrorCorrectionLevel errorLevel, out QrVersion version)

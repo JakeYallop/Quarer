@@ -12,7 +12,7 @@ public static class QrDataEncoder
     {
         //For now, just use a single mode for the full set of data.
         var mode = DeriveMode(data);
-        var dataLength = GetBitStreamLength(mode, data);
+        var dataLength = mode.GetBitStreamLength(data);
         if (!QrCapacityLookup.TryGetVersionForDataCapacity(dataLength, mode, requestedErrorCorrectionLevel, out var version))
         {
             return QrDataEncoding.Invalid(QrAnalysisResult.DataTooLarge);
@@ -29,20 +29,6 @@ public static class QrDataEncoder
         return data.ContainsAnyExcept(AlphanumericCharacters)
             ? KanjiEncoder.ContainsAnyExceptKanji(data) ? ModeIndicator.Byte : ModeIndicator.Kanji
             : data.ContainsAnyExcept(NumericCharacters) ? ModeIndicator.Alphanumeric : ModeIndicator.Numeric;
-    }
-
-    public static int GetBitStreamLength(this ModeIndicator mode, ReadOnlySpan<char> data)
-    {
-#pragma warning disable IDE0072 // Add missing cases
-        return mode switch
-        {
-            ModeIndicator.Numeric => NumericEncoder.GetBitStreamLength(data),
-            ModeIndicator.Alphanumeric => AlphanumericEncoder.GetBitStreamLength(data),
-            ModeIndicator.Byte => data.Length * 2 * 8,
-            ModeIndicator.Kanji => KanjiEncoder.GetBitStreamLength(data),
-            _ => throw new NotSupportedException($"Mode must be one of {ModeIndicator.Numeric}, {ModeIndicator.Alphanumeric}, {ModeIndicator.Byte} or {ModeIndicator.Kanji}.")
-        };
-#pragma warning restore IDE0072 // Add missing cases
     }
 }
 
