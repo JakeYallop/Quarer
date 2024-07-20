@@ -1,5 +1,6 @@
 ﻿using System.Buffers;
 using System.Collections.Immutable;
+using System.Diagnostics;
 
 namespace Quarer;
 
@@ -29,6 +30,42 @@ public static class QrDataEncoder
         return data.ContainsAnyExcept(AlphanumericCharacters)
             ? KanjiEncoder.ContainsAnyExceptKanji(data) ? ModeIndicator.Byte : ModeIndicator.Kanji
             : data.ContainsAnyExcept(NumericCharacters) ? ModeIndicator.Alphanumeric : ModeIndicator.Numeric;
+    }
+
+    public static IEnumerable<byte> EncodeDataBitStream(ReadOnlySpan<char> data, QrDataEncoding qrDataEncoding)
+    {
+        var bitWriter = new BitWriter(qrDataEncoding.Version.DataCapactiyCodewords);
+
+        foreach (var segment in qrDataEncoding.DataSegments)
+        {
+#pragma warning disable IDE0010 // Add missing cases
+            switch (segment.Mode)
+            {
+                case ModeIndicator.Numeric:
+                    NumericEncoder.Encode(bitWriter, data[segment.Range]);
+                    break;
+                case ModeIndicator.Alphanumeric:
+                    AlphanumericEncoder.Encode(bitWriter, data[segment.Range]);
+                    break;
+                case ModeIndicator.Byte:
+                    //TODO: Add byte encoder to allow making this more efficient (e.g vectorization) and allow testability
+                    //e.g read 4 bytes at a time and write 32 bits
+                    foreach (var c in data[segment.Range])
+                    {
+                        bitWriter.WriteBits(c, 8);
+                    }
+                    break;
+                case ModeIndicator.Kanji:
+                    KanjiEncoder.Encode(bitWriter, data[segment.Range]);
+                    break;
+                default:
+                    throw new UnreachableException($"Mode '{segment.Mode}' not expected.");
+            }
+#pragma warning restore IDE0010 // Add missing cases
+        }
+
+        //TODO: Terminator, padding codewords
+        return bitWriter.GetByteStream();
     }
 }
 

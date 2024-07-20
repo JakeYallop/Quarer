@@ -23,5 +23,15 @@ public readonly record struct DataSegment
     /// Segment length including mode indicator and character count.
     /// </summary>
     public int FullSegmentLength { get; }
+
+    public void Deconstruct(out ModeIndicator mode, out Range range, out int fullSegmentLength)
+    {
+        mode = Mode;
+        range = Range;
+        fullSegmentLength = FullSegmentLength;
+    }
+
+    public override string ToString()
+        => $"{nameof(Range)}: {Range}, {nameof(Mode)}: {Mode}, {nameof(FullSegmentLength)}: {FullSegmentLength}";
 }
 

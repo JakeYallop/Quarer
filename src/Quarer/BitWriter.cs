@@ -1,11 +1,12 @@
-﻿using System.Diagnostics;
+﻿using System.Buffers;
+using System.Diagnostics;
+using System.Globalization;
 using System.Numerics;
 using System.Runtime.InteropServices;
 
 namespace Quarer;
 
-//TODO: Add ReadX APIs, maybe rename to BitStream
-internal sealed class BitWriter
+internal sealed class BitWriter(int initialCapacity)
 {
     private const int BitsPerElement = 32;
     private const int BitShiftPerInt32 = 5;
@@ -13,9 +14,9 @@ internal sealed class BitWriter
     private int _bitsWritten;
     private int _capacity;
     //TODO: Allow using a pre-allocated buffer, maybe add a value builder and use a stackalloc'd buffer.
-    private readonly List<int> _buffer = new(16);
+    private readonly List<uint> _buffer = new(initialCapacity);
 
-    public BitWriter()
+    public BitWriter() : this(16)
     {
     }
 
@@ -24,7 +25,7 @@ internal sealed class BitWriter
     /// </summary>
     public int Count { get; set; }
 
-    public void WriteBits<T>(T value, int bitCount) where T : IBinaryInteger<T>
+    public void WriteBits<T>(T value, int bitCount) where T : INumber<T>, IBinaryInteger<T>
     {
         ThrowForInvalidValue(value, bitCount);
         var remainingBitsInValue = bitCount;
@@ -62,17 +63,78 @@ internal sealed class BitWriter
         }
     }
 
-    private static int GetBitsFromValue<T>(T value, int bitCount, int remainingBitsInValue) where T : IBinaryInteger<T>
-        => int.CreateChecked((value >> remainingBitsInValue) & GetAllSetBitMask<T>(bitCount));
-    private static T GetAllSetBitMask<T>(int bitCount) where T : IBinaryInteger<T>
-        => (T.One << bitCount) - T.One;
-
-    private static void ThrowForInvalidValue<T>(T value, int lowBitsToUse) where T : IBinaryInteger<T>
+    public IEnumerable<byte> GetByteStream()
     {
-        var maxValue = T.One << lowBitsToUse;
-        if (value >= maxValue || T.PopCount(value) > T.CreateSaturating(lowBitsToUse))
+        //TODO: Return an enumerable that implements ICollection so that TryGetNonEnumeratedCount etc works
+        var current = 0;
+        var fullElements = Math.DivRem(Count, BitsPerElement, out var remainder);
+        while (current < fullElements)
         {
-            throw new ArgumentOutOfRangeException(nameof(value), $"Expected value to be less than or equal to {maxValue}, to fit within {lowBitsToUse}-bits.");
+            var i = _buffer[current];
+
+            for (var currentBit = 0; currentBit < BitsPerElement; currentBit += 8)
+            {
+                var @byte = GetBitsFromValue(i, 8, BitsPerElement - currentBit - 8);
+                yield return (byte)@byte;
+            }
+
+            current++;
+        }
+
+        if (remainder == 0)
+        {
+            yield break;
+        }
+
+        var lastElement = _buffer[current];
+        for (var currentBit = 0; currentBit < remainder; currentBit += 8)
+        {
+            var @byte = GetBitsFromValue(lastElement, 8, BitsPerElement - currentBit - 8);
+            yield return (byte)@byte;
+        }
+    }
+
+    private static uint GetBitsFromValue<T>(T value, int bitCount, int remainingBitsInValue) where T : INumber<T>, IBinaryInteger<T>
+    => uint.CreateTruncating((value >> remainingBitsInValue) & GetAllSetBitMask<T>(bitCount));
+    private static T GetAllSetBitMask<T>(int bitCount) where T : INumber<T>, IBinaryInteger<T>
+    {
+        var maxBits = GetMaxBits<T>();
+        var n = typeof(T).Name;
+        Debug.Assert(T.CreateTruncating(bitCount) <= maxBits);
+        if (maxBits == T.CreateTruncating(bitCount))
+        {
+            return T.AllBitsSet;
+        }
+
+        return unchecked((T.One << bitCount) - T.One);
+    }
+
+    private static T GetMaxBits<T>() where T : INumber<T>, IBinaryInteger<T>
+    {
+        var maxBitsForT = T.LeadingZeroCount(T.One) + T.One;
+        Debug.Assert(T.IsPositive(maxBitsForT) || T.IsZero(maxBitsForT));
+        return maxBitsForT;
+    }
+
+    private static void ThrowForInvalidValue<T>(T value, int bitsToUse) where T : INumber<T>, IBinaryInteger<T>
+    {
+        if (T.IsZero(value))
+        {
+            return;
+        }
+
+        var maxBitsForT = GetMaxBits<T>();
+        if (T.CreateTruncating(bitsToUse) > maxBitsForT)
+        {
+            throw new ArgumentOutOfRangeException(nameof(bitsToUse), $"The maximum number of bits in a '{typeof(T).Name}' is '{maxBitsForT}', but '{bitsToUse}' was requested.");
+        }
+
+        var allSetMask = GetAllSetBitMask<T>(bitsToUse);
+        var s1 = T.Sign(allSetMask);
+        var s2 = T.Sign(value);
+        if ((s1 != s2 ? T.Min(allSetMask, value) : T.Max(allSetMask, value)) != allSetMask)
+        {
+            throw new ArgumentOutOfRangeException(nameof(value), $"Expected value to be less than or equal to 0x{allSetMask:x}, to fit within {bitsToUse}-bits, actual 0x{value:x}.");
         }
     }
 
