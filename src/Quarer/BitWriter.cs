@@ -1,6 +1,4 @@
-﻿using System.Buffers;
-using System.Diagnostics;
-using System.Globalization;
+﻿using System.Diagnostics;
 using System.Numerics;
 using System.Runtime.InteropServices;
 
@@ -23,7 +21,19 @@ internal sealed class BitWriter(int initialCapacity)
     /// <summary>
     /// The total number of bits written.
     /// </summary>
-    public int Count { get; set; }
+    public int Count { get; private set; }
+
+    /// <summary>
+    /// The total number of bytes, rounded up to the nearest full byte.
+    /// </summary>
+    public int ByteCount
+    {
+        get
+        {
+            var (fullElements, remainder) = int.DivRem(Count, 8);
+            return fullElements + (remainder > 0 ? 1 : 0);
+        }
+    }
 
     public void WriteBits<T>(T value, int bitCount) where T : INumber<T>, IBinaryInteger<T>
     {
@@ -99,14 +109,9 @@ internal sealed class BitWriter(int initialCapacity)
     private static T GetAllSetBitMask<T>(int bitCount) where T : INumber<T>, IBinaryInteger<T>
     {
         var maxBits = GetMaxBits<T>();
-        var n = typeof(T).Name;
-        Debug.Assert(T.CreateTruncating(bitCount) <= maxBits);
-        if (maxBits == T.CreateTruncating(bitCount))
-        {
-            return T.AllBitsSet;
-        }
-
-        return unchecked((T.One << bitCount) - T.One);
+        var bitCountBits = T.CreateTruncating(bitCount);
+        Debug.Assert(bitCountBits <= maxBits);
+        return maxBits == bitCountBits ? T.AllBitsSet : unchecked((T.One << bitCount) - T.One);
     }
 
     private static T GetMaxBits<T>() where T : INumber<T>, IBinaryInteger<T>

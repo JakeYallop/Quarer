@@ -1,8 +1,4 @@
-﻿using System.Diagnostics;
-using System.Linq.Expressions;
-using System.Numerics;
-using System.Runtime.CompilerServices;
-using Newtonsoft.Json.Linq;
+﻿using System.Numerics;
 
 namespace Quarer.Tests;
 
@@ -26,7 +22,6 @@ public class BitWriterTests
             { 0x7FFF_FFFF_FFFF_FFFFu, 63 },
         };
 
-
     public static TheoryData<object, int> ValidData_FitsWithin32Bits()
         => new()
         {
@@ -48,6 +43,7 @@ public class BitWriterTests
             { (ushort)1, 1 },
             { (ushort)0, 0 },
             { (ushort)3, 2 },
+            { (ushort)0, 4 }, //e.g writing the terminator block
         };
 
     private static T UnboxInto<T>(object obj) where T : IBinaryInteger<T>
@@ -69,6 +65,7 @@ public class BitWriterTests
         }
     }
 
+#pragma warning disable xUnit1045 // Avoid using TheoryData type arguments that might not be serializable
     [Theory]
     [MemberData(nameof(ValidData_FitsWithin16Bits))]
     public void WriteBits_ValidValue_IsSuccessful_short(object value, int bitCount)
@@ -139,6 +136,7 @@ public class BitWriterTests
         var bitWriter = new BitWriter();
         Assert.Throws<ArgumentOutOfRangeException>(() => bitWriter.WriteBits(value, bitCount));
     }
+#pragma warning restore xUnit1045 // Avoid using TheoryData type arguments that might not be serializable
 
     [Fact]
     public void WriteBits_WritesCorrectValues()
@@ -158,7 +156,6 @@ public class BitWriterTests
         bitWriter.WriteBits(value5, 6);
         bitWriter.WriteBits(value6, 4);
 
-
         var bitStream = bitWriter.GetBitStream();
 
         AssertExtensions.BitsEqual($"{value1:B10}{value2:B4}{value3:B7}{value4:B13}{value5:B6}{value6:B4}", bitStream);
@@ -173,7 +170,6 @@ public class BitWriterTests
         ushort value3 = 0b0010_000;
         ushort value4 = 0b0010_0101_0101_1;
         ushort value5 = 0b0001_00;
-        ushort value6 = 0b0100;
 
         bitWriter.WriteBits(value1, 10);
         bitWriter.WriteBits(value2, 4);
@@ -224,5 +220,15 @@ public class BitWriterTests
         bitWriter.WriteBits(value3, 10);
 
         Assert.Equal(30, bitWriter.Count);
+    }
+
+    [Fact]
+    public void ByteCount_ReturnsExpectedResult()
+    {
+        var bitWriter = new BitWriter();
+        bitWriter.WriteBits(0, 32);
+        bitWriter.WriteBits(0, 5);
+
+        Assert.Equal(5, bitWriter.ByteCount);
     }
 }

@@ -34,7 +34,8 @@ public static class QrDataEncoder
 
     public static IEnumerable<byte> EncodeDataBitStream(ReadOnlySpan<char> data, QrDataEncoding qrDataEncoding)
     {
-        var bitWriter = new BitWriter(qrDataEncoding.Version.DataCapactiyCodewords);
+        var version = qrDataEncoding.Version;
+        var bitWriter = new BitWriter(qrDataEncoding.Version.DataCodewordsCapacity);
 
         foreach (var segment in qrDataEncoding.DataSegments)
         {
@@ -64,9 +65,29 @@ public static class QrDataEncoder
 #pragma warning restore IDE0010 // Add missing cases
         }
 
-        //TODO: Terminator, padding codewords
+        //TODO: Tests for this
+        QrTerminatorBlock.WriteTerminator(bitWriter, version);
+
+        var codewords = bitWriter.ByteCount;
+        while (codewords <= version.DataCodewordsCapacity - 4)
+        {
+            bitWriter.WriteBits(PadPattern32Bits, 32);
+            codewords += 4;
+        }
+
+        var alternate = false;
+        while (codewords <= version.DataCodewordsCapacity)
+        {
+            bitWriter.WriteBits(alternate ? PadPattern8_1 : PadPattern8_2, 8);
+            codewords++;
+        }
+
         return bitWriter.GetByteStream();
     }
+
+    private const byte PadPattern8_1 = 0b1110_1100;
+    private const byte PadPattern8_2 = 0b0001_0001;
+    private const uint PadPattern32Bits = unchecked((uint)((PadPattern8_1 << 24) | (PadPattern8_2 << 16) | (PadPattern8_1 << 8) | PadPattern8_2));
 }
 
 public enum QrAnalysisResult

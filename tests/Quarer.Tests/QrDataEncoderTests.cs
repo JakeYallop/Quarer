@@ -56,4 +56,14 @@ public sealed class QrDataEncoderTests
         Assert.Equal(default, encoding.DataSegments);
         Assert.Equal(QrAnalysisResult.DataTooLarge, encoding.Result);
     }
+
+    [Fact]
+    public void EncodeDataBitStream_ValidNumericData_ReturnsCorrectBitStream()
+    {
+        var data = "1234567890";
+        var errorCorrectionLevel = ErrorCorrectionLevel.M;
+        var encoding = QrDataEncoder.AnalyzeSimple(data, errorCorrectionLevel);
+
+        var bitStream = QrDataEncoder.EncodeDataBitStream(data, encoding).ToArray();
+    }
 }

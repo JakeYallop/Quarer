@@ -3,6 +3,7 @@ using System.Globalization;
 
 namespace Quarer;
 
+//TODO: Fix capacities - need ec codewords + data codewords. Can probably get rid of the capacity lookup (will use this instead)
 public readonly struct QrVersion : IEquatable<QrVersion>, IComparable<QrVersion>
 {
     // TODO: Replace with ImmutableArray; https://github.com/xunit/xunit/issues/2970
@@ -59,7 +60,7 @@ public readonly struct QrVersion : IEquatable<QrVersion>, IComparable<QrVersion>
     private QrVersion(byte version, ushort dataCapacityCodewords, byte remainderBits)
     {
         Version = version;
-        DataCapactiyCodewords = dataCapacityCodewords;
+        DataCodewordsCapacity = dataCapacityCodewords;
         RemainderBits = remainderBits;
     }
 
@@ -72,7 +73,7 @@ public readonly struct QrVersion : IEquatable<QrVersion>, IComparable<QrVersion>
     }
 
     public readonly byte Version { get; }
-    public readonly ushort DataCapactiyCodewords { get; }
+    public readonly ushort DataCodewordsCapacity { get; }
     public readonly byte RemainderBits { get; }
 
     public static bool operator ==(QrVersion left, QrVersion right) => left.Equals(right);
