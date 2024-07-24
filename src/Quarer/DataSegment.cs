@@ -2,7 +2,7 @@
 
 public readonly record struct DataSegment
 {
-    public DataSegment(ModeIndicator mode, Range range, int fullSegmentLength)
+    private DataSegment(ModeIndicator mode, Range range, int fullSegmentLength)
     {
         Mode = mode;
         Range = range;
@@ -13,7 +13,7 @@ public readonly record struct DataSegment
     //see: https://github.com/zxing/zxing/blob/2fb22b724660b9af7edd22fc0f88358fdaf63aa1/core/src/main/java/com/google/zxing/qrcode/encoder/MinimalEncoder.java#L445
     public static DataSegment Create(ushort characterCount, ModeIndicator mode, int bitstreamLength, Range range)
     {
-        var fullLength = bitstreamLength + characterCount;
+        var fullLength = 4 + bitstreamLength + characterCount;
         return new DataSegment(mode, range, fullLength);
     }
 
