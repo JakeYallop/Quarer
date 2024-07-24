@@ -70,43 +70,24 @@ internal static class QrVersionLookup
 
     private static int CalculateActualCharacterCapacity(QrVersion version, ModeIndicator mode)
     {
-        //#pragma warning disable IDE0072 // Add missing cases
-        //        return mode switch
-        //        {
-        //            ModeIndicator.Numeric => GetActualCharacterCount(version, mode, 10, [7, 4]),
-        //            ModeIndicator.Alphanumeric => GetActualCharacterCount(version, mode, 11, [6]),
-        //            ModeIndicator.Byte => GetActualCharacterCount(version, mode, 8, []),
-        //            ModeIndicator.Kanji => GetActualCharacterCount(version, mode, 13, []),
-        //            _ => throw new UnreachableException()
-        //        };
-        //#pragma warning restore IDE0072 // Add missing cases
-
 #pragma warning disable IDE0072 // Add missing cases
-
         const int ModeIndicatorBits = 4;
         var characterCount = CharacterCount.GetCharacterCountBitCount(version, mode);
         var capacity = (version.DataCodewordsCapacity << 3) - ModeIndicatorBits - characterCount;
 
         return mode switch
         {
+            // 10 bits per 3 characters, 3 / 10, integer division allows us to ignore the remainder cases (4 or 7 bits left over)
             ModeIndicator.Numeric => (int)(capacity * 0.3),
-            //TODO: Replace dvision with constants
-            ModeIndicator.Alphanumeric => (int)(capacity * (2 / 11d)),
+            // 11 bits per 2 characters, 2.0 / 11.0, integer division allows us to ignore the remainder case (1 character in 6)
+            ModeIndicator.Alphanumeric => (int)(capacity * 0.18181818181818182d),
+            // 8 bits per character
             ModeIndicator.Byte => capacity >> 3,
-            ModeIndicator.Kanji => (int)(capacity * (1 / 13d)),
+            // 13 bits per character, 1.0 / 13.0,
+            ModeIndicator.Kanji => (int)(capacity * 0.07692307692307693),
             _ => throw new UnreachableException()
         };
 #pragma warning restore IDE0072 // Add missing cases
-    }
-
-    internal static int GetActualCharacterCount(QrVersion version, ModeIndicator mode, int encodingSize, ReadOnlySpan<int> encodingSizes)
-    {
-        const int ModeIndicatorBits = 4;
-        var characterCount = CharacterCount.GetCharacterCountBitCount(version, mode);
-
-
-
-        return 0;
     }
 
     [DoesNotReturn]
