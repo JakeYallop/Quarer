@@ -13,10 +13,10 @@ public enum ModeIndicator
     /// 8.3.8 - FNC1 mode is used for messages containing data formatted either in accordance with the UCC/EAN Application Identifiers standard or in accordance with a specific industry standard previously agreed with AIM International
     /// </summary>
     Fnc1FirstPosition = 5,
-    Eci = 7,
-    Kanji = 8,
-    Fnc1SecondPosition = 9,
     /// <summary>
     /// Exteneded Channel Interpretation
     /// </summary>
+    Eci = 7,
+    Kanji = 8,
+    Fnc1SecondPosition = 9,
 }

@@ -5,29 +5,29 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Quarer;
 
-public sealed class QrAnalysisResult
+public sealed class DataAnalysisResult
 {
-    private QrAnalysisResult(QrDataEncoding encoding) : this(encoding, AnalysisResult.Success)
+    private DataAnalysisResult(QrEncodingInfo encoding) : this(encoding, AnalysisResult.Success)
     {
     }
 
-    private QrAnalysisResult(QrDataEncoding? encoding, AnalysisResult result)
+    private DataAnalysisResult(QrEncodingInfo? encoding, AnalysisResult result)
     {
         Result = encoding;
         AnalysisResult = result;
     }
 
-    public QrDataEncoding? Result { get; }
+    public QrEncodingInfo? Result { get; }
     public AnalysisResult AnalysisResult { get; }
     [MemberNotNullWhen(true, nameof(Result))]
     public bool Success => AnalysisResult is AnalysisResult.Success;
 
-    public static QrAnalysisResult Invalid(AnalysisResult result)
+    public static DataAnalysisResult Invalid(AnalysisResult result)
         => result == AnalysisResult.Success
             ? throw new ArgumentException("Cannot create an invalid result from a success.", nameof(result))
             : new(null, result);
 
-    public static QrAnalysisResult Successful(QrDataEncoding encoding)
+    public static DataAnalysisResult Successful(QrEncodingInfo encoding)
         => new(encoding);
 }
 
@@ -36,21 +36,21 @@ public static class QrDataEncoder
     public static readonly SearchValues<char> AlphanumericCharacters = SearchValues.Create(AlphanumericEncoder.Characters);
     public static readonly SearchValues<char> NumericCharacters = SearchValues.Create("0123456789");
 
-    public static QrAnalysisResult AnalyzeSimple(ReadOnlySpan<char> data, ErrorCorrectionLevel requestedErrorCorrectionLevel)
+    public static DataAnalysisResult AnalyzeSimple(ReadOnlySpan<char> data, ErrorCorrectionLevel requestedErrorCorrectionLevel)
     {
         //For now, just use a single mode for the full set of data.
         var mode = DeriveMode(data);
         var dataLength = mode.GetBitStreamLength(data);
         if (!QrVersionLookup.TryGetVersionForDataCapacity(dataLength, mode, requestedErrorCorrectionLevel, out var version))
         {
-            return QrAnalysisResult.Invalid(AnalysisResult.DataTooLarge);
+            return DataAnalysisResult.Invalid(AnalysisResult.DataTooLarge);
         }
 
         var characterCount = CharacterCount.GetCharacterCountBitCount(version, mode);
         var segment = DataSegment.Create(characterCount, mode, dataLength, new Range(0, data.Length));
         var segments = ImmutableArray.Create(segment);
-        var encoding = new QrDataEncoding(version, segments);
-        return QrAnalysisResult.Successful(encoding);
+        var encoding = new QrEncodingInfo(version, segments);
+        return DataAnalysisResult.Successful(encoding);
     }
 
     public static ModeIndicator DeriveMode(ReadOnlySpan<char> data)
@@ -60,7 +60,7 @@ public static class QrDataEncoder
             : data.ContainsAnyExcept(NumericCharacters) ? ModeIndicator.Alphanumeric : ModeIndicator.Numeric;
     }
 
-    public static IEnumerable<byte> EncodeDataBitStream(ReadOnlySpan<char> data, QrDataEncoding qrDataEncoding)
+    public static IEnumerable<byte> EncodeDataBitStream(ReadOnlySpan<char> data, QrEncodingInfo qrDataEncoding)
     {
         var version = qrDataEncoding.Version;
         var bitWriter = new BitWriter(qrDataEncoding.Version.DataCodewordsCapacity);
@@ -93,7 +93,6 @@ public static class QrDataEncoder
 #pragma warning restore IDE0010 // Add missing cases
         }
 
-        //TODO: Tests for this
         QrTerminatorBlock.WriteTerminator(bitWriter, version);
 
         var codewords = bitWriter.ByteCount;
@@ -104,7 +103,7 @@ public static class QrDataEncoder
         }
 
         var alternate = false;
-        while (codewords <= version.DataCodewordsCapacity)
+        while (codewords < version.DataCodewordsCapacity)
         {
             bitWriter.WriteBits(alternate ? PadPattern8_1 : PadPattern8_2, 8);
             codewords++;

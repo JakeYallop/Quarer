@@ -2,9 +2,9 @@
 
 namespace Quarer;
 
-public sealed class QrDataEncoding
+public sealed class QrEncodingInfo
 {
-    internal QrDataEncoding(QrVersion version, ImmutableArray<DataSegment> dataSegments)
+    internal QrEncodingInfo(QrVersion version, ImmutableArray<DataSegment> dataSegments)
     {
         Version = version;
         DataSegments = dataSegments;

@@ -5,12 +5,12 @@ public sealed class QrAnalysisResultTests
     [InlineData(AnalysisResult.DataTooLarge)]
     public void Invalid(AnalysisResult result)
     {
-        var encoding = QrAnalysisResult.Invalid(result);
+        var encoding = DataAnalysisResult.Invalid(result);
         Assert.False(encoding.Success);
         Assert.Equal(result, encoding.AnalysisResult);
     }
 
     [Fact]
     public void Invalid_ThrowsForSuccessResult()
-        => Assert.Throws<ArgumentException>(() => QrAnalysisResult.Invalid(AnalysisResult.Success));
+        => Assert.Throws<ArgumentException>(() => DataAnalysisResult.Invalid(AnalysisResult.Success));
 }

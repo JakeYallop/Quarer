@@ -57,14 +57,18 @@ public sealed class QrDataEncoderTests
         Assert.Equal(AnalysisResult.DataTooLarge, result.AnalysisResult);
     }
 
-    [Fact(Skip = "TODO")]
-    public void EncodeDataBitStream_ValidNumericData_ReturnsCorrectBitStream()
+    [Fact]
+    public void EncodeDataBitStream_ValidNumericData_ReturnsExpectedBitStream()
     {
         var data = "1234567890";
         var errorCorrectionLevel = ErrorCorrectionLevel.M;
-        var result = QrDataEncoder.AnalyzeSimple(data, errorCorrectionLevel);
+        var version = QrVersion.GetVersion(1, errorCorrectionLevel); //34 input data character capacity
+        var characterCount = CharacterCount.GetCharacterCountBitCount(version, ModeIndicator.Numeric);
+        var encodingInfo = new QrEncodingInfo(version, [DataSegment.Create(characterCount, ModeIndicator.Numeric, NumericEncoder.GetBitStreamLength(data), new(0, data.Length))]);
 
-        Assert.True(result.Success);
-        var bitStream = QrDataEncoder.EncodeDataBitStream(data, result.Result).ToArray();
+        var bitStream = QrDataEncoder.EncodeDataBitStream(data, encodingInfo).ToArray();
+        // mode indicator, character count, data bits, terminator
+        var expectedCount = 4 + characterCount + NumericEncoder.GetBitStreamLength(new char[34]) + 4;
+        Assert.Equal(expectedCount / 8, bitStream.Length);
     }
 }
