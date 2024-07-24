@@ -2,16 +2,19 @@
 
 internal static class BinarySearcher
 {
-    public static int BinarySearchUpperBound(ReadOnlySpan<int> span, int value)
+    // Span overload exists to allow `Span<T>` values to correctly infer type arguments
+    public static int BinarySearchUpperBound<T, TValue>(Span<T> span, TValue value, Func<T, TValue> selector) where TValue : IComparable<TValue>
+        => BinarySearchUpperBound((ReadOnlySpan<T>)span, value, selector);
+    public static int BinarySearchUpperBound<T, TValue>(ReadOnlySpan<T> span, TValue value, Func<T, TValue> selector) where TValue : IComparable<TValue>
     {
         if (span.Length == 0)
         {
-            return value;
+            return -1;
         }
 
         if (span.Length == 1)
         {
-            return span[0] >= value ? 0 : -1;
+            return selector(span[0]).CompareTo(value) is 0 or 1 ? 0 : -1;
         }
 
         var low = 0;
@@ -19,7 +22,7 @@ internal static class BinarySearcher
         while (low <= high)
         {
             var mid = low + ((high - low) >> 1);
-            if (span[mid] < value)
+            if (selector(span[mid]).CompareTo(value) == -1)
             {
                 low = mid + 1;
             }

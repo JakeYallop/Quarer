@@ -1,107 +1,128 @@
-﻿using System.Diagnostics.CodeAnalysis;
-using System.Globalization;
+﻿using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Quarer;
 
-//TODO: Fix capacities - need ec codewords + data codewords. Can probably get rid of the capacity lookup (will use this instead)
-public readonly struct QrVersion : IEquatable<QrVersion>, IComparable<QrVersion>
+public class QrVersion : IEquatable<QrVersion>, IComparable<QrVersion>
 {
-    // TODO: Replace with ImmutableArray; https://github.com/xunit/xunit/issues/2970
-    private static readonly QrVersion[] QrVersionsLookup = [
-            new QrVersion(1, 26, 0),
-            new QrVersion(2, 44, 7),
-            new QrVersion(3, 70, 7),
-            new QrVersion(4, 100, 7),
-            new QrVersion(5, 134, 7),
-            new QrVersion(6, 172, 7),
-            new QrVersion(7, 196, 0),
-            new QrVersion(8, 242, 0),
-            new QrVersion(9, 292, 0),
-            new QrVersion(10, 346, 0),
-            new QrVersion(11, 404, 0),
-            new QrVersion(12, 466, 0),
-            new QrVersion(13, 532, 0),
-            new QrVersion(14, 581, 3),
-            new QrVersion(15, 655, 3),
-            new QrVersion(16, 733, 3),
-            new QrVersion(17, 815, 3),
-            new QrVersion(18, 901, 3),
-            new QrVersion(19, 991, 3),
-            new QrVersion(20, 1085, 3),
-            new QrVersion(21, 1156, 4),
-            new QrVersion(22, 1258, 4),
-            new QrVersion(23, 1364, 4),
-            new QrVersion(24, 1474, 4),
-            new QrVersion(25, 1588, 4),
-            new QrVersion(26, 1706, 4),
-            new QrVersion(27, 1828, 4),
-            new QrVersion(28, 1921, 3),
-            new QrVersion(29, 2051, 3),
-            new QrVersion(30, 2185, 3),
-            new QrVersion(31, 2323, 3),
-            new QrVersion(32, 2465, 3),
-            new QrVersion(33, 2611, 3),
-            new QrVersion(34, 2761, 3),
-            new QrVersion(35, 2876, 0),
-            new QrVersion(36, 3034, 0),
-            new QrVersion(37, 3196, 0),
-            new QrVersion(38, 3362, 0),
-            new QrVersion(39, 3532, 0),
-            new QrVersion(40, 3706, 0)
-    ];
-
     public const byte MinVersion = 1;
     public const byte MaxVersion = 40;
-    public static readonly QrVersion Max = new(40, 3706, 0);
-    public static readonly QrVersion Min = new(1, 26, 0);
 
-    public QrVersion() : this(MinVersion, 26, 0) { }
+    private ushort _totalCodewordsCapacity = 0;
+    private ushort _dataCodewordsCapacity = 0;
 
-    private QrVersion(byte version, ushort dataCapacityCodewords, byte remainderBits)
+    internal QrVersion(byte version, ErrorCorrectionLevel errorCorrectionLevel, QrErrorCorrectionBlocks errorCorrectionBlocks)
     {
         Version = version;
-        DataCodewordsCapacity = dataCapacityCodewords;
-        RemainderBits = remainderBits;
+        ErrorCorrectionLevel = errorCorrectionLevel;
+        ErrorCorrectionBlocks = errorCorrectionBlocks;
     }
 
-    public static QrVersion GetVersion(byte version)
+    public static QrVersion GetVersion(byte version, ErrorCorrectionLevel errorCorrectionLevel)
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(version, 1);
         ArgumentOutOfRangeException.ThrowIfGreaterThan(version, 40);
 
-        return QrVersionsLookup[version - 1];
+        return QrVersionLookup.GetVersion(version, errorCorrectionLevel);
     }
 
-    public readonly byte Version { get; }
-    public readonly ushort DataCodewordsCapacity { get; }
-    public readonly byte RemainderBits { get; }
+    public byte Version { get; }
+    public ErrorCorrectionLevel ErrorCorrectionLevel { get; }
+    public ushort TotalCodewords
+    {
+        get
+        {
+            if (_totalCodewordsCapacity is not 0)
+            {
+                return _totalCodewordsCapacity;
+            }
+
+            var totalDataCodewords = 0;
+            var totalCount = 0;
+            foreach (var item in ErrorCorrectionBlocks.Blocks)
+            {
+                totalDataCodewords += item.DataCodewordsPerBlock * item.BlockCount;
+                totalCount += item.BlockCount;
+            }
+            _totalCodewordsCapacity = (ushort)(totalDataCodewords + (totalCount * ErrorCorrectionBlocks.ErrorCorrectionCodewordsPerBlock));
+            return _totalCodewordsCapacity;
+        }
+    }
+
+    public ushort DataCodewordsCapacity
+    {
+        get
+        {
+            if (_dataCodewordsCapacity is not 0)
+            {
+                return _dataCodewordsCapacity;
+            }
+
+            var total = 0;
+            foreach (var item in ErrorCorrectionBlocks.Blocks)
+            {
+                total += item.DataCodewordsPerBlock * item.BlockCount;
+            }
+            _dataCodewordsCapacity = (ushort)total;
+            return _dataCodewordsCapacity;
+        }
+    }
+
+    public QrErrorCorrectionBlocks ErrorCorrectionBlocks { get; }
 
     public static bool operator ==(QrVersion left, QrVersion right) => left.Equals(right);
     public static bool operator !=(QrVersion left, QrVersion right) => !(left == right);
-    public static bool operator <(QrVersion left, QrVersion right) => left.CompareTo(right) < 0;
-    public static bool operator <=(QrVersion left, QrVersion right) => left.CompareTo(right) <= 0;
-    public static bool operator >(QrVersion left, QrVersion right) => left.CompareTo(right) > 0;
-    public static bool operator >=(QrVersion left, QrVersion right) => left.CompareTo(right) >= 0;
 
-    public static byte ToByte(QrVersion version) => version.Version;
-    public static QrVersion FromByte(byte version) => GetVersion(version);
-    public readonly int CompareTo(QrVersion other) => Version.CompareTo(other.Version);
+    public int CompareTo(QrVersion? other)
+    {
+        if (other is null)
+        {
+            return 1;
+        }
 
-    public static implicit operator byte(QrVersion version)
-        => version.Version;
-    public static explicit operator QrVersion(byte version)
-        => GetVersion(version);
-
-    public override readonly string ToString() => Version.ToString(CultureInfo.InvariantCulture);
+        var versionComparison = Version.CompareTo(other.Version);
+        return versionComparison is not 0 ? versionComparison : ErrorCorrectionLevel.CompareTo(other.ErrorCorrectionLevel);
+    }
 
     /// <inheritdoc cref="object.Equals(object?)" />
-    public override readonly bool Equals([NotNullWhen(true)] object? obj) => obj != null && obj is QrVersion qrVersion && Equals(qrVersion);
+    public override bool Equals([NotNullWhen(true)] object? obj) => obj != null && obj is QrVersion qrVersion && Equals(qrVersion);
 
     /// <summary>
     /// Indicates whether the current object is equal to another object of the same type.
     /// </summary>
     /// <param name="other">An object to compare with this object.</param>
     /// <returns><see langword="true" /> if the current object is equal to <paramref name="other"/>; otherwise, <see langword="false" />.</returns>
-    public bool Equals(QrVersion other) => Version == other.Version;
-    public override readonly int GetHashCode() => Version.GetHashCode();
+    public bool Equals([NotNullWhen(true)] QrVersion? other) => other is not null && Version == other.Version && ErrorCorrectionLevel == other.ErrorCorrectionLevel;
+    public override int GetHashCode() => Version.GetHashCode();
+
+    public class QrErrorCorrectionBlock(byte blockCount, ushort dataCodewordsPerBlock) : IEquatable<QrErrorCorrectionBlock>
+    {
+        public byte BlockCount { get; } = blockCount;
+        public ushort DataCodewordsPerBlock { get; } = dataCodewordsPerBlock;
+
+        public static bool operator ==(QrErrorCorrectionBlock left, QrErrorCorrectionBlock right) => left.Equals(right);
+        public static bool operator !=(QrErrorCorrectionBlock left, QrErrorCorrectionBlock right) => !(left == right);
+        public override bool Equals([NotNullWhen(true)] object? obj) => obj is QrErrorCorrectionBlock block && Equals(block);
+        public bool Equals([NotNullWhen(true)] QrErrorCorrectionBlock? other) => other is not null && BlockCount == other.BlockCount && DataCodewordsPerBlock == other.DataCodewordsPerBlock;
+        public override int GetHashCode() => HashCode.Combine(BlockCount, DataCodewordsPerBlock);
+    }
+
+    public class QrErrorCorrectionBlocks : IEquatable<QrErrorCorrectionBlocks>
+    {
+        public QrErrorCorrectionBlocks(ushort errorCorrectionCodewordsPerBlock, ImmutableArray<QrErrorCorrectionBlock> blocks)
+        {
+            ErrorCorrectionCodewordsPerBlock = errorCorrectionCodewordsPerBlock;
+            Blocks = blocks;
+        }
+
+        public ushort ErrorCorrectionCodewordsPerBlock { get; }
+        public ImmutableArray<QrErrorCorrectionBlock> Blocks { get; }
+
+        public static bool operator ==(QrErrorCorrectionBlocks left, QrErrorCorrectionBlocks right) => left.Equals(right);
+        public static bool operator !=(QrErrorCorrectionBlocks left, QrErrorCorrectionBlocks right) => !(left == right);
+        public override bool Equals(object? obj) => obj is QrErrorCorrectionBlocks blocks && Equals(blocks);
+        public bool Equals(QrErrorCorrectionBlocks? other) => other is not null && ErrorCorrectionCodewordsPerBlock == other.ErrorCorrectionCodewordsPerBlock;
+        public override int GetHashCode() => ErrorCorrectionCodewordsPerBlock.GetHashCode();
+
+    }
 }

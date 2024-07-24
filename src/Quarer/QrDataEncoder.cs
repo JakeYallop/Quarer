@@ -1,28 +1,56 @@
 ﻿using System.Buffers;
 using System.Collections.Immutable;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Quarer;
+
+public sealed class QrAnalysisResult
+{
+    private QrAnalysisResult(QrDataEncoding encoding) : this(encoding, AnalysisResult.Success)
+    {
+    }
+
+    private QrAnalysisResult(QrDataEncoding? encoding, AnalysisResult result)
+    {
+        Result = encoding;
+        AnalysisResult = result;
+    }
+
+    public QrDataEncoding? Result { get; }
+    public AnalysisResult AnalysisResult { get; }
+    [MemberNotNullWhen(true, nameof(Result))]
+    public bool Success => AnalysisResult is AnalysisResult.Success;
+
+    public static QrAnalysisResult Invalid(AnalysisResult result)
+        => result == AnalysisResult.Success
+            ? throw new ArgumentException("Cannot create an invalid result from a success.", nameof(result))
+            : new(null, result);
+
+    public static QrAnalysisResult Successful(QrDataEncoding encoding)
+        => new(encoding);
+}
 
 public static class QrDataEncoder
 {
     public static readonly SearchValues<char> AlphanumericCharacters = SearchValues.Create(AlphanumericEncoder.Characters);
     public static readonly SearchValues<char> NumericCharacters = SearchValues.Create("0123456789");
 
-    public static QrDataEncoding AnalyzeSimple(ReadOnlySpan<char> data, ErrorCorrectionLevel requestedErrorCorrectionLevel)
+    public static QrAnalysisResult AnalyzeSimple(ReadOnlySpan<char> data, ErrorCorrectionLevel requestedErrorCorrectionLevel)
     {
         //For now, just use a single mode for the full set of data.
         var mode = DeriveMode(data);
         var dataLength = mode.GetBitStreamLength(data);
-        if (!QrCapacityLookup.TryGetVersionForDataCapacity(dataLength, mode, requestedErrorCorrectionLevel, out var version))
+        if (!QrVersionLookup.TryGetVersionForDataCapacity(dataLength, mode, requestedErrorCorrectionLevel, out var version))
         {
-            return QrDataEncoding.Invalid(QrAnalysisResult.DataTooLarge);
+            return QrAnalysisResult.Invalid(AnalysisResult.DataTooLarge);
         }
 
         var characterCount = CharacterCount.GetCharacterCountBitCount(version, mode);
         var segment = DataSegment.Create(characterCount, mode, dataLength, new Range(0, data.Length));
         var segments = ImmutableArray.Create(segment);
-        return new QrDataEncoding(version, segments);
+        var encoding = new QrDataEncoding(version, segments);
+        return QrAnalysisResult.Successful(encoding);
     }
 
     public static ModeIndicator DeriveMode(ReadOnlySpan<char> data)
@@ -90,7 +118,7 @@ public static class QrDataEncoder
     private const uint PadPattern32Bits = unchecked((uint)((PadPattern8_1 << 24) | (PadPattern8_2 << 16) | (PadPattern8_1 << 8) | PadPattern8_2));
 }
 
-public enum QrAnalysisResult
+public enum AnalysisResult
 {
     Success = 1,
     DataTooLarge

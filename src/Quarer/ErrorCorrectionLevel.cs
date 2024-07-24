@@ -1,5 +1,5 @@
 ﻿namespace Quarer;
-public enum ErrorCorrectionLevel : byte
+public enum ErrorCorrectionLevel
 {
     L = 1,
     M,

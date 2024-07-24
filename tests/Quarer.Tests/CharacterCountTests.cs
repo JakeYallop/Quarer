@@ -8,9 +8,9 @@ public class CharacterCountTests
     [InlineData(26, ModeIndicator.Numeric, 12)]
     [InlineData(27, ModeIndicator.Numeric, 14)]
     [InlineData(40, ModeIndicator.Numeric, 14)]
-    public void GetCharacterCount_ForNumericMode_ReturnsCorrectCount(int version, ModeIndicator mode, ushort expected)
+    public void GetCharacterCount_ForNumericMode_ReturnsCorrectCount(byte version, ModeIndicator mode, ushort expected)
     {
-        var result = CharacterCount.GetCharacterCountBitCount((QrVersion)version, mode);
+        var result = CharacterCount.GetCharacterCountBitCount(QrVersion.GetVersion(version, ErrorCorrectionLevel.L), mode);
         Assert.Equal(expected, result);
     }
 
@@ -21,9 +21,9 @@ public class CharacterCountTests
     [InlineData(26, ModeIndicator.Alphanumeric, 11)]
     [InlineData(27, ModeIndicator.Alphanumeric, 13)]
     [InlineData(40, ModeIndicator.Alphanumeric, 13)]
-    public void GetCharacterCount_ForAlphanumericMode_ReturnsCorrectCount(int version, ModeIndicator mode, ushort expected)
+    public void GetCharacterCount_ForAlphanumericMode_ReturnsCorrectCount(byte version, ModeIndicator mode, ushort expected)
     {
-        var result = CharacterCount.GetCharacterCountBitCount((QrVersion)version, mode);
+        var result = CharacterCount.GetCharacterCountBitCount(QrVersion.GetVersion(version, ErrorCorrectionLevel.L), mode);
         Assert.Equal(expected, result);
     }
 
@@ -34,9 +34,9 @@ public class CharacterCountTests
     [InlineData(26, ModeIndicator.Byte, 16)]
     [InlineData(27, ModeIndicator.Byte, 16)]
     [InlineData(40, ModeIndicator.Byte, 16)]
-    public void GetCharacterCount_ForByteMode_ReturnsCorrectCount(int version, ModeIndicator mode, ushort expected)
+    public void GetCharacterCount_ForByteMode_ReturnsCorrectCount(byte version, ModeIndicator mode, ushort expected)
     {
-        var result = CharacterCount.GetCharacterCountBitCount((QrVersion)version, mode);
+        var result = CharacterCount.GetCharacterCountBitCount(QrVersion.GetVersion(version, ErrorCorrectionLevel.L), mode);
         Assert.Equal(expected, result);
     }
 
@@ -47,9 +47,9 @@ public class CharacterCountTests
     [InlineData(26, ModeIndicator.Kanji, 10)]
     [InlineData(27, ModeIndicator.Kanji, 12)]
     [InlineData(40, ModeIndicator.Kanji, 12)]
-    public void GetCharacterCount_ForKanjiMode_ReturnsCorrectCount(int version, ModeIndicator mode, ushort expected)
+    public void GetCharacterCount_ForKanjiMode_ReturnsCorrectCount(byte version, ModeIndicator mode, ushort expected)
     {
-        var result = CharacterCount.GetCharacterCountBitCount((QrVersion)version, mode);
+        var result = CharacterCount.GetCharacterCountBitCount(QrVersion.GetVersion(version, ErrorCorrectionLevel.L), mode);
         Assert.Equal(expected, result);
     }
 }
