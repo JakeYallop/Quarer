@@ -17,7 +17,7 @@ internal static class QrVersionLookup
         return GetRelevantVersions(errorCorrectionLevel)[version - 1];
     }
 
-    //TODO: Needs to account for ECI + others, character count + mode indicator
+    //TODO: Needs to account for ECI + others
     public static bool TryGetVersionForDataCapacity(int requestedCapacityDataCharacters, ModeIndicator mode, ErrorCorrectionLevel errorCorrectionLevel, [NotNullWhen(true)] out QrVersion? version)
     {
         version = default!;
