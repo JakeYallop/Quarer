@@ -10,10 +10,10 @@ public class BinarySearcherTests
             var span = Enumerable.Range(0, i).Select(x => x * 2).ToArray().AsSpan();
             for (var index = 0; index < span.Length; index++)
             {
-                Assert.Equal(index, BinarySearcher.BinarySearchUpperBound(span, span[index], static x => x));
+                Assert.Equal(index, BinarySearcher.BinarySearchUpperBound(span, span[index], 0, static (x, _) => x));
 
                 var expectedNextIndexForValuePlusOne = index + 1 < span.Length ? index + 1 : -1;
-                Assert.Equal(expectedNextIndexForValuePlusOne, BinarySearcher.BinarySearchUpperBound(span, span[index] + 1, static x => x));
+                Assert.Equal(expectedNextIndexForValuePlusOne, BinarySearcher.BinarySearchUpperBound(span, span[index] + 1, 0, static (x, _) => x));
             }
         }
     }
@@ -38,8 +38,20 @@ public class BinarySearcherTests
     [Theory]
     [MemberData(nameof(Data))]
     public void ReturnsExpectedResult2(int value, int[] array, int expected)
-        => Assert.Equal(expected, BinarySearcher.BinarySearchUpperBound(array.AsSpan(), value, static x => x));
+        => Assert.Equal(expected, BinarySearcher.BinarySearchUpperBound(array.AsSpan(), value, 0, static (x, _) => x));
 
     [Fact]
-    public void ValueNotFound() => Assert.Equal(-1, BinarySearcher.BinarySearchUpperBound([1, 2, 3], 4, static x => x));
+    public void ValueNotFound() => Assert.Equal(-1, BinarySearcher.BinarySearchUpperBound([1, 2, 3], 4, 0, static (x, _) => x));
+
+    private static readonly bool[] Arg = [false];
+    [Fact]
+    public void ArgPassed()
+    {
+        _ = BinarySearcher.BinarySearchUpperBound([1], 4, Arg, static (x, a) =>
+        {
+            a[0] = true;
+            return 1;
+        });
+        Assert.True(Arg[0]);
+    }
 }

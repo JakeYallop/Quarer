@@ -25,7 +25,7 @@ internal static class QrVersionLookup
         EnsureValidErrorCorrectionLevel(errorCorrectionLevel);
 
         var relevantCapacities = GetRelevantVersions(errorCorrectionLevel);
-        var index = BinarySearcher.BinarySearchUpperBound(relevantCapacities.AsSpan(), requestedCapacityDataCharacters, x => CalculateActualCharacterCapacity(x, mode));
+        var index = BinarySearcher.BinarySearchUpperBound(relevantCapacities.AsSpan(), requestedCapacityDataCharacters, mode, static (x, mode) => CalculateActualCharacterCapacity(x, mode));
 
         if (index is -1)
         {
