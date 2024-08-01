@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Quarer.Tests;
+﻿namespace Quarer.Tests;
 public sealed class QrVersionLookupTests
 {
     [Theory]

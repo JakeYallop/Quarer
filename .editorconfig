@@ -103,8 +103,6 @@ dotnet_remove_unnecessary_suppression_exclusions = none:warning
 # Style Definitions
 dotnet_naming_style.pascal_case_style.capitalization = pascal_case
 dotnet_naming_style.camel_case_style.capitalization = camel_case
-dotnet_naming_style.upper_case_style.capitalization = all_upper
-dotnet_naming_style.upper_case_style.word_separator = _
 
 dotnet_naming_style.camel_case_with_underscore_style.capitalization = camel_case
 dotnet_naming_style.camel_case_with_underscore_style.required_prefix = _
@@ -125,9 +123,13 @@ dotnet_naming_symbols.public_internal_members.applicable_accessibilities = publi
 dotnet_naming_symbols.private_members.applicable_kinds = method, event, delegate
 dotnet_naming_symbols.private_members.applicable_accessibilities = private, private_protected
 
-dotnet_naming_symbols.private_static_readonly_members_symbols.applicable_kinds = property, field
+dotnet_naming_symbols.private_static_readonly_members_symbols.applicable_kinds = field
 dotnet_naming_symbols.private_static_readonly_members_symbols.applicable_accessibilities = private, private_protected
 dotnet_naming_symbols.private_static_readonly_members_symbols.required_modifiers = static, readonly
+
+dotnet_naming_symbols.private_static_property_symbols.applicable_kinds = property
+dotnet_naming_symbols.private_static_property_symbols.applicable_accessibilities = private, private_protected
+dotnet_naming_symbols.private_static_property_symbols.required_modifiers = static
 
 dotnet_naming_symbols.private_fields.applicable_kinds = property, field
 dotnet_naming_symbols.private_fields.applicable_accessibilities = private, private_protected
@@ -161,6 +163,11 @@ dotnet_naming_rule.private_members_rule.style = pascal_case_style
 dotnet_naming_rule.private_static_readonly_members_rule.severity = warning
 dotnet_naming_rule.private_static_readonly_members_rule.symbols = private_static_readonly_members_symbols
 dotnet_naming_rule.private_static_readonly_members_rule.style = pascal_case_style
+
+# Use PascalCase for private static fields
+dotnet_naming_rule.private_static_property_rule.severity = warning
+dotnet_naming_rule.private_static_property_rule.symbols = private_static_property_symbols
+dotnet_naming_rule.private_static_property_rule.style = pascal_case_style
 
 # Use camelCase with underscore for private fields
 dotnet_naming_rule.private_field_rule.severity = warning
