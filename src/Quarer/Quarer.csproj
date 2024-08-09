@@ -6,11 +6,13 @@
         <GenerateDocumentationFile>false</GenerateDocumentationFile>
     </PropertyGroup>
 
+
     <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
         <CheckForOverflowUnderflow>true</CheckForOverflowUnderflow>
     </PropertyGroup>
 
     <ItemGroup>
       <InternalsVisibleTo Include="Quarer.Tests" />
+      <InternalsVisibleTo Include="TableGenerator"/>
     </ItemGroup>
 </Project>
