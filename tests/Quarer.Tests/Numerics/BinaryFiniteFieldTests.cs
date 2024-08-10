@@ -85,4 +85,16 @@ public class BinaryFiniteFieldTests
         Assert.Equal((ReadOnlySpan<byte>)[0xa5, 0x24, 0xd4, 0xc1, 0xed, 0x36, 0xc7, 0x87, 0x2c, 0x55], remainder);
     }
 
+    [Theory]
+    [InlineData(new byte[] { 1, 2, 3 }, 1, 0)]
+    [InlineData(new byte[] { 1, 2, 3, 4 }, 1, 4)]
+    [InlineData(new byte[] { 1, 2, 3, 1, 4 }, 1, 5)]
+    [InlineData(new byte[] { 1, 2, 3 }, 2, 9)]
+    [InlineData(new byte[] { 10, 20, 40, 60 }, 1, 10)]
+    [InlineData(new byte[] { 10, 20, 40, 60 }, 2, 127)]
+    public void Evaluate_ReturnsExpectedResult(byte[] polynomial, byte x, byte expected)
+    {
+        Assert.Equal(expected, BinaryFiniteField.Evaluate(polynomial, x));
+    }
+
 }

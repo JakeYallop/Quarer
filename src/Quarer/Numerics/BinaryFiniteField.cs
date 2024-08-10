@@ -183,7 +183,7 @@ internal static class BinaryFiniteField
     }
 
     /// <summary>
-    /// Returns the value of the polynomial <paramref name="polynomial"/> at <paramref name="x"/>, under the finite field.#
+    /// Returns the value of the polynomial <paramref name="polynomial"/> at <paramref name="x"/>, under the finite field.
     /// <para>
     /// Expects <paramref name="polynomial"/> to be represented in power order with the largest power first.
     /// </para>

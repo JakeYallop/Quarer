@@ -13,6 +13,6 @@
 
     <ItemGroup>
       <InternalsVisibleTo Include="Quarer.Tests" />
-      <InternalsVisibleTo Include="TableGenerator"/>
+      <InternalsVisibleTo Include="LookupTableGenerator"/>
     </ItemGroup>
 </Project>
