@@ -81,7 +81,7 @@ static int[] BuildGeneratorPolynomial(int numberOfSymbols)
     {
         var destination = new byte[40];
         var written = BinaryFiniteField.Multiply(generator, [1, BinaryFiniteField.Pow(2, (byte)i)], destination);
-        generator = destination[..written];
+        generator = destination.AsSpan()[..written];
     }
 
     return generator.ToArray().Select(x => (int)x).ToArray();

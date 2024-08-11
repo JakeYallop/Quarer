@@ -93,6 +93,9 @@ internal static class QrVersionLookup
     private static void ThrowOutOfRangeException(int min, int max, string description)
         => throw new ArgumentOutOfRangeException($"{description} must be between {min} and {max}.");
 
+    // individual error blocks must be in ascending order of data codewords per block
+    // as this is key for the interleaving process, where smaller data blocks are intrerleaved first
+
     private static readonly ImmutableArray<QrVersion> QrVersionsLookupL =
     [
         new(1, ErrorCorrectionLevel.L, new(7, [new(1, 19)])),
