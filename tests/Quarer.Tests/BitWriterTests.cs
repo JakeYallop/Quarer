@@ -1,4 +1,5 @@
-﻿using System.Numerics;
+﻿using System.ComponentModel.DataAnnotations;
+using System.Numerics;
 
 namespace Quarer.Tests;
 
@@ -230,5 +231,69 @@ public class BitWriterTests
         bitWriter.WriteBits(0, 5);
 
         Assert.Equal(5, bitWriter.ByteCount);
+    }
+
+
+    private static byte[] Bytes => [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19];
+    public static TheoryData<byte[], int, bool, int, bool, byte[]> BytesData()
+    {
+        var data = new TheoryData<byte[], int, bool, int, bool, byte[]>();
+        //start isFromEnd: false, end isFromEnd: false
+        for (var start = 0; start < 5; start++)
+        {
+            for (var end = start; end < 10; end++)
+            {
+                var range = start..(start + end);
+                data.Add(Bytes, range.Start.Value, range.Start.IsFromEnd, range.End.Value, range.End.IsFromEnd, Bytes[range]);
+            }
+        }
+
+        //start isFromEnd: true, end isFromEnd: false
+        for (var start = 0; start < 3; start++)
+        {
+            for (var end = Bytes.Length - start; end < Math.Min(end, Bytes.Length - 1); end++)
+            {
+                var range = ^start..(start + end);
+                data.Add(Bytes, range.Start.Value, range.Start.IsFromEnd, range.End.Value, range.End.IsFromEnd, Bytes[range]);
+            }
+        }
+
+        //start isFromEnd: false, end isFromEnd: true
+        for (var start = 0; start < 3; start++)
+        {
+            for (var end = start; end < 3; end++)
+            {
+                var range = start..^(start + end);
+                data.Add(Bytes, range.Start.Value, range.Start.IsFromEnd, range.End.Value, range.End.IsFromEnd, Bytes[range]);
+            }
+        }
+
+        //start isFromEnd: true, end isFromEnd: true
+        for (var end = 0; end < 3; end++)
+        {
+            for (var start = end + 1; start < 3; start++)
+            {
+                var range = ^start..^end;
+                data.Add(Bytes, range.Start.Value, range.Start.IsFromEnd, range.End.Value, range.End.IsFromEnd, Bytes[range]);
+            }
+        }
+        return data;
+    }
+
+    [Theory]
+    [MemberData(nameof(BytesData))]
+    public void GetBytes(byte[] bytes, int start, bool fromEnd, int end, bool fromEnd2, byte[] expectedBytes)
+    {
+        var bitWriter = new BitWriter();
+        foreach (var b in bytes)
+        {
+            bitWriter.WriteBits(b, 8);
+        }
+
+        var destination = new byte[expectedBytes.Length];
+        var written = bitWriter.GetBytes(new(new(start, fromEnd), new(end, fromEnd2)), destination);
+
+        Assert.Equal(expectedBytes.Length, written);
+        Assert.Equal(expectedBytes, destination);
     }
 }

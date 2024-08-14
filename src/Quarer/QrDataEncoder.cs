@@ -2,6 +2,8 @@
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
+using Quarer.Numerics;
 
 namespace Quarer;
 
@@ -60,7 +62,7 @@ public static class QrDataEncoder
             : data.ContainsAnyExcept(NumericCharacters) ? ModeIndicator.Alphanumeric : ModeIndicator.Numeric;
     }
 
-    public static IEnumerable<byte> EncodeDataBitStream(ReadOnlySpan<char> data, QrEncodingInfo qrDataEncoding)
+    public static IEnumerable<byte> EncodeDataBitStream(QrEncodingInfo qrDataEncoding, ReadOnlySpan<char> data)
     {
         var version = qrDataEncoding.Version;
         var bitWriter = new BitWriter(qrDataEncoding.Version.DataCodewordsCapacity);
@@ -115,6 +117,56 @@ public static class QrDataEncoder
     private const byte PadPattern8_1 = 0b1110_1100;
     private const byte PadPattern8_2 = 0b0001_0001;
     private const uint PadPattern32Bits = unchecked((uint)((PadPattern8_1 << 24) | (PadPattern8_2 << 16) | (PadPattern8_1 << 8) | PadPattern8_2));
+
+    public static IEnumerable<byte> EncodeAndInterleaveErrorCorrectionBlocks(QrEncodingInfo info, BitWriter dataStream)
+    {
+        //var version = info.Version;
+        //var errorCorrectionCodewordsPerBlock = version.ErrorCorrectionBlocks.ErrorCorrectionCodewordsPerBlock;
+        //var errorCorrectionBlocks = version.ErrorCorrectionBlocks.Blocks;
+
+        //Span<byte> dataCodewordsDestination = stackalloc byte[32];
+        //Span<byte> divisionDestination = stackalloc byte[256];
+
+        //var dataEnumerator = dataStream.GetEnumerator();
+        //foreach (var block in errorCorrectionBlocks)
+        //{
+        //    for (var i = 0; i < block.BlockCount; i++)
+        //    {
+        //        ReadDataCodewords(dataEnumerator, block.DataCodewordsPerBlock, dataCodewordsDestination);
+        //        var dataCodewords = dataCodewordsDestination[..block.DataCodewordsPerBlock];
+
+        //        var generator = BinaryFiniteField.GetGeneratorPolynomial(errorCorrectionCodewordsPerBlock);
+        //        var (written, separator) = BinaryFiniteField.Divide(dataCodewords, generator, divisionDestination);
+        //        var divisionResult = divisionDestination[..written];
+        //        var errorCodewords = divisionDestination[separator..];
+
+        //        for (var j = 0; j < dataCodewords.Length; j++)
+        //        {
+        //            yield return dataCodewords[j];
+        //        }
+
+        //        for (var j = 0; j < errorCodewords.Length; j++)
+        //        {
+        //            yield return errorCodewords[j];
+        //        }
+        //    }
+        //}
+
+        var version = info.Version;
+        var errorCorrectionCodewordsPerBlock = version.ErrorCorrectionBlocks.ErrorCorrectionCodewordsPerBlock;
+        var errorCorrectionBlocks = version.ErrorCorrectionBlocks.Blocks;
+
+        return [];
+
+        static void ReadDataCodewords(IEnumerator<byte> enumerator, int numberOfCodewords, Span<byte> destination)
+        {
+            for (var i = 0; i < numberOfCodewords; i++)
+            {
+                enumerator.MoveNext();
+                destination[i] = enumerator.Current;
+            }
+        }
+    }
 }
 
 public enum AnalysisResult

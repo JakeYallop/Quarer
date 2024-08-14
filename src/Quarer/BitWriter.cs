@@ -1,13 +1,18 @@
-﻿using System.Diagnostics;
+﻿using System.Buffers.Binary;
+using System.Diagnostics;
 using System.Numerics;
 using System.Runtime.InteropServices;
 
 namespace Quarer;
 
-internal sealed class BitWriter(int initialCapacity)
+//TODO: Rename to BitArray or similar (BitBuffer, BitArray, BitStream?)
+public sealed class BitWriter(int initialCapacity)
 {
     private const int BitsPerElement = 32;
-    private const int BitShiftPerInt32 = 5;
+    private const int BitShiftPerElement = 5;
+    private const int BytesPerElement = 4;
+    private const int BytesShiftPerElement = 3;
+
     private int _position;
     private int _bitsWritten;
     private int _capacity;
@@ -73,6 +78,11 @@ internal sealed class BitWriter(int initialCapacity)
         }
     }
 
+    /// <summary>
+    /// Returns bytes from this <see cref="BitWriter"/>. The number of bytes returned is rounded up to the nearest full byte,
+    /// with the final byte padded with zeros if necessary
+    /// </summary>
+    /// <returns></returns>
     public IEnumerable<byte> GetByteStream()
     {
         //TODO: Return an enumerable that implements ICollection so that TryGetNonEnumeratedCount etc works
@@ -102,6 +112,73 @@ internal sealed class BitWriter(int initialCapacity)
             var @byte = GetBitsFromValue(lastElement, 8, BitsPerElement - currentBit - 8);
             yield return (byte)@byte;
         }
+    }
+
+    public int GetBytes(Range range, Span<byte> destination)
+    {
+        var (byteOffset, length) = range.GetOffsetAndLength(ByteCount);
+
+        if (destination.Length < length)
+        {
+            throw new ArgumentException("The destination span is too small.", nameof(destination));
+        }
+
+        var written = 0;
+        var lengthInBits = length << 3;
+        var offsetInStartElement = (byteOffset << 3) & (BitsPerElement - 1);
+        var currentElement = GetElementLengthFromBytesFloor(byteOffset);
+
+        if (offsetInStartElement > 0)
+        {
+            var bitsToReadInFirstElement = Math.Min(BitsPerElement - offsetInStartElement, lengthInBits);
+            written += ReadBytes(_buffer[currentElement], offsetInStartElement, offsetInStartElement + bitsToReadInFirstElement, destination);
+            currentElement++;
+        }
+
+        var slicedDestination = destination[written..];
+        for (; length - written >= 4; currentElement++)
+        {
+            Debug.Assert((byteOffset + written) % BytesPerElement == 0, $"Expected expression to be aligned at {BitsPerElement}-bit boundary.");
+            BinaryPrimitives.WriteUInt32BigEndian(slicedDestination, _buffer[currentElement]);
+            slicedDestination = slicedDestination[BytesPerElement..];
+            written += BytesPerElement;
+        }
+
+        var bitsRemainingInFinalElement = (length - written) << BytesShiftPerElement;
+        if (bitsRemainingInFinalElement > 0)
+        {
+            //if (written > 0)
+            //{
+            //    currentElement++;
+            //}
+
+            written += ReadBytes(_buffer[currentElement], 0, bitsRemainingInFinalElement, slicedDestination);
+        }
+
+        return written;
+    }
+
+    private static int ReadBytes(uint element, int start, int end, Span<byte> destination)
+    {
+        Debug.Assert(start % 8 == 0, "Expected start offset to be byte aligned.");
+        Debug.Assert(end % 8 == 0, "Expected end offset to be byte aligned.");
+        Debug.Assert(destination.Length >= (end - start) / 8, "Expected destination span to be larger.");
+        var written = 0;
+        var destinationOffset = 0;
+        for (var offset = start; offset < end; offset += 8)
+        {
+            var byteValue = ReadByte(element, offset);
+            destination[destinationOffset] = byteValue;
+            destinationOffset++;
+            written++;
+        }
+        return written;
+    }
+
+    private static byte ReadByte(uint element, int offset)
+    {
+        var byteValue = GetBitsFromValue(element, 8, BitsPerElement - offset - 8);
+        return (byte)byteValue;
     }
 
     private static uint GetBitsFromValue<T>(T value, int bitCount, int remainingBitsInValue) where T : INumber<T>, IBinaryInteger<T>
@@ -163,7 +240,7 @@ internal sealed class BitWriter(int initialCapacity)
     {
         if (requestedCapacity > _capacity)
         {
-            var currentBitCapactity = _buffer.Count << BitShiftPerInt32;
+            var currentBitCapactity = _buffer.Count << BitShiftPerElement;
             var newBitCapacity = Math.Max(currentBitCapactity, BitsPerElement);
             while (newBitCapacity < requestedCapacity)
             {
@@ -171,13 +248,15 @@ internal sealed class BitWriter(int initialCapacity)
             };
 
             var intCapacity = GetInt32LengthFromBits(newBitCapacity);
-            Debug.Assert(ComputeMod32(newBitCapacity) == 0);
+            Debug.Assert(newBitCapacity % BitsPerElement == 0);
             _capacity = newBitCapacity;
             _buffer.EnsureCapacity(intCapacity);
             CollectionsMarshal.SetCount(_buffer, intCapacity);
         }
     }
 
-    private static int GetInt32LengthFromBits(int bits) => (int)((uint)(bits - 1 + (1 << BitShiftPerInt32)) >> BitShiftPerInt32);
-    private static int ComputeMod32(int bits) => bits & (BitShiftPerInt32 - 1);
+    private static int GetInt32LengthFromBits(int bits) => (int)((uint)(bits - 1 + (1 << BitShiftPerElement)) >> BitShiftPerElement);
+    private static int GetInt32LengthFromBitsFloor(int bits) => bits >> BitShiftPerElement;
+    private static int GetElementLengthFromBytesCeil(int bytes) => (int)((uint)(bytes - 1 + (1 << (BytesShiftPerElement - 1))) >> (BytesShiftPerElement - 1));
+    private static int GetElementLengthFromBytesFloor(int bytes) => bytes >> (BytesShiftPerElement - 1);
 }

@@ -78,7 +78,7 @@ internal static class BinaryFiniteField
     internal static ReadOnlySpan<byte> G28 => [1, 252, 9, 28, 13, 18, 251, 208, 150, 103, 174, 100, 41, 167, 12, 247, 56, 117, 119, 233, 127, 181, 100, 121, 147, 176, 74, 58, 197];
     internal static ReadOnlySpan<byte> G30 => [1, 212, 246, 77, 73, 195, 192, 75, 98, 5, 70, 103, 177, 22, 217, 138, 51, 181, 246, 72, 25, 18, 46, 228, 74, 216, 195, 11, 106, 130, 150];
 
-    private static ReadOnlySpan<byte> GetGeneratorPolynomial(int numberOfErrorCorrectionCodewords)
+    public static ReadOnlySpan<byte> GetGeneratorPolynomial(int numberOfErrorCorrectionCodewords)
     {
         return numberOfErrorCorrectionCodewords switch
         {

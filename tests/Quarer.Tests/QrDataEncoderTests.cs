@@ -66,7 +66,7 @@ public sealed class QrDataEncoderTests
         var characterCount = CharacterCount.GetCharacterCountBitCount(version, ModeIndicator.Numeric);
         var encodingInfo = new QrEncodingInfo(version, [DataSegment.Create(characterCount, ModeIndicator.Numeric, NumericEncoder.GetBitStreamLength(data), new(0, data.Length))]);
 
-        var bitStream = QrDataEncoder.EncodeDataBitStream(data, encodingInfo).ToArray();
+        var bitStream = QrDataEncoder.EncodeDataBitStream(encodingInfo, data).ToArray();
         // mode indicator, character count, data bits, terminator
         var expectedCount = 4 + characterCount + NumericEncoder.GetBitStreamLength(new char[34]) + 4;
         Assert.Equal(expectedCount / 8, bitStream.Length);
