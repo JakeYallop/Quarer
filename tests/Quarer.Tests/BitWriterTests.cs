@@ -277,6 +277,10 @@ public class BitWriterTests
                 data.Add(Bytes, range.Start.Value, range.Start.IsFromEnd, range.End.Value, range.End.IsFromEnd, Bytes[range]);
             }
         }
+
+        data.Add([0xFA, 0xCE], 0, false, 1, false, [0xFA]);
+        data.Add([0xFA, 0xCE], 0, false, 2, false, [0xFA, 0xCE]);
+        data.Add([0xFA, 0xCE], 1, false, 1, false, [0xCE]);
         return data;
     }
 
@@ -295,5 +299,36 @@ public class BitWriterTests
 
         Assert.Equal(expectedBytes.Length, written);
         Assert.Equal(expectedBytes, destination);
+    }
+
+    [Fact]
+    public void GetBytes_WhenStartIsLessThanZero_ThrowsArgumentOutOfRangeException()
+    {
+        var bitWriter = new BitWriter();
+        Assert.Throws<ArgumentOutOfRangeException>(() => bitWriter.GetBytes(-1, 0, []));
+    }
+
+    [Fact]
+    public void GetBytes_WhenLengthLessThanZero_ThrowsArgumentOutOfRangeException()
+    {
+        var bitWriter = new BitWriter();
+        Assert.Throws<ArgumentOutOfRangeException>(() => bitWriter.GetBytes(0, -1, []));
+    }
+
+    [Fact]
+    public void GetBytes_WhenStartPlusLengthGreaterThanBitWriterByteCount_ThrowsArgumentOutOfRangeException()
+    {
+        var bitWriter = new BitWriter();
+        bitWriter.WriteBits(0xFA, 8);
+        bitWriter.WriteBits(0xCE, 8);
+        Assert.Throws<ArgumentOutOfRangeException>(() => bitWriter.GetBytes(1, 2, [0]));
+    }
+
+    [Fact]
+    public void GetBytes_WhenDestinationIsNull_ThrowsArgumentException()
+    {
+        var bitWriter = new BitWriter();
+        bitWriter.WriteBits(0, 8);
+        Assert.Throws<ArgumentException>(() => bitWriter.GetBytes(0, 1, []));
     }
 }

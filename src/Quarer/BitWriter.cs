@@ -151,7 +151,8 @@ public sealed class BitWriter(int initialCapacity)
     public int GetBytes(int start, int length, Span<byte> destination)
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(start, 0);
-        ArgumentOutOfRangeException.ThrowIfGreaterThan(start + length - 1, ByteCount);
+        ArgumentOutOfRangeException.ThrowIfLessThan(length, 0);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(start + length, ByteCount);
 
         if (destination.Length < length)
         {
