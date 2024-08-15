@@ -5,7 +5,34 @@ using System.Runtime.InteropServices;
 
 namespace Quarer;
 
+[DebuggerDisplay("Count = {ByteCount}")]
+internal sealed class BitWriterDebugView
+{
+    private readonly BitWriter _bitWriter;
+
+    public BitWriterDebugView(BitWriter bitWriter)
+    {
+        ArgumentNullException.ThrowIfNull(bitWriter);
+        _bitWriter = bitWriter;
+    }
+
+    public int Count => _bitWriter.Count;
+    public int ByteCount => _bitWriter.ByteCount;
+
+    public byte[] ByteView
+    {
+        get
+        {
+            var bytes = new byte[_bitWriter.ByteCount];
+            _bitWriter.GetBytes(0, _bitWriter.ByteCount, bytes);
+            return bytes;
+        }
+    }
+
+}
+
 //TODO: Rename to BitArray or similar (BitBuffer, BitArray, BitStream?)
+[DebuggerTypeProxy(typeof(BitWriterDebugView))]
 public sealed class BitWriter(int initialCapacity)
 {
     private const int BitsPerElement = 32;
@@ -117,6 +144,14 @@ public sealed class BitWriter(int initialCapacity)
     public int GetBytes(Range range, Span<byte> destination)
     {
         var (byteOffset, length) = range.GetOffsetAndLength(ByteCount);
+        return GetBytes(byteOffset, length, destination);
+    }
+
+    //TODO: Tests for error conditions
+    public int GetBytes(int start, int length, Span<byte> destination)
+    {
+        ArgumentOutOfRangeException.ThrowIfLessThan(start, 0);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(start + length - 1, ByteCount);
 
         if (destination.Length < length)
         {
@@ -125,8 +160,8 @@ public sealed class BitWriter(int initialCapacity)
 
         var written = 0;
         var lengthInBits = length << 3;
-        var offsetInStartElement = (byteOffset << 3) & (BitsPerElement - 1);
-        var currentElement = GetElementLengthFromBytesFloor(byteOffset);
+        var offsetInStartElement = (start << 3) & (BitsPerElement - 1);
+        var currentElement = GetElementLengthFromBytesFloor(start);
 
         if (offsetInStartElement > 0)
         {
@@ -138,7 +173,7 @@ public sealed class BitWriter(int initialCapacity)
         var slicedDestination = destination[written..];
         for (; length - written >= 4; currentElement++)
         {
-            Debug.Assert((byteOffset + written) % BytesPerElement == 0, $"Expected expression to be aligned at {BitsPerElement}-bit boundary.");
+            Debug.Assert((start + written) % BytesPerElement == 0, $"Expected expression to be aligned at {BitsPerElement}-bit boundary.");
             BinaryPrimitives.WriteUInt32BigEndian(slicedDestination, _buffer[currentElement]);
             slicedDestination = slicedDestination[BytesPerElement..];
             written += BytesPerElement;
@@ -147,11 +182,6 @@ public sealed class BitWriter(int initialCapacity)
         var bitsRemainingInFinalElement = (length - written) << BytesShiftPerElement;
         if (bitsRemainingInFinalElement > 0)
         {
-            //if (written > 0)
-            //{
-            //    currentElement++;
-            //}
-
             written += ReadBytes(_buffer[currentElement], 0, bitsRemainingInFinalElement, slicedDestination);
         }
 

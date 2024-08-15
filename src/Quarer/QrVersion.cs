@@ -44,7 +44,8 @@ public class QrVersion : IEquatable<QrVersion>, IComparable<QrVersion>
                 totalDataCodewords += item.DataCodewordsPerBlock * item.BlockCount;
                 totalCount += item.BlockCount;
             }
-            _totalCodewordsCapacity = (ushort)(totalDataCodewords + (totalCount * ErrorCorrectionBlocks.ErrorCorrectionCodewordsPerBlock));
+            var totalCodewords = (ushort)(totalDataCodewords + (totalCount * ErrorCorrectionBlocks.ErrorCorrectionCodewordsPerBlock));
+            Interlocked.CompareExchange(ref _totalCodewordsCapacity, totalCodewords, 0);
             return _totalCodewordsCapacity;
         }
     }
@@ -63,7 +64,7 @@ public class QrVersion : IEquatable<QrVersion>, IComparable<QrVersion>
             {
                 total += item.DataCodewordsPerBlock * item.BlockCount;
             }
-            _dataCodewordsCapacity = (ushort)total;
+            Interlocked.CompareExchange(ref _dataCodewordsCapacity, (ushort)total, 0);
             return _dataCodewordsCapacity;
         }
     }
@@ -97,6 +98,7 @@ public class QrVersion : IEquatable<QrVersion>, IComparable<QrVersion>
 
     public class QrErrorCorrectionBlock(byte blockCount, ushort dataCodewordsPerBlock) : IEquatable<QrErrorCorrectionBlock>
     {
+        //TODO: Rename to Count?
         public byte BlockCount { get; } = blockCount;
         public ushort DataCodewordsPerBlock { get; } = dataCodewordsPerBlock;
 
@@ -109,6 +111,9 @@ public class QrVersion : IEquatable<QrVersion>, IComparable<QrVersion>
 
     public class QrErrorCorrectionBlocks : IEquatable<QrErrorCorrectionBlocks>
     {
+        private ushort _blockCount = 0;
+        private ushort _maxDataCodewordsInBlock = 0;
+
         public QrErrorCorrectionBlocks(ushort errorCorrectionCodewordsPerBlock, ImmutableArray<QrErrorCorrectionBlock> blocks)
         {
             ErrorCorrectionCodewordsPerBlock = errorCorrectionCodewordsPerBlock;
@@ -117,12 +122,71 @@ public class QrVersion : IEquatable<QrVersion>, IComparable<QrVersion>
 
         public ushort ErrorCorrectionCodewordsPerBlock { get; }
         public ImmutableArray<QrErrorCorrectionBlock> Blocks { get; }
+        public ushort TotalBlockCount
+        {
+            get
+            {
+                if (_blockCount is not 0)
+                {
+                    return _blockCount;
+                }
+
+                ushort count = 0;
+                foreach (var item in Blocks)
+                {
+                    count += item.BlockCount;
+                }
+                Interlocked.CompareExchange(ref _blockCount, count, 0);
+                return _blockCount;
+            }
+        }
+
+        public ushort MaxDataCodewordsInBlock
+        {
+            get
+            {
+                if (_maxDataCodewordsInBlock is not 0)
+                {
+                    return _maxDataCodewordsInBlock;
+                }
+
+                ushort max = 0;
+                foreach (var item in Blocks)
+                {
+                    if (item.DataCodewordsPerBlock > max)
+                    {
+                        max = item.DataCodewordsPerBlock;
+                    }
+                }
+                Interlocked.CompareExchange(ref _maxDataCodewordsInBlock, max, 0);
+                return _maxDataCodewordsInBlock;
+            }
+        }
+        //TODO: Tests
+        public IEnumerable<QrErrorCorrectionBlock> EnumerateIndividualBlocks()
+        {
+            foreach (var b in Blocks)
+            {
+                for (var i = 0; i < b.BlockCount; i++)
+                {
+                    yield return b;
+                }
+            }
+        }
 
         public static bool operator ==(QrErrorCorrectionBlocks left, QrErrorCorrectionBlocks right) => left.Equals(right);
         public static bool operator !=(QrErrorCorrectionBlocks left, QrErrorCorrectionBlocks right) => !(left == right);
         public override bool Equals(object? obj) => obj is QrErrorCorrectionBlocks blocks && Equals(blocks);
         public bool Equals(QrErrorCorrectionBlocks? other) => other is not null && ErrorCorrectionCodewordsPerBlock == other.ErrorCorrectionCodewordsPerBlock;
-        public override int GetHashCode() => ErrorCorrectionCodewordsPerBlock.GetHashCode();
-
+        public override int GetHashCode()
+        {
+            var hashCode = new HashCode();
+            hashCode.Add(ErrorCorrectionCodewordsPerBlock);
+            foreach (var b in Blocks)
+            {
+                hashCode.Add(b);
+            }
+            return hashCode.ToHashCode();
+        }
     }
 }

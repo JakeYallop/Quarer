@@ -3,6 +3,7 @@ using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using Quarer.Numerics;
 
 namespace Quarer;
@@ -118,54 +119,79 @@ public static class QrDataEncoder
     private const byte PadPattern8_2 = 0b0001_0001;
     private const uint PadPattern32Bits = unchecked((uint)((PadPattern8_1 << 24) | (PadPattern8_2 << 16) | (PadPattern8_1 << 8) | PadPattern8_2));
 
-    public static IEnumerable<byte> EncodeAndInterleaveErrorCorrectionBlocks(QrEncodingInfo info, BitWriter dataStream)
+    public static unsafe BitWriter EncodeAndInterleaveErrorCorrectionBlocks(QrVersion version, BitWriter dataCodewordsBitBuffer)
     {
-        //var version = info.Version;
-        //var errorCorrectionCodewordsPerBlock = version.ErrorCorrectionBlocks.ErrorCorrectionCodewordsPerBlock;
-        //var errorCorrectionBlocks = version.ErrorCorrectionBlocks.Blocks;
-
-        //Span<byte> dataCodewordsDestination = stackalloc byte[32];
-        //Span<byte> divisionDestination = stackalloc byte[256];
-
-        //var dataEnumerator = dataStream.GetEnumerator();
-        //foreach (var block in errorCorrectionBlocks)
-        //{
-        //    for (var i = 0; i < block.BlockCount; i++)
-        //    {
-        //        ReadDataCodewords(dataEnumerator, block.DataCodewordsPerBlock, dataCodewordsDestination);
-        //        var dataCodewords = dataCodewordsDestination[..block.DataCodewordsPerBlock];
-
-        //        var generator = BinaryFiniteField.GetGeneratorPolynomial(errorCorrectionCodewordsPerBlock);
-        //        var (written, separator) = BinaryFiniteField.Divide(dataCodewords, generator, divisionDestination);
-        //        var divisionResult = divisionDestination[..written];
-        //        var errorCodewords = divisionDestination[separator..];
-
-        //        for (var j = 0; j < dataCodewords.Length; j++)
-        //        {
-        //            yield return dataCodewords[j];
-        //        }
-
-        //        for (var j = 0; j < errorCodewords.Length; j++)
-        //        {
-        //            yield return errorCodewords[j];
-        //        }
-        //    }
-        //}
-
-        var version = info.Version;
-        var errorCorrectionCodewordsPerBlock = version.ErrorCorrectionBlocks.ErrorCorrectionCodewordsPerBlock;
-        var errorCorrectionBlocks = version.ErrorCorrectionBlocks.Blocks;
-
-        return [];
-
-        static void ReadDataCodewords(IEnumerator<byte> enumerator, int numberOfCodewords, Span<byte> destination)
+        if (dataCodewordsBitBuffer.ByteCount != version.DataCodewordsCapacity)
         {
-            for (var i = 0; i < numberOfCodewords; i++)
-            {
-                enumerator.MoveNext();
-                destination[i] = enumerator.Current;
-            }
+            throw new ArgumentException("Size of input data and size of version do not match.", nameof(dataCodewordsBitBuffer));
         }
+
+        var errorCorrectionCodewordsPerBlock = version.ErrorCorrectionBlocks.ErrorCorrectionCodewordsPerBlock;
+        var errorCorrectionBlocks = version.ErrorCorrectionBlocks;
+        var maxDataCodewordsInBlocks = errorCorrectionBlocks.MaxDataCodewordsInBlock;
+        var resultBitWriter = new BitWriter(version.TotalCodewords >> 2);
+
+        // max number of codewords in a data block is 123, so ensure buffer size is greater than or equal to 123
+        Span<byte> dataCodewordsDestination = stackalloc byte[128];
+
+        var codewordsSeen = 0;
+        for (var i = 0; i < maxDataCodewordsInBlocks; i++)
+        {
+            foreach (var b in errorCorrectionBlocks.EnumerateIndividualBlocks())
+            {
+                if (i < b.DataCodewordsPerBlock)
+                {
+                    //TODO: Add indexer to BitWriter?
+                    var written = dataCodewordsBitBuffer.GetBytes(codewordsSeen + i, 1, dataCodewordsDestination);
+                    Debug.Assert(written == 1);
+                    //var dataCodewords = dataCodewordsDestination[..written];
+                    resultBitWriter.WriteBits(dataCodewordsDestination[0], 8);
+                }
+                codewordsSeen += b.DataCodewordsPerBlock;
+            }
+            codewordsSeen = 0;
+        }
+
+        // max number of blocks for a symbol is 81, max number of codewords per block is 30
+        Span<ByteBuffer30> errorBlocks = stackalloc ByteBuffer30[81];
+        var generator = BinaryFiniteField.GetGeneratorPolynomial(errorCorrectionCodewordsPerBlock);
+
+        codewordsSeen = 0;
+        var blockIndex = 1;
+        Span<byte> divisionDestination = stackalloc byte[256];
+        foreach (var b in errorCorrectionBlocks.EnumerateIndividualBlocks())
+        {
+            var dataCodewordsWritten = dataCodewordsBitBuffer.GetBytes(codewordsSeen, b.DataCodewordsPerBlock, dataCodewordsDestination);
+            var dataCodewords = dataCodewordsDestination[..dataCodewordsWritten];
+
+            var (written, separator) = BinaryFiniteField.Divide(dataCodewords, generator, divisionDestination);
+            var divisionResult = divisionDestination[..written];
+            var errorCodewords = divisionResult[separator..];
+            Span<byte> buffer = errorBlocks[blockIndex - 1];
+            errorCodewords.CopyTo(buffer);
+            blockIndex++;
+            codewordsSeen = b.DataCodewordsPerBlock;
+        }
+
+        for (var i = 0; i < errorCorrectionCodewordsPerBlock; i++)
+        {
+            var errorBlockIndex = 0;
+            foreach (var b in errorCorrectionBlocks.EnumerateIndividualBlocks())
+            {
+                ReadOnlySpan<byte> bytes = errorBlocks[errorBlockIndex];
+                resultBitWriter.WriteBits(bytes[i], 8);
+                errorBlockIndex++;
+            }
+            errorBlockIndex = 0;
+        }
+
+        return resultBitWriter;
+    }
+
+    [InlineArray(30)]
+    private struct ByteBuffer30
+    {
+        public byte _0;
     }
 }
 
