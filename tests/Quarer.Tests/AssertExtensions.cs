@@ -23,7 +23,6 @@ internal static class AssertExtensions
             {
                 stackallocBuffer[i++] = item ? '1' : '0';
             }
-            //TODO: Does this perform a copy?
             actualBitsBuffer = stackallocBuffer;
         }
         else
@@ -58,7 +57,6 @@ internal static class AssertExtensions
         if (!CollectionsMarshal.AsSpan(expectedBits).SequenceEqual(actualBitsBuffer))
         {
             var s1 = string.Join(',', expectedBits);
-            //TODO: Get an array reference from the span somehow?
             var s2 = string.Join(',', actualBitsBuffer.ToArray());
             throw EqualException.ForMismatchedValues(s1, s2);
         }

@@ -162,7 +162,7 @@ public class QrVersion : IEquatable<QrVersion>, IComparable<QrVersion>
                 return _maxDataCodewordsInBlock;
             }
         }
-        //TODO: Tests
+
         public IEnumerable<QrErrorCorrectionBlock> EnumerateIndividualBlocks()
         {
             foreach (var b in Blocks)

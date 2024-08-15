@@ -147,7 +147,6 @@ public sealed class BitWriter(int initialCapacity)
         return GetBytes(byteOffset, length, destination);
     }
 
-    //TODO: Tests for error conditions
     public int GetBytes(int start, int length, Span<byte> destination)
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(start, 0);
