@@ -278,7 +278,8 @@ public class BitBufferTests
 
         data.Add([0xFA, 0xCE], 0, false, 1, false, [0xFA]);
         data.Add([0xFA, 0xCE], 0, false, 2, false, [0xFA, 0xCE]);
-        data.Add([0xFA, 0xCE], 1, false, 1, false, [0xCE]);
+        data.Add([0xFA, 0xCE], 1, false, 0, true, [0xCE]);
+        data.Add([0xFA, 0xCE], 1, false, 1, false, []);
         return data;
     }
 
