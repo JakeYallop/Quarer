@@ -43,6 +43,6 @@ public class QrCode
         var header = QrHeaderBlock.Create(version, mode, utf8Data.Length);
         header.WriteHeader(buffer);
         ReadOnlySpan<byte> roData = utf8Data;
-        return buffer.GetBitStream().ToArray();
+        return buffer.AsBitEnumerable().ToArray();
     }
 }

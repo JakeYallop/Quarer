@@ -23,7 +23,7 @@ public sealed class QrTerminatorBlockTests
         QrTerminatorBlock.WriteTerminator(buffer, version);
         Assert.Equal(initialCapacity + 1, buffer.ByteCount);
         Assert.Equal(count + 4, buffer.Count);
-        AssertExtensions.BitsEqual("0000", buffer.GetBitStream().TakeLast(4));
+        AssertExtensions.BitsEqual("0000", buffer.AsBitEnumerable().TakeLast(4));
     }
 
     [Theory]
@@ -42,7 +42,7 @@ public sealed class QrTerminatorBlockTests
         QrTerminatorBlock.WriteTerminator(buffer, version);
         Assert.Equal(initialCapacity + 1, buffer.ByteCount);
         Assert.Equal(count + 4, buffer.Count);
-        AssertExtensions.BitsEqual("0000", buffer.GetBitStream().TakeLast(4));
+        AssertExtensions.BitsEqual("0000", buffer.AsBitEnumerable().TakeLast(4));
     }
 
     [Theory]
@@ -62,7 +62,7 @@ public sealed class QrTerminatorBlockTests
         QrTerminatorBlock.WriteTerminator(buffer, version);
         Assert.Equal(initialCapacity + 1, buffer.ByteCount);
         Assert.Equal(count + remainingBits, buffer.Count);
-        AssertExtensions.BitsEqual(new string('0', remainingBits), buffer.GetBitStream().TakeLast(remainingBits));
+        AssertExtensions.BitsEqual(new string('0', remainingBits), buffer.AsBitEnumerable().TakeLast(remainingBits));
     }
 
     [Fact]

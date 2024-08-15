@@ -11,8 +11,8 @@ public sealed class NumericModeEncoderTests
         //2 triples of 10 bits each, for 20 bits total
         Assert.Equal(20, buffer.Count);
 
-        var bitStream = buffer.GetBitStream();
-        AssertExtensions.BitsEqual($"{123:B10}{456:B10}", bitStream);
+        var bits = buffer.AsBitEnumerable();
+        AssertExtensions.BitsEqual($"{123:B10}{456:B10}", bits);
     }
 
     [Fact]
@@ -22,7 +22,7 @@ public sealed class NumericModeEncoderTests
         NumericEncoder.Encode(buffer, "1234");
 
         Assert.Equal(14, buffer.Count);
-        AssertExtensions.BitsEqual($"{123:B10}{4:B4}", buffer.GetBitStream());
+        AssertExtensions.BitsEqual($"{123:B10}{4:B4}", buffer.AsBitEnumerable());
     }
 
     [Fact]
@@ -32,7 +32,7 @@ public sealed class NumericModeEncoderTests
         NumericEncoder.Encode(buffer, "12345");
 
         Assert.Equal(17, buffer.Count);
-        AssertExtensions.BitsEqual($"{123:B10}{45:B7}", buffer.GetBitStream());
+        AssertExtensions.BitsEqual($"{123:B10}{45:B7}", buffer.AsBitEnumerable());
     }
 
     [Fact]

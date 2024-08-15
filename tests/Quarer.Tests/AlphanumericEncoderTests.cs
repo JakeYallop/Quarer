@@ -11,7 +11,7 @@ public sealed class AlphanumericEncoderTests
         //3 pairs of 11 bits each
         Assert.Equal(33, buffer.Count);
 
-        AssertExtensions.BitsEqual($"{(10 * 45) + 11:B11}{(12 * 45) + 0:B11}{(44 * 45) + 29:B11}", buffer.GetBitStream());
+        AssertExtensions.BitsEqual($"{(10 * 45) + 11:B11}{(12 * 45) + 0:B11}{(44 * 45) + 29:B11}", buffer.AsBitEnumerable());
     }
 
     [Fact]
@@ -23,7 +23,7 @@ public sealed class AlphanumericEncoderTests
         //2 pairs of 11 bits each, 1 extra of 6 bits.
         Assert.Equal(28, buffer.Count);
 
-        AssertExtensions.BitsEqual($"{(10 * 45) + 11:B11}{(12 * 45) + 0:B11}{44:B6}", buffer.GetBitStream());
+        AssertExtensions.BitsEqual($"{(10 * 45) + 11:B11}{(12 * 45) + 0:B11}{44:B6}", buffer.AsBitEnumerable());
     }
 
     [Fact]

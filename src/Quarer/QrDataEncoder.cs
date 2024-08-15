@@ -111,7 +111,7 @@ public static class QrDataEncoder
             codewords++;
         }
 
-        return bitBuffer.GetByteStream();
+        return bitBuffer.AsByteEnumerable();
     }
 
     private const byte PadPattern8_1 = 0b1110_1100;

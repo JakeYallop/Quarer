@@ -115,7 +115,7 @@ public sealed class BitBuffer(int initialCapacity)
         }
     }
 
-    public IEnumerable<bool> GetBitStream()
+    public IEnumerable<bool> AsBitEnumerable()
     {
         //TODO: Return an enumerable that implements ICollection so that TryGetNonEnumeratedCount etc works
         var current = 0;
@@ -140,7 +140,7 @@ public sealed class BitBuffer(int initialCapacity)
     /// with the final byte padded with zeros if necessary
     /// </summary>
     /// <returns></returns>
-    public IEnumerable<byte> GetByteStream()
+    public IEnumerable<byte> AsByteEnumerable()
     {
         //TODO: Return an enumerable that implements ICollection so that TryGetNonEnumeratedCount etc works
         var current = 0;

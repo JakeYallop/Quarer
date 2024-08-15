@@ -130,7 +130,7 @@ public sealed class QrDataEncoderTests
     {
         var resultBitWriter = QrDataEncoder.EncodeAndInterleaveErrorCorrectionBlocks(version, dataCodewordsBitBuffer);
 
-        Assert.Equal(expectedBytes, resultBitWriter.GetByteStream().ToArray());
+        Assert.Equal(expectedBytes, resultBitWriter.AsByteEnumerable().ToArray());
     }
 
     [Fact]

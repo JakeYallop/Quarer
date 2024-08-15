@@ -10,8 +10,8 @@ public sealed class KanjiEncoderTests
         var bitBuffer = new BitBuffer();
         KanjiEncoder.Encode(bitBuffer, [first, second]);
 
-        var bitStream = bitBuffer.GetBitStream();
-        AssertExtensions.BitsEqual(expected, bitStream);
+        var bits = bitBuffer.AsBitEnumerable();
+        AssertExtensions.BitsEqual(expected, bits);
     }
 
     [Fact]
@@ -31,13 +31,13 @@ public sealed class KanjiEncoderTests
 
         KanjiEncoder.Encode(bitBuffer, data);
 
-        var bitStream = bitBuffer.GetBitStream();
+        var bits = bitBuffer.AsBitEnumerable();
         AssertExtensions.BitsEqual("""
             0 0000 0000 0000
             1 0111 0100 0000
             1 0111 0011 1100
             1 1111 1111 1111
-            """, bitStream);
+            """, bits);
     }
 
     [Theory]

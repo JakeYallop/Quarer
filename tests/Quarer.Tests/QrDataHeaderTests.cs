@@ -50,6 +50,6 @@ public sealed class QrDataHeaderTests
         header.WriteHeader(buffer);
 
         Assert.Equal(4 + bitsForCharacterCount, buffer.Count);
-        AssertExtensions.BitsEqual(expectedBitString, buffer.GetBitStream());
+        AssertExtensions.BitsEqual(expectedBitString, buffer.AsBitEnumerable());
     }
 }

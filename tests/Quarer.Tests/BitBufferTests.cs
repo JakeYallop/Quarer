@@ -156,13 +156,13 @@ public class BitBufferTests
         bitBuffer.WriteBits(value5, 6);
         bitBuffer.WriteBits(value6, 4);
 
-        var bitStream = bitBuffer.GetBitStream();
+        var bits = bitBuffer.AsBitEnumerable();
 
-        AssertExtensions.BitsEqual($"{value1:B10}{value2:B4}{value3:B7}{value4:B13}{value5:B6}{value6:B4}", bitStream);
+        AssertExtensions.BitsEqual($"{value1:B10}{value2:B4}{value3:B7}{value4:B13}{value5:B6}{value6:B4}", bits);
     }
 
     [Fact]
-    public void WriteBits_WritesCorrectValues_ByteStream()
+    public void WriteBits_WritesCorrectValues_Bytes()
     {
         var bitBuffer = new BitBuffer();
         ushort value1 = 0b1000_0000_00;
@@ -177,18 +177,18 @@ public class BitBufferTests
         bitBuffer.WriteBits(value4, 13);
         bitBuffer.WriteBits(value5, 6);
 
-        var byteStream = bitBuffer.GetByteStream().ToArray();
+        var bytes = bitBuffer.AsByteEnumerable().ToArray();
 
-        Assert.Equal(5, byteStream.Length);
-        Assert.Equal(0x80, byteStream[0]);
-        Assert.Equal(0x10, byteStream[1]);
-        Assert.Equal(0x81, byteStream[2]);
-        Assert.Equal(0x2A, byteStream[3]);
-        Assert.Equal(0xC4, byteStream[4]);
+        Assert.Equal(5, bytes.Length);
+        Assert.Equal(0x80, bytes[0]);
+        Assert.Equal(0x10, bytes[1]);
+        Assert.Equal(0x81, bytes[2]);
+        Assert.Equal(0x2A, bytes[3]);
+        Assert.Equal(0xC4, bytes[4]);
     }
 
     [Fact]
-    public void ByteStream_ReturnsZeroPaddedLastByte()
+    public void AsByteEnumerable_ReturnsZeroPaddedLastByte()
     {
         var bitBuffer = new BitBuffer();
         var value1 = 0xCACA_CACA;
@@ -197,14 +197,14 @@ public class BitBufferTests
         bitBuffer.WriteBits(value1, 32);
         bitBuffer.WriteBits(value2, 5);
 
-        var byteStream = bitBuffer.GetByteStream().ToArray();
+        var bytes = bitBuffer.AsByteEnumerable().ToArray();
 
-        Assert.Equal(5, byteStream.Length);
-        Assert.Equal(0xCA, byteStream[0]);
-        Assert.Equal(0xCA, byteStream[1]);
-        Assert.Equal(0xCA, byteStream[2]);
-        Assert.Equal(0xCA, byteStream[3]);
-        Assert.Equal(0b0100_1000, byteStream[4]);
+        Assert.Equal(5, bytes.Length);
+        Assert.Equal(0xCA, bytes[0]);
+        Assert.Equal(0xCA, bytes[1]);
+        Assert.Equal(0xCA, bytes[2]);
+        Assert.Equal(0xCA, bytes[3]);
+        Assert.Equal(0b0100_1000, bytes[4]);
     }
 
     [Fact]
@@ -331,7 +331,7 @@ public class BitBufferTests
         Assert.Throws<ArgumentException>(() => bitBuffer.GetBytes(0, 1, []));
     }
 
-    static BitBuffer Buffer(ReadOnlySpan<byte> bytes)
+    private static BitBuffer Buffer(ReadOnlySpan<byte> bytes)
     {
         var bitBuffer = new BitBuffer(bytes.Length * 8);
         foreach (var b in bytes)
@@ -352,7 +352,7 @@ public class BitBufferTests
     {
         var bitBuffer = Buffer(data);
         bitBuffer[index] = value;
-        Assert.Equal(expected, bitBuffer.GetByteStream());
+        Assert.Equal(expected, bitBuffer.AsByteEnumerable());
     }
 
     [Theory]
