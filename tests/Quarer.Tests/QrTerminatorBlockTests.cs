@@ -2,7 +2,7 @@
 
 public sealed class QrTerminatorBlockTests
 {
-    private static BitBuffer GetWriter(int byteCount)
+    private static BitBuffer GetBuffer(int byteCount)
     {
         var buffer = new BitBuffer();
         for (var i = 0; i < byteCount; i++)
@@ -17,7 +17,7 @@ public sealed class QrTerminatorBlockTests
     {
         var version = QrVersion.GetVersion(1, ErrorCorrectionLevel.L);
         var initialCapacity = version.DataCodewordsCapacity - 3;
-        var buffer = GetWriter(initialCapacity);
+        var buffer = GetBuffer(initialCapacity);
 
         var count = buffer.Count;
         QrTerminatorBlock.WriteTerminator(buffer, version);
@@ -35,7 +35,7 @@ public sealed class QrTerminatorBlockTests
     {
         var version = QrVersion.GetVersion(1, ErrorCorrectionLevel.M);
         var initialCapacity = version.DataCodewordsCapacity - 1;
-        var buffer = GetWriter(initialCapacity);
+        var buffer = GetBuffer(initialCapacity);
         buffer.WriteBits(1 << (filledBitsInLastByte - 1), filledBitsInLastByte);
 
         var count = buffer.Count;
@@ -54,7 +54,7 @@ public sealed class QrTerminatorBlockTests
     {
         var version = QrVersion.GetVersion(1, ErrorCorrectionLevel.Q);
         var initialCapacity = version.DataCodewordsCapacity - 1;
-        var buffer = GetWriter(initialCapacity);
+        var buffer = GetBuffer(initialCapacity);
         buffer.WriteBits(1 << (filledBitsInLastByte - 1), filledBitsInLastByte);
         var remainingBits = 8 - filledBitsInLastByte;
 
@@ -69,7 +69,7 @@ public sealed class QrTerminatorBlockTests
     public void WriteTerminator_AtCodewordCapacity_NoSpaceForTerminator_DoesNotWriteAnything()
     {
         var version = QrVersion.GetVersion(1, ErrorCorrectionLevel.H);
-        var buffer = GetWriter(version.DataCodewordsCapacity);
+        var buffer = GetBuffer(version.DataCodewordsCapacity);
 
         var count = buffer.Count;
         QrTerminatorBlock.WriteTerminator(buffer, version);

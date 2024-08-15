@@ -42,7 +42,6 @@ public sealed class BitBuffer(int initialCapacity)
     private int _position;
     private int _bitsWritten;
     private int _capacity;
-    //TODO: Allow using a pre-allocated buffer, maybe add a value builder and use a stackalloc'd buffer.
     private readonly List<uint> _buffer = new(initialCapacity);
 
     public BitBuffer() : this(16)
@@ -63,6 +62,38 @@ public sealed class BitBuffer(int initialCapacity)
         {
             var (fullElements, remainder) = int.DivRem(Count, 8);
             return fullElements + (remainder > 0 ? 1 : 0);
+        }
+    }
+
+    public bool this[int index]
+    {
+        get
+        {
+            if (index < 0 || index >= Count)
+            {
+                throw new ArgumentOutOfRangeException(nameof(index));
+            }
+            var elementIndex = GetInt32LengthFromBitsFloor(index);
+            var bitIndex = index & (BitsPerElement - 1);
+            return (_buffer[elementIndex] & (1 << (BitsPerElement - bitIndex - 1))) != 0;
+        }
+
+        set
+        {
+            if (index < 0 || index >= Count)
+            {
+                throw new ArgumentOutOfRangeException(nameof(index));
+            }
+            var elementIndex = GetInt32LengthFromBitsFloor(index);
+            var bitIndex = index & (BitsPerElement - 1);
+            if (value)
+            {
+                _buffer[elementIndex] |= (uint)(1 << (BitsPerElement - bitIndex - 1));
+            }
+            else
+            {
+                _buffer[elementIndex] &= ~(uint)(1 << (BitsPerElement - bitIndex - 1));
+            }
         }
     }
 

@@ -2,7 +2,7 @@
 
 namespace Quarer.Tests;
 
-public class BitWriterTests
+public class BitBufferTests
 {
     [Fact]
     public void WriteBits_ValidValue_IsSuccessful()
@@ -328,5 +328,43 @@ public class BitWriterTests
         var bitBuffer = new BitBuffer();
         bitBuffer.WriteBits(0, 8);
         Assert.Throws<ArgumentException>(() => bitBuffer.GetBytes(0, 1, []));
+    }
+
+    static BitBuffer Buffer(ReadOnlySpan<byte> bytes)
+    {
+        var bitBuffer = new BitBuffer(bytes.Length * 8);
+        foreach (var b in bytes)
+        {
+            bitBuffer.WriteBits(b, 8);
+        }
+        return bitBuffer;
+    }
+
+    [Theory]
+    [InlineData(new byte[] { 0b0000_0000, 0b0000_0000 }, 14, true, new byte[] { 0b0000_0000, 0b0000_0010 })]
+    [InlineData(new byte[] { 0b0101_0101, 0b1111_0000 }, 9, false, new byte[] { 0b0101_0101, 0b1011_0000 })]
+    [InlineData(new byte[] { 0b0101_0101, 0b1111_0000 }, 1, false, new byte[] { 0b0001_0101, 0b1011_0000 })]
+    [InlineData(new byte[] { 0xFA, 0xFA, 0xFA, 0xFA, 0b0000_0000, 0b0101_0101, 0b1111_0000 }, 55, true, new byte[] { 0xFA, 0xFA, 0xFA, 0xFA, 0b0000_0000, 0b0101_0101, 0b1111_0001 })]
+    [InlineData(new byte[] { 0xFA, 0xFA, 0xFA, 0xFA, 0b0000_0000, 0b0101_0101, 0b1111_0001 }, 55, false, new byte[] { 0xFA, 0xFA, 0xFA, 0xFA, 0b0000_0000, 0b0101_0101, 0b1111_0000 })]
+    [InlineData(new byte[] { 0xFA, 0xFA, 0xFA, 0xFA, 0b0000_0000, 0b0101_0101, 0b1101_0001 }, 50, false, new byte[] { 0xFA, 0xFA, 0xFA, 0xFA, 0b0000_0000, 0b0101_0101, 0b1101_0001 })]
+    public void SetBit(byte[] data, int index, bool value, byte[] expected)
+    {
+        var bitBuffer = Buffer(data);
+        bitBuffer[index] = value;
+        Assert.Equal(expected, bitBuffer.GetByteStream());
+    }
+
+    [Theory]
+    [InlineData(new byte[] { 0b0000_0000, 0b0000_0000 }, 14, false)]
+    [InlineData(new byte[] { 0b0101_0101, 0b1111_0000 }, 9, true)]
+    [InlineData(new byte[] { 0b0101_0101, 0b1111_0000 }, 1, true)]
+    [InlineData(new byte[] { 0xFA, 0xFA, 0xFA, 0xFA, 0b0000_0000, 0b0101_0101, 0b1111_0000 }, 55, false)]
+    [InlineData(new byte[] { 0xFA, 0xFA, 0xFA, 0xFA, 0b0000_0000, 0b0101_0101, 0b1111_0001 }, 55, true)]
+    [InlineData(new byte[] { 0xFA, 0xFA, 0xFA, 0xFA, 0b0000_0000, 0b0101_0101, 0b1010_0001 }, 50, true)]
+    public void GetBit(byte[] data, int index, bool expected)
+    {
+        var bitBuffer = Buffer(data);
+        var actual = bitBuffer[index];
+        Assert.Equal(expected, actual);
     }
 }

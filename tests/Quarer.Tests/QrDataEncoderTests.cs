@@ -78,7 +78,7 @@ public sealed class QrDataEncoderTests
         {
             {
                 QrVersion.GetVersion(1, ErrorCorrectionLevel.H),
-                Writer([32, 65, 205, 69, 41, 220, 46, 128, 236]),
+                Buffer([32, 65, 205, 69, 41, 220, 46, 128, 236]),
                 [
                     //data codewords
                     32, 65, 205, 69, 41, 220, 46, 128, 236,
@@ -88,7 +88,7 @@ public sealed class QrDataEncoderTests
             },
             {
                 QrVersion.GetVersion(5, ErrorCorrectionLevel.H),
-                Writer(
+                Buffer(
                 [
                     //each line is one data block
                     67, 70, 22, 38, 54, 70, 86, 102, 118, 108, 1,
@@ -113,7 +113,7 @@ public sealed class QrDataEncoderTests
             },
         };
 
-        static BitBuffer Writer(ReadOnlySpan<byte> bytes)
+        static BitBuffer Buffer(ReadOnlySpan<byte> bytes)
         {
             var bitBuffer = new BitBuffer(bytes.Length * 8);
             foreach (var b in bytes)
