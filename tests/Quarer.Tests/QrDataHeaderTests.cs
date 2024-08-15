@@ -43,13 +43,13 @@ public sealed class QrDataHeaderTests
     [MemberData(nameof(Data))]
     public void WriteHeader_WritesCorrectData(QrVersion version, ModeIndicator mode, int inputDataCount, string expectedBitString)
     {
-        var writer = new BitWriter();
+        var buffer = new BitBuffer();
         var header = QrHeaderBlock.Create(version, mode, inputDataCount);
         var bitsForCharacterCount = CharacterCount.GetCharacterCountBitCount(version, mode);
 
-        header.WriteHeader(writer);
+        header.WriteHeader(buffer);
 
-        Assert.Equal(4 + bitsForCharacterCount, writer.Count);
-        AssertExtensions.BitsEqual(expectedBitString, writer.GetBitStream());
+        Assert.Equal(4 + bitsForCharacterCount, buffer.Count);
+        AssertExtensions.BitsEqual(expectedBitString, buffer.GetBitStream());
     }
 }

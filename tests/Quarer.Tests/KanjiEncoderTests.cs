@@ -7,31 +7,31 @@ public sealed class KanjiEncoderTests
     [InlineData((char)0x935F, (char)0xE4AA, "0 1101 1001 1111 1 1010 1010 1010")] //test case from the spec
     public void Encode_ValidKanji_EncodesCorrectly(char first, char second, string expected)
     {
-        var bitWriter = new BitWriter();
-        KanjiEncoder.Encode(bitWriter, [first, second]);
+        var bitBuffer = new BitBuffer();
+        KanjiEncoder.Encode(bitBuffer, [first, second]);
 
-        var bitStream = bitWriter.GetBitStream();
+        var bitStream = bitBuffer.GetBitStream();
         AssertExtensions.BitsEqual(expected, bitStream);
     }
 
     [Fact]
     public void Encode_InvalidKanji_ThrowsArgumentException()
     {
-        var bitWriter = new BitWriter();
+        var bitBuffer = new BitBuffer();
         var data = new[] { (char)0x7FFF, (char)0xFFFF };
 
-        Assert.Throws<ArgumentException>(() => KanjiEncoder.Encode(bitWriter, data));
+        Assert.Throws<ArgumentException>(() => KanjiEncoder.Encode(bitBuffer, data));
     }
 
     [Fact]
     public void Encode_MixedKanji_EncodesCorrectly()
     {
-        var bitWriter = new BitWriter();
+        var bitBuffer = new BitBuffer();
         var data = new[] { (char)0x8140, (char)0xE040, (char)0x9FFC, (char)0xEBBF };
 
-        KanjiEncoder.Encode(bitWriter, data);
+        KanjiEncoder.Encode(bitBuffer, data);
 
-        var bitStream = bitWriter.GetBitStream();
+        var bitStream = bitBuffer.GetBitStream();
         AssertExtensions.BitsEqual("""
             0 0000 0000 0000
             1 0111 0100 0000

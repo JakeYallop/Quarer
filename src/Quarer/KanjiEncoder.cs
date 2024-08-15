@@ -17,7 +17,7 @@ internal static partial class KanjiEncoder
         return false;
     }
 
-    public static void Encode(BitWriter writer, scoped ReadOnlySpan<char> data)
+    public static void Encode(BitBuffer buffer, scoped ReadOnlySpan<char> data)
     {
         foreach (var c in data)
         {
@@ -31,7 +31,7 @@ internal static partial class KanjiEncoder
             var upper = (byte)(value >> 8);
             var lower = (byte)(value & 0xFF);
             var finalValue = (ushort)((upper * 0xC0) + lower);
-            writer.WriteBits(finalValue, 13);
+            buffer.WriteBits(finalValue, 13);
         }
     }
 

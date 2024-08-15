@@ -132,7 +132,7 @@ internal static class AlphanumericEncoder
         1575,   // Z - 90
     ];
 
-    public static void Encode(BitWriter writer, scoped ReadOnlySpan<char> data)
+    public static void Encode(BitBuffer buffer, scoped ReadOnlySpan<char> data)
     {
         var position = 0;
         for (; position + 2 <= data.Length; position += 2)
@@ -142,7 +142,7 @@ internal static class AlphanumericEncoder
             var i2 = pair[1] - ' ';
             Debug.Assert(Character1Map[i1] != -1);
             Debug.Assert(Character2Map[i2] != -1);
-            writer.WriteBits(Character1Map[i1] + Character2Map[i2], 11);
+            buffer.WriteBits(Character1Map[i1] + Character2Map[i2], 11);
         }
 
         if (data.Length != position)
@@ -151,7 +151,7 @@ internal static class AlphanumericEncoder
             var remainingCharacter = data[position] - ' ';
 
             Debug.Assert(Character1Map[remainingCharacter] != -1);
-            writer.WriteBits(Character2Map[remainingCharacter], 6);
+            buffer.WriteBits(Character2Map[remainingCharacter], 6);
         }
     }
 

@@ -72,7 +72,7 @@ public sealed class QrDataEncoderTests
         Assert.Equal(expectedCount / 8, bitStream.Length);
     }
 
-    public static TheoryData<QrVersion, BitWriter, byte[]> EncodeAndInterleaveErrorCorrectionBlocksData()
+    public static TheoryData<QrVersion, BitBuffer, byte[]> EncodeAndInterleaveErrorCorrectionBlocksData()
     {
         return new()
         {
@@ -113,20 +113,20 @@ public sealed class QrDataEncoderTests
             },
         };
 
-        static BitWriter Writer(ReadOnlySpan<byte> bytes)
+        static BitBuffer Writer(ReadOnlySpan<byte> bytes)
         {
-            var bitWriter = new BitWriter(bytes.Length * 8);
+            var bitBuffer = new BitBuffer(bytes.Length * 8);
             foreach (var b in bytes)
             {
-                bitWriter.WriteBits(b, 8);
+                bitBuffer.WriteBits(b, 8);
             }
-            return bitWriter;
+            return bitBuffer;
         }
     }
 
     [Theory]
     [MemberData(nameof(EncodeAndInterleaveErrorCorrectionBlocksData))]
-    public void EncodeAndInterleaveErrorCorrectionBlocks_ReturnsExpectedResult1(QrVersion version, BitWriter dataCodewordsBitBuffer, byte[] expectedBytes)
+    public void EncodeAndInterleaveErrorCorrectionBlocks_ReturnsExpectedResult1(QrVersion version, BitBuffer dataCodewordsBitBuffer, byte[] expectedBytes)
     {
         var resultBitWriter = QrDataEncoder.EncodeAndInterleaveErrorCorrectionBlocks(version, dataCodewordsBitBuffer);
 
@@ -137,7 +137,7 @@ public sealed class QrDataEncoderTests
     public void EncodeAndInterleaveErrorCorrectionBlocks_BitWriterInputSizeDoesNotMatchExpectedSizeFromVersion_ThrowsArgumentException()
     {
         var version = QrVersion.GetVersion(1, ErrorCorrectionLevel.H);
-        var dataCodewordsBitBuffer = new BitWriter(1);
+        var dataCodewordsBitBuffer = new BitBuffer(1);
         Assert.Throws<ArgumentException>(() => QrDataEncoder.EncodeAndInterleaveErrorCorrectionBlocks(version, dataCodewordsBitBuffer));
     }
 }

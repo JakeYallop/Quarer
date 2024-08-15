@@ -6,34 +6,33 @@ using System.Runtime.InteropServices;
 namespace Quarer;
 
 [DebuggerDisplay("Count = {ByteCount}")]
-internal sealed class BitWriterDebugView
+internal sealed class BitBufferDebugView
 {
-    private readonly BitWriter _bitWriter;
+    private readonly BitBuffer _bitBuffer;
 
-    public BitWriterDebugView(BitWriter bitWriter)
+    public BitBufferDebugView(BitBuffer bitBuffer)
     {
-        ArgumentNullException.ThrowIfNull(bitWriter);
-        _bitWriter = bitWriter;
+        ArgumentNullException.ThrowIfNull(bitBuffer);
+        _bitBuffer = bitBuffer;
     }
 
-    public int Count => _bitWriter.Count;
-    public int ByteCount => _bitWriter.ByteCount;
+    public int Count => _bitBuffer.Count;
+    public int ByteCount => _bitBuffer.ByteCount;
 
     public byte[] ByteView
     {
         get
         {
-            var bytes = new byte[_bitWriter.ByteCount];
-            _bitWriter.GetBytes(0, _bitWriter.ByteCount, bytes);
+            var bytes = new byte[_bitBuffer.ByteCount];
+            _bitBuffer.GetBytes(0, _bitBuffer.ByteCount, bytes);
             return bytes;
         }
     }
 
 }
 
-//TODO: Rename to BitArray or similar (BitBuffer, BitArray, BitStream?)
-[DebuggerTypeProxy(typeof(BitWriterDebugView))]
-public sealed class BitWriter(int initialCapacity)
+[DebuggerTypeProxy(typeof(BitBufferDebugView))]
+public sealed class BitBuffer(int initialCapacity)
 {
     private const int BitsPerElement = 32;
     private const int BitShiftPerElement = 5;
@@ -46,7 +45,7 @@ public sealed class BitWriter(int initialCapacity)
     //TODO: Allow using a pre-allocated buffer, maybe add a value builder and use a stackalloc'd buffer.
     private readonly List<uint> _buffer = new(initialCapacity);
 
-    public BitWriter() : this(16)
+    public BitBuffer() : this(16)
     {
     }
 
@@ -106,7 +105,7 @@ public sealed class BitWriter(int initialCapacity)
     }
 
     /// <summary>
-    /// Returns bytes from this <see cref="BitWriter"/>. The number of bytes returned is rounded up to the nearest full byte,
+    /// Returns bytes from this <see cref="BitBuffer"/>. The number of bytes returned is rounded up to the nearest full byte,
     /// with the final byte padded with zeros if necessary
     /// </summary>
     /// <returns></returns>

@@ -24,10 +24,10 @@ internal readonly struct QrHeaderBlock
     public ushort CharacterCountBitCount { get; }
     public int InputDataLength { get; }
 
-    public void WriteHeader(BitWriter writer)
+    public void WriteHeader(BitBuffer buffer)
     {
-        writer.WriteBits((byte)ModeIndicator, 4);
-        writer.WriteBits(InputDataLength, CharacterCountBitCount);
+        buffer.WriteBits((byte)ModeIndicator, 4);
+        buffer.WriteBits(InputDataLength, CharacterCountBitCount);
     }
 
     //TODO: Support ECI, FNC, StructuredAppend etc.

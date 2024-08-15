@@ -5,25 +5,25 @@ public sealed class AlphanumericEncoderTests
     [Fact]
     public void Encode_WithEvenInput_WritesCorrectValues()
     {
-        var writer = new BitWriter();
-        AlphanumericEncoder.Encode(writer, "ABC0:T");
+        var buffer = new BitBuffer();
+        AlphanumericEncoder.Encode(buffer, "ABC0:T");
 
         //3 pairs of 11 bits each
-        Assert.Equal(33, writer.Count);
+        Assert.Equal(33, buffer.Count);
 
-        AssertExtensions.BitsEqual($"{(10 * 45) + 11:B11}{(12 * 45) + 0:B11}{(44 * 45) + 29:B11}", writer.GetBitStream());
+        AssertExtensions.BitsEqual($"{(10 * 45) + 11:B11}{(12 * 45) + 0:B11}{(44 * 45) + 29:B11}", buffer.GetBitStream());
     }
 
     [Fact]
     public void Encode_WithOddInput_WritesCorrectValues()
     {
-        var writer = new BitWriter();
-        AlphanumericEncoder.Encode(writer, "ABC0:");
+        var buffer = new BitBuffer();
+        AlphanumericEncoder.Encode(buffer, "ABC0:");
 
         //2 pairs of 11 bits each, 1 extra of 6 bits.
-        Assert.Equal(28, writer.Count);
+        Assert.Equal(28, buffer.Count);
 
-        AssertExtensions.BitsEqual($"{(10 * 45) + 11:B11}{(12 * 45) + 0:B11}{44:B6}", writer.GetBitStream());
+        AssertExtensions.BitsEqual($"{(10 * 45) + 11:B11}{(12 * 45) + 0:B11}{44:B6}", buffer.GetBitStream());
     }
 
     [Fact]

@@ -1,5 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-using System.Numerics;
+﻿using System.Numerics;
 
 namespace Quarer.Tests;
 
@@ -8,9 +7,9 @@ public class BitWriterTests
     [Fact]
     public void WriteBits_ValidValue_IsSuccessful()
     {
-        var bitWriter = new BitWriter();
+        var bitBuffer = new BitBuffer();
         ushort validValue = 1023;
-        bitWriter.WriteBits(validValue, 10);
+        bitBuffer.WriteBits(validValue, 10);
     }
 
     public static TheoryData<object, int> ValidData_FitsWithin64Bits()
@@ -71,18 +70,18 @@ public class BitWriterTests
     [MemberData(nameof(ValidData_FitsWithin16Bits))]
     public void WriteBits_ValidValue_IsSuccessful_short(object value, int bitCount)
     {
-        var bitWriter = new BitWriter();
+        var bitBuffer = new BitBuffer();
         var bits = UnboxInto<short>(value);
-        bitWriter.WriteBits(bits, bitCount);
+        bitBuffer.WriteBits(bits, bitCount);
     }
 
     [Theory]
     [MemberData(nameof(ValidData_FitsWithin16Bits))]
     public void WriteBits_ValidValue_IsSuccessful_ushort(object value, int bitCount)
     {
-        var bitWriter = new BitWriter();
+        var bitBuffer = new BitBuffer();
         var bits = UnboxInto<ushort>(value);
-        bitWriter.WriteBits(bits, bitCount);
+        bitBuffer.WriteBits(bits, bitCount);
     }
 
     [Theory]
@@ -90,9 +89,9 @@ public class BitWriterTests
     [MemberData(nameof(ValidData_FitsWithin32Bits))]
     public void WriteBits_ValidValue_IsSuccessful_int(object value, int bitCount)
     {
-        var bitWriter = new BitWriter();
+        var bitBuffer = new BitBuffer();
         var bits = UnboxInto<int>(value);
-        bitWriter.WriteBits(bits, bitCount);
+        bitBuffer.WriteBits(bits, bitCount);
     }
 
     [Theory]
@@ -100,9 +99,9 @@ public class BitWriterTests
     [MemberData(nameof(ValidData_FitsWithin32Bits))]
     public void WriteBits_ValidValue_IsSuccessful_uint(object value, int bitCount)
     {
-        var bitWriter = new BitWriter();
+        var bitBuffer = new BitBuffer();
         var bits = UnboxInto<uint>(value);
-        bitWriter.WriteBits(bits, bitCount);
+        bitBuffer.WriteBits(bits, bitCount);
     }
 
     [Theory]
@@ -111,9 +110,9 @@ public class BitWriterTests
     [MemberData(nameof(ValidData_FitsWithin64Bits))]
     public void WriteBits_ValidValue_IsSuccessful_long(object value, int bitCount)
     {
-        var bitWriter = new BitWriter();
+        var bitBuffer = new BitBuffer();
         var bits = UnboxInto<long>(value);
-        bitWriter.WriteBits(bits, bitCount);
+        bitBuffer.WriteBits(bits, bitCount);
     }
 
     [Theory]
@@ -122,9 +121,9 @@ public class BitWriterTests
     [MemberData(nameof(ValidData_FitsWithin64Bits))]
     public void WriteBits_ValidValue_IsSuccessful_ulong(object value, int bitCount)
     {
-        var bitWriter = new BitWriter();
+        var bitBuffer = new BitBuffer();
         var bits = UnboxInto<ulong>(value);
-        bitWriter.WriteBits(bits, bitCount);
+        bitBuffer.WriteBits(bits, bitCount);
     }
 
     [Theory]
@@ -134,15 +133,15 @@ public class BitWriterTests
     [InlineData(7, 2)]
     public void WriteBits_ValueLargerThanSpecifiedBits_ShouldThrowArgumentOutOfRangeException(ushort value, int bitCount)
     {
-        var bitWriter = new BitWriter();
-        Assert.Throws<ArgumentOutOfRangeException>(() => bitWriter.WriteBits(value, bitCount));
+        var bitBuffer = new BitBuffer();
+        Assert.Throws<ArgumentOutOfRangeException>(() => bitBuffer.WriteBits(value, bitCount));
     }
 #pragma warning restore xUnit1045 // Avoid using TheoryData type arguments that might not be serializable
 
     [Fact]
     public void WriteBits_WritesCorrectValues()
     {
-        var bitWriter = new BitWriter();
+        var bitBuffer = new BitBuffer();
         ushort value1 = 0b1000_0000_00;
         ushort value2 = 0b0100;
         ushort value3 = 0b0010_000;
@@ -150,14 +149,14 @@ public class BitWriterTests
         ushort value5 = 0b0001_00;
         ushort value6 = 0b0100;
 
-        bitWriter.WriteBits(value1, 10);
-        bitWriter.WriteBits(value2, 4);
-        bitWriter.WriteBits(value3, 7);
-        bitWriter.WriteBits(value4, 13);
-        bitWriter.WriteBits(value5, 6);
-        bitWriter.WriteBits(value6, 4);
+        bitBuffer.WriteBits(value1, 10);
+        bitBuffer.WriteBits(value2, 4);
+        bitBuffer.WriteBits(value3, 7);
+        bitBuffer.WriteBits(value4, 13);
+        bitBuffer.WriteBits(value5, 6);
+        bitBuffer.WriteBits(value6, 4);
 
-        var bitStream = bitWriter.GetBitStream();
+        var bitStream = bitBuffer.GetBitStream();
 
         AssertExtensions.BitsEqual($"{value1:B10}{value2:B4}{value3:B7}{value4:B13}{value5:B6}{value6:B4}", bitStream);
     }
@@ -165,20 +164,20 @@ public class BitWriterTests
     [Fact]
     public void WriteBits_WritesCorrectValues_ByteStream()
     {
-        var bitWriter = new BitWriter();
+        var bitBuffer = new BitBuffer();
         ushort value1 = 0b1000_0000_00;
         ushort value2 = 0b0100;
         ushort value3 = 0b0010_000;
         ushort value4 = 0b0010_0101_0101_1;
         ushort value5 = 0b0001_00;
 
-        bitWriter.WriteBits(value1, 10);
-        bitWriter.WriteBits(value2, 4);
-        bitWriter.WriteBits(value3, 7);
-        bitWriter.WriteBits(value4, 13);
-        bitWriter.WriteBits(value5, 6);
+        bitBuffer.WriteBits(value1, 10);
+        bitBuffer.WriteBits(value2, 4);
+        bitBuffer.WriteBits(value3, 7);
+        bitBuffer.WriteBits(value4, 13);
+        bitBuffer.WriteBits(value5, 6);
 
-        var byteStream = bitWriter.GetByteStream().ToArray();
+        var byteStream = bitBuffer.GetByteStream().ToArray();
 
         Assert.Equal(5, byteStream.Length);
         Assert.Equal(0x80, byteStream[0]);
@@ -191,14 +190,14 @@ public class BitWriterTests
     [Fact]
     public void ByteStream_ReturnsZeroPaddedLastByte()
     {
-        var bitWriter = new BitWriter();
+        var bitBuffer = new BitBuffer();
         var value1 = 0xCACA_CACA;
         var value2 = 0b0100_1;
 
-        bitWriter.WriteBits(value1, 32);
-        bitWriter.WriteBits(value2, 5);
+        bitBuffer.WriteBits(value1, 32);
+        bitBuffer.WriteBits(value2, 5);
 
-        var byteStream = bitWriter.GetByteStream().ToArray();
+        var byteStream = bitBuffer.GetByteStream().ToArray();
 
         Assert.Equal(5, byteStream.Length);
         Assert.Equal(0xCA, byteStream[0]);
@@ -211,28 +210,27 @@ public class BitWriterTests
     [Fact]
     public void WriteBits_HasCorrectBitCountAfterAddingMultipleValues()
     {
-        var bitWriter = new BitWriter();
+        var bitBuffer = new BitBuffer();
         ushort value1 = 0b1000_0000_00;
         ushort value2 = 0b0100_0000_00;
         ushort value3 = 0b0010_0000_00;
 
-        bitWriter.WriteBits(value1, 10);
-        bitWriter.WriteBits(value2, 10);
-        bitWriter.WriteBits(value3, 10);
+        bitBuffer.WriteBits(value1, 10);
+        bitBuffer.WriteBits(value2, 10);
+        bitBuffer.WriteBits(value3, 10);
 
-        Assert.Equal(30, bitWriter.Count);
+        Assert.Equal(30, bitBuffer.Count);
     }
 
     [Fact]
     public void ByteCount_ReturnsExpectedResult()
     {
-        var bitWriter = new BitWriter();
-        bitWriter.WriteBits(0, 32);
-        bitWriter.WriteBits(0, 5);
+        var bitBuffer = new BitBuffer();
+        bitBuffer.WriteBits(0, 32);
+        bitBuffer.WriteBits(0, 5);
 
-        Assert.Equal(5, bitWriter.ByteCount);
+        Assert.Equal(5, bitBuffer.ByteCount);
     }
-
 
     private static byte[] Bytes => [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19];
     public static TheoryData<byte[], int, bool, int, bool, byte[]> BytesData()
@@ -288,14 +286,14 @@ public class BitWriterTests
     [MemberData(nameof(BytesData))]
     public void GetBytes(byte[] bytes, int start, bool fromEnd, int end, bool fromEnd2, byte[] expectedBytes)
     {
-        var bitWriter = new BitWriter();
+        var bitBuffer = new BitBuffer();
         foreach (var b in bytes)
         {
-            bitWriter.WriteBits(b, 8);
+            bitBuffer.WriteBits(b, 8);
         }
 
         var destination = new byte[expectedBytes.Length];
-        var written = bitWriter.GetBytes(new(new(start, fromEnd), new(end, fromEnd2)), destination);
+        var written = bitBuffer.GetBytes(new(new(start, fromEnd), new(end, fromEnd2)), destination);
 
         Assert.Equal(expectedBytes.Length, written);
         Assert.Equal(expectedBytes, destination);
@@ -304,31 +302,31 @@ public class BitWriterTests
     [Fact]
     public void GetBytes_WhenStartIsLessThanZero_ThrowsArgumentOutOfRangeException()
     {
-        var bitWriter = new BitWriter();
-        Assert.Throws<ArgumentOutOfRangeException>(() => bitWriter.GetBytes(-1, 0, []));
+        var bitBuffer = new BitBuffer();
+        Assert.Throws<ArgumentOutOfRangeException>(() => bitBuffer.GetBytes(-1, 0, []));
     }
 
     [Fact]
     public void GetBytes_WhenLengthLessThanZero_ThrowsArgumentOutOfRangeException()
     {
-        var bitWriter = new BitWriter();
-        Assert.Throws<ArgumentOutOfRangeException>(() => bitWriter.GetBytes(0, -1, []));
+        var bitBuffer = new BitBuffer();
+        Assert.Throws<ArgumentOutOfRangeException>(() => bitBuffer.GetBytes(0, -1, []));
     }
 
     [Fact]
     public void GetBytes_WhenStartPlusLengthGreaterThanBitWriterByteCount_ThrowsArgumentOutOfRangeException()
     {
-        var bitWriter = new BitWriter();
-        bitWriter.WriteBits(0xFA, 8);
-        bitWriter.WriteBits(0xCE, 8);
-        Assert.Throws<ArgumentOutOfRangeException>(() => bitWriter.GetBytes(1, 2, [0]));
+        var bitBuffer = new BitBuffer();
+        bitBuffer.WriteBits(0xFA, 8);
+        bitBuffer.WriteBits(0xCE, 8);
+        Assert.Throws<ArgumentOutOfRangeException>(() => bitBuffer.GetBytes(1, 2, [0]));
     }
 
     [Fact]
     public void GetBytes_WhenDestinationIsNull_ThrowsArgumentException()
     {
-        var bitWriter = new BitWriter();
-        bitWriter.WriteBits(0, 8);
-        Assert.Throws<ArgumentException>(() => bitWriter.GetBytes(0, 1, []));
+        var bitBuffer = new BitBuffer();
+        bitBuffer.WriteBits(0, 8);
+        Assert.Throws<ArgumentException>(() => bitBuffer.GetBytes(0, 1, []));
     }
 }

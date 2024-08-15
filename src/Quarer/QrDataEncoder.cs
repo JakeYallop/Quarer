@@ -3,7 +3,6 @@ using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using Quarer.Numerics;
 
 namespace Quarer;
@@ -66,7 +65,7 @@ public static class QrDataEncoder
     public static IEnumerable<byte> EncodeDataBitStream(QrEncodingInfo qrDataEncoding, ReadOnlySpan<char> data)
     {
         var version = qrDataEncoding.Version;
-        var bitWriter = new BitWriter(qrDataEncoding.Version.DataCodewordsCapacity);
+        var bitBuffer = new BitBuffer(qrDataEncoding.Version.DataCodewordsCapacity);
 
         foreach (var segment in qrDataEncoding.DataSegments)
         {
@@ -74,21 +73,21 @@ public static class QrDataEncoder
             switch (segment.Mode)
             {
                 case ModeIndicator.Numeric:
-                    NumericEncoder.Encode(bitWriter, data[segment.Range]);
+                    NumericEncoder.Encode(bitBuffer, data[segment.Range]);
                     break;
                 case ModeIndicator.Alphanumeric:
-                    AlphanumericEncoder.Encode(bitWriter, data[segment.Range]);
+                    AlphanumericEncoder.Encode(bitBuffer, data[segment.Range]);
                     break;
                 case ModeIndicator.Byte:
                     //TODO: Add byte encoder to allow making this more efficient (e.g vectorization) and allow testability
                     //e.g read 4 bytes at a time and write 32 bits
                     foreach (var c in data[segment.Range])
                     {
-                        bitWriter.WriteBits(c, 8);
+                        bitBuffer.WriteBits(c, 8);
                     }
                     break;
                 case ModeIndicator.Kanji:
-                    KanjiEncoder.Encode(bitWriter, data[segment.Range]);
+                    KanjiEncoder.Encode(bitBuffer, data[segment.Range]);
                     break;
                 default:
                     throw new UnreachableException($"Mode '{segment.Mode}' not expected.");
@@ -96,30 +95,30 @@ public static class QrDataEncoder
 #pragma warning restore IDE0010 // Add missing cases
         }
 
-        QrTerminatorBlock.WriteTerminator(bitWriter, version);
+        QrTerminatorBlock.WriteTerminator(bitBuffer, version);
 
-        var codewords = bitWriter.ByteCount;
+        var codewords = bitBuffer.ByteCount;
         while (codewords <= version.DataCodewordsCapacity - 4)
         {
-            bitWriter.WriteBits(PadPattern32Bits, 32);
+            bitBuffer.WriteBits(PadPattern32Bits, 32);
             codewords += 4;
         }
 
         var alternate = false;
         while (codewords < version.DataCodewordsCapacity)
         {
-            bitWriter.WriteBits(alternate ? PadPattern8_1 : PadPattern8_2, 8);
+            bitBuffer.WriteBits(alternate ? PadPattern8_1 : PadPattern8_2, 8);
             codewords++;
         }
 
-        return bitWriter.GetByteStream();
+        return bitBuffer.GetByteStream();
     }
 
     private const byte PadPattern8_1 = 0b1110_1100;
     private const byte PadPattern8_2 = 0b0001_0001;
     private const uint PadPattern32Bits = unchecked((uint)((PadPattern8_1 << 24) | (PadPattern8_2 << 16) | (PadPattern8_1 << 8) | PadPattern8_2));
 
-    public static unsafe BitWriter EncodeAndInterleaveErrorCorrectionBlocks(QrVersion version, BitWriter dataCodewordsBitBuffer)
+    public static unsafe BitBuffer EncodeAndInterleaveErrorCorrectionBlocks(QrVersion version, BitBuffer dataCodewordsBitBuffer)
     {
         if (dataCodewordsBitBuffer.ByteCount != version.DataCodewordsCapacity)
         {
@@ -129,7 +128,7 @@ public static class QrDataEncoder
         var errorCorrectionCodewordsPerBlock = version.ErrorCorrectionBlocks.ErrorCorrectionCodewordsPerBlock;
         var errorCorrectionBlocks = version.ErrorCorrectionBlocks;
         var maxDataCodewordsInBlocks = errorCorrectionBlocks.MaxDataCodewordsInBlock;
-        var resultBitWriter = new BitWriter(version.TotalCodewords >> 2);
+        var resultBitBuffer = new BitBuffer(version.TotalCodewords >> 2);
 
         // max number of codewords in a data block is 123, so ensure buffer size is greater than or equal to 123
         Span<byte> dataCodewordsDestination = stackalloc byte[128];
@@ -141,11 +140,11 @@ public static class QrDataEncoder
             {
                 if (i < b.DataCodewordsPerBlock)
                 {
-                    //TODO: Add indexer to BitWriter?
+                    //TODO: Add indexer to BitBuffer?
                     var written = dataCodewordsBitBuffer.GetBytes(codewordsSeen + i, 1, dataCodewordsDestination);
                     Debug.Assert(written == 1);
                     //var dataCodewords = dataCodewordsDestination[..written];
-                    resultBitWriter.WriteBits(dataCodewordsDestination[0], 8);
+                    resultBitBuffer.WriteBits(dataCodewordsDestination[0], 8);
                 }
                 codewordsSeen += b.DataCodewordsPerBlock;
             }
@@ -179,13 +178,13 @@ public static class QrDataEncoder
             foreach (var b in errorCorrectionBlocks.EnumerateIndividualBlocks())
             {
                 ReadOnlySpan<byte> bytes = errorBlocks[errorBlockIndex];
-                resultBitWriter.WriteBits(bytes[i], 8);
+                resultBitBuffer.WriteBits(bytes[i], 8);
                 errorBlockIndex++;
             }
             errorBlockIndex = 0;
         }
 
-        return resultBitWriter;
+        return resultBitBuffer;
     }
 
     [InlineArray(30)]
