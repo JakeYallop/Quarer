@@ -42,9 +42,9 @@ public sealed class BitBuffer(int initialCapacity)
     private int _position;
     private int _bitsWritten;
     private int _capacity;
-    private readonly List<uint> _buffer = new(initialCapacity);
+    private readonly List<uint> _buffer = new(GetElementLengthFromBits(initialCapacity));
 
-    public BitBuffer() : this(16)
+    public BitBuffer() : this(128)
     {
     }
 
@@ -307,7 +307,7 @@ public sealed class BitBuffer(int initialCapacity)
                 newBitCapacity = (int)Math.Min(((long)newBitCapacity) * 2, int.MaxValue);
             };
 
-            var intCapacity = GetInt32LengthFromBits(newBitCapacity);
+            var intCapacity = GetElementLengthFromBits(newBitCapacity);
             Debug.Assert(newBitCapacity % BitsPerElement == 0);
             _capacity = newBitCapacity;
             _buffer.EnsureCapacity(intCapacity);
@@ -315,8 +315,8 @@ public sealed class BitBuffer(int initialCapacity)
         }
     }
 
-    private static int GetInt32LengthFromBits(int bits) => (int)((uint)(bits - 1 + (1 << BitShiftPerElement)) >> BitShiftPerElement);
-    private static int GetInt32LengthFromBitsFloor(int bits) => bits >> BitShiftPerElement;
-    private static int GetElementLengthFromBytesCeil(int bytes) => (int)((uint)(bytes - 1 + (1 << (BytesShiftPerElement - 1))) >> (BytesShiftPerElement - 1));
-    private static int GetElementLengthFromBytesFloor(int bytes) => bytes >> (BytesShiftPerElement - 1);
+    internal static int GetElementLengthFromBits(int bits) => (int)((uint)(bits - 1 + (1 << BitShiftPerElement)) >> BitShiftPerElement);
+    internal static int GetInt32LengthFromBitsFloor(int bits) => bits >> BitShiftPerElement;
+    internal static int GetElementLengthFromBytesCeil(int bytes) => (int)((uint)(bytes - 1 + (1 << (BytesShiftPerElement - 1))) >> (BytesShiftPerElement - 1));
+    internal static int GetElementLengthFromBytesFloor(int bytes) => bytes >> (BytesShiftPerElement - 1);
 }
