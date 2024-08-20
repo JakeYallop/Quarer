@@ -1,5 +1,5 @@
 ﻿namespace Quarer;
-public sealed class BitMatrix
+public class BitMatrix
 {
     private readonly BitBuffer[] _values;
 
@@ -14,16 +14,25 @@ public sealed class BitMatrix
             var arr = new BitBuffer[height];
             for (var i = 0; i < height; i++)
             {
-                arr[i] = new BitBuffer(width);
+                var buffer = new BitBuffer(width);
+                arr[i] = buffer;
+                buffer.SetCountUnsafe(width);
             }
 
             return arr;
         }
     }
 
+    protected BitMatrix(BitMatrix bitMatrix)
+    {
+        _values = bitMatrix._values;
+        Width = bitMatrix.Width;
+        Height = bitMatrix.Height;
+    }
+
     public int Width { get; }
     public int Height { get; }
-    public bool this[int x, int y]
+    public virtual bool this[int x, int y]
     {
         get => _values[y][x];
         set => _values[y][x] = value;
