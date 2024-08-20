@@ -39,10 +39,10 @@ public class QrCode
             b = (byte)(b - '0');
         }
 
-        var buffer = new BitBuffer();
+        var writer = new BitWriter();
         var header = QrHeaderBlock.Create(version, mode, utf8Data.Length);
-        header.WriteHeader(buffer);
+        header.WriteHeader(writer);
         ReadOnlySpan<byte> roData = utf8Data;
-        return buffer.AsBitEnumerable().ToArray();
+        return writer.Buffer.AsBitEnumerable().ToArray();
     }
 }

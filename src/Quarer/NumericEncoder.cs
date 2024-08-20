@@ -5,14 +5,14 @@ namespace Quarer;
 //TODO: Consider making this a class (or struct) with instance methods (even though it has no state) for a tiny bit of extra perf (assuming a thunk is needed for invoking the static methods)
 internal static class NumericEncoder
 {
-    public static void Encode(BitBuffer buffer, scoped ReadOnlySpan<char> data)
+    public static void Encode(BitWriter writer, scoped ReadOnlySpan<char> data)
     {
         var position = 0;
         for (; position + 3 <= data.Length; position += 3)
         {
             var digits = data[position..(position + 3)];
             var v = GetDigitsAsValue(digits);
-            buffer.WriteBits(v, 10);
+            writer.WriteBitsBigEndian(v, 10);
         }
 
         if (data.Length != position)
@@ -26,7 +26,7 @@ internal static class NumericEncoder
                 _ => throw new InvalidOperationException("Expected only 1 or 2 digits as a remainder after encoding all other 10 bit triples.")
             };
 
-            buffer.WriteBits(GetDigitsAsValue(remainingDigits), numberOfBits);
+            writer.WriteBitsBigEndian(GetDigitsAsValue(remainingDigits), numberOfBits);
         }
     }
 

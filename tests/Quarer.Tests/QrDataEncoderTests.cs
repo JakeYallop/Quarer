@@ -116,9 +116,10 @@ public sealed class QrDataEncoderTests
         static BitBuffer Buffer(ReadOnlySpan<byte> bytes)
         {
             var bitBuffer = new BitBuffer(bytes.Length * 8);
+            var writer = new BitWriter(bitBuffer);
             foreach (var b in bytes)
             {
-                bitBuffer.WriteBits(b, 8);
+                writer.WriteBitsBigEndian(b, 8);
             }
             return bitBuffer;
         }
@@ -130,7 +131,7 @@ public sealed class QrDataEncoderTests
     {
         var resultBitWriter = QrDataEncoder.EncodeAndInterleaveErrorCorrectionBlocks(version, dataCodewordsBitBuffer);
 
-        Assert.Equal(expectedBytes, resultBitWriter.AsByteEnumerable().ToArray());
+        Assert.Equal(expectedBytes, resultBitWriter.Buffer.AsByteEnumerable().ToArray());
     }
 
     [Fact]

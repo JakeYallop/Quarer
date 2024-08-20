@@ -5,34 +5,34 @@ public sealed class NumericModeEncoderTests
     [Fact]
     public void Encode_WithNoRemainder_WritesCorrectValues()
     {
-        var buffer = new BitBuffer();
-        NumericEncoder.Encode(buffer, "123456");
+        var writer = new BitWriter();
+        NumericEncoder.Encode(writer, "123456");
 
         //2 triples of 10 bits each, for 20 bits total
-        Assert.Equal(20, buffer.Count);
+        Assert.Equal(20, writer.BitsWritten);
 
-        var bits = buffer.AsBitEnumerable();
+        var bits = writer.Buffer.AsBitEnumerable();
         AssertExtensions.BitsEqual($"{123:B10}{456:B10}", bits);
     }
 
     [Fact]
     public void Encode_WithOneRemainder_WritesCorrectValues()
     {
-        var buffer = new BitBuffer();
-        NumericEncoder.Encode(buffer, "1234");
+        var writer = new BitWriter();
+        NumericEncoder.Encode(writer, "1234");
 
-        Assert.Equal(14, buffer.Count);
-        AssertExtensions.BitsEqual($"{123:B10}{4:B4}", buffer.AsBitEnumerable());
+        Assert.Equal(14, writer.BitsWritten);
+        AssertExtensions.BitsEqual($"{123:B10}{4:B4}", writer.Buffer.AsBitEnumerable());
     }
 
     [Fact]
     public void Encode_WithTwoRemainders_WritesCorrectValues()
     {
-        var buffer = new BitBuffer();
-        NumericEncoder.Encode(buffer, "12345");
+        var writer = new BitWriter();
+        NumericEncoder.Encode(writer, "12345");
 
-        Assert.Equal(17, buffer.Count);
-        AssertExtensions.BitsEqual($"{123:B10}{45:B7}", buffer.AsBitEnumerable());
+        Assert.Equal(17, writer.BitsWritten);
+        AssertExtensions.BitsEqual($"{123:B10}{45:B7}", writer.Buffer.AsBitEnumerable());
     }
 
     [Fact]

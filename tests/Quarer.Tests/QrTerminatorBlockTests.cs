@@ -2,14 +2,14 @@
 
 public sealed class QrTerminatorBlockTests
 {
-    private static BitBuffer GetBuffer(int byteCount)
+    private static BitWriter GetBuffer(int byteCount)
     {
-        var buffer = new BitBuffer();
+        var writer = new BitWriter();
         for (var i = 0; i < byteCount; i++)
         {
-            buffer.WriteBits(byte.MaxValue, 8);
+            writer.WriteBitsBigEndian(byte.MaxValue, 8);
         }
-        return buffer;
+        return writer;
     }
 
     [Fact]
@@ -17,13 +17,13 @@ public sealed class QrTerminatorBlockTests
     {
         var version = QrVersion.GetVersion(1, ErrorCorrectionLevel.L);
         var initialCapacity = version.DataCodewordsCapacity - 3;
-        var buffer = GetBuffer(initialCapacity);
+        var writer = GetBuffer(initialCapacity);
 
-        var count = buffer.Count;
-        QrTerminatorBlock.WriteTerminator(buffer, version);
-        Assert.Equal(initialCapacity + 1, buffer.ByteCount);
-        Assert.Equal(count + 4, buffer.Count);
-        AssertExtensions.BitsEqual("0000", buffer.AsBitEnumerable().TakeLast(4));
+        var count = writer.BitsWritten;
+        QrTerminatorBlock.WriteTerminator(writer, version);
+        Assert.Equal(initialCapacity + 1, writer.BytesWritten);
+        Assert.Equal(count + 4, writer.BitsWritten);
+        AssertExtensions.BitsEqual("0000", writer.Buffer.AsBitEnumerable().TakeLast(4));
     }
 
     [Theory]
@@ -35,14 +35,14 @@ public sealed class QrTerminatorBlockTests
     {
         var version = QrVersion.GetVersion(1, ErrorCorrectionLevel.M);
         var initialCapacity = version.DataCodewordsCapacity - 1;
-        var buffer = GetBuffer(initialCapacity);
-        buffer.WriteBits(1 << (filledBitsInLastByte - 1), filledBitsInLastByte);
+        var writer = GetBuffer(initialCapacity);
+        writer.WriteBitsBigEndian(1 << (filledBitsInLastByte - 1), filledBitsInLastByte);
 
-        var count = buffer.Count;
-        QrTerminatorBlock.WriteTerminator(buffer, version);
-        Assert.Equal(initialCapacity + 1, buffer.ByteCount);
-        Assert.Equal(count + 4, buffer.Count);
-        AssertExtensions.BitsEqual("0000", buffer.AsBitEnumerable().TakeLast(4));
+        var count = writer.BitsWritten;
+        QrTerminatorBlock.WriteTerminator(writer, version);
+        Assert.Equal(initialCapacity + 1, writer.Buffer.ByteCount);
+        Assert.Equal(count + 4, writer.BitsWritten);
+        AssertExtensions.BitsEqual("0000", writer.Buffer.AsBitEnumerable().TakeLast(4));
     }
 
     [Theory]
@@ -54,27 +54,27 @@ public sealed class QrTerminatorBlockTests
     {
         var version = QrVersion.GetVersion(1, ErrorCorrectionLevel.Q);
         var initialCapacity = version.DataCodewordsCapacity - 1;
-        var buffer = GetBuffer(initialCapacity);
-        buffer.WriteBits(1 << (filledBitsInLastByte - 1), filledBitsInLastByte);
+        var writer = GetBuffer(initialCapacity);
+        writer.WriteBitsBigEndian(1 << (filledBitsInLastByte - 1), filledBitsInLastByte);
         var remainingBits = 8 - filledBitsInLastByte;
 
-        var count = buffer.Count;
-        QrTerminatorBlock.WriteTerminator(buffer, version);
-        Assert.Equal(initialCapacity + 1, buffer.ByteCount);
-        Assert.Equal(count + remainingBits, buffer.Count);
-        AssertExtensions.BitsEqual(new string('0', remainingBits), buffer.AsBitEnumerable().TakeLast(remainingBits));
+        var count = writer.BitsWritten;
+        QrTerminatorBlock.WriteTerminator(writer, version);
+        Assert.Equal(initialCapacity + 1, writer.Buffer.ByteCount);
+        Assert.Equal(count + remainingBits, writer.BitsWritten);
+        AssertExtensions.BitsEqual(new string('0', remainingBits), writer.Buffer.AsBitEnumerable().TakeLast(remainingBits));
     }
 
     [Fact]
     public void WriteTerminator_AtCodewordCapacity_NoSpaceForTerminator_DoesNotWriteAnything()
     {
         var version = QrVersion.GetVersion(1, ErrorCorrectionLevel.H);
-        var buffer = GetBuffer(version.DataCodewordsCapacity);
+        var writer = GetBuffer(version.DataCodewordsCapacity);
 
-        var count = buffer.Count;
-        QrTerminatorBlock.WriteTerminator(buffer, version);
-        Assert.Equal(version.DataCodewordsCapacity, buffer.ByteCount);
-        Assert.Equal(count, buffer.Count);
+        var count = writer.BitsWritten;
+        QrTerminatorBlock.WriteTerminator(writer, version);
+        Assert.Equal(version.DataCodewordsCapacity, writer.Buffer.ByteCount);
+        Assert.Equal(count, writer.BitsWritten);
     }
 
 }

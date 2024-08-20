@@ -1,7 +1,9 @@
 ﻿using System.Buffers.Binary;
 using System.Diagnostics;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Text;
 
 namespace Quarer;
 
@@ -9,12 +11,14 @@ namespace Quarer;
 internal sealed class BitBufferDebugView
 {
     private readonly BitBuffer _bitBuffer;
-
-    public BitBufferDebugView(BitBuffer bitBuffer)
+    public BitBufferDebugView(BitBuffer bitWriter)
     {
-        ArgumentNullException.ThrowIfNull(bitBuffer);
-        _bitBuffer = bitBuffer;
+        ArgumentNullException.ThrowIfNull(bitWriter);
+        _bitBuffer = bitWriter;
     }
+
+    [UnsafeAccessor(UnsafeAccessorKind.Field)]
+    public static extern ref List<uint> _buffer(BitBuffer @this);
 
     public int Count => _bitBuffer.Count;
     public int ByteCount => _bitBuffer.ByteCount;
@@ -29,32 +33,49 @@ internal sealed class BitBufferDebugView
         }
     }
 
+    public string BitView
+    {
+        get
+        {
+            var sb = new StringBuilder(_bitBuffer.Count);
+            foreach (var i in _buffer(_bitBuffer))
+            {
+                sb.AppendFormat("{0:B32}", i);
+            }
+            return sb.ToString();
+        }
+    }
+
 }
 
 [DebuggerTypeProxy(typeof(BitBufferDebugView))]
-public sealed class BitBuffer(int initialCapacity)
+public sealed class BitBuffer
 {
     private const int BitsPerElement = 32;
     private const int BitShiftPerElement = 5;
     private const int BytesPerElement = 4;
     private const int BytesShiftPerElement = 3;
 
-    private int _position;
-    private int _bitsWritten;
-    private int _capacity;
-    private readonly List<uint> _buffer = new(GetElementLengthFromBits(initialCapacity));
+    private readonly List<uint> _buffer;
 
-    public BitBuffer() : this(128)
+    public BitBuffer()
     {
+        _buffer = new(2);
+    }
+
+    public BitBuffer(int initialBitCount)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(initialBitCount);
+        _buffer = new(GetElementLengthFromBitsCeil(initialBitCount));
     }
 
     /// <summary>
-    /// The total number of bits written.
+    /// The total number of bits currently in this buffer.
     /// </summary>
     public int Count { get; private set; }
 
     /// <summary>
-    /// The total number of bytes, rounded up to the nearest full byte.
+    /// The total number of bytes in this buffer, rounded up to the nearest full byte.
     /// </summary>
     public int ByteCount
     {
@@ -73,9 +94,9 @@ public sealed class BitBuffer(int initialCapacity)
             {
                 throw new ArgumentOutOfRangeException(nameof(index));
             }
-            var elementIndex = GetInt32LengthFromBitsFloor(index);
+            var elementIndex = GetElementLengthFromBitsFloor(index);
             var bitIndex = index & (BitsPerElement - 1);
-            return (_buffer[elementIndex] & (1 << (BitsPerElement - bitIndex - 1))) != 0;
+            return (_buffer[elementIndex] & (1u << (BitsPerElement - bitIndex - 1))) != 0;
         }
 
         set
@@ -84,35 +105,46 @@ public sealed class BitBuffer(int initialCapacity)
             {
                 throw new ArgumentOutOfRangeException(nameof(index));
             }
-            var elementIndex = GetInt32LengthFromBitsFloor(index);
+            var elementIndex = GetElementLengthFromBitsFloor(index);
             var bitIndex = index & (BitsPerElement - 1);
+            var mask = 1u << (BitsPerElement - bitIndex - 1);
             if (value)
             {
-                _buffer[elementIndex] |= (uint)(1 << (BitsPerElement - bitIndex - 1));
+                _buffer[elementIndex] |= mask;
             }
             else
             {
-                _buffer[elementIndex] &= ~(uint)(1 << (BitsPerElement - bitIndex - 1));
+                _buffer[elementIndex] &= ~mask;
             }
         }
     }
-
-    public void WriteBits<T>(T value, int bitCount) where T : INumber<T>, IBinaryInteger<T>
+    public void WriteBitsBigEndian<T>(int position, T value, int bitCount) where T : IBinaryInteger<T>
     {
+        ArgumentOutOfRangeException.ThrowIfLessThan(position, 0);
         ThrowForInvalidValue(value, bitCount);
         var remainingBitsInValue = bitCount;
-        EnsureCapacity(checked(Count + remainingBitsInValue));
+        EnsureCapacity(checked(position + remainingBitsInValue));
+        var elementPosition = GetElementLengthFromBitsFloor(position);
+
+        var bitIndex = position & (BitsPerElement - 1);
         var buffer = CollectionsMarshal.AsSpan(_buffer);
+
         while (remainingBitsInValue > 0)
         {
-            var remainingBitsForCurrentPosition = BitsPerElement - _bitsWritten;
+            var remainingBitsForCurrentPosition = BitsPerElement - bitIndex;
             var bitsToWrite = Math.Min(remainingBitsInValue, remainingBitsForCurrentPosition);
-
             remainingBitsInValue -= bitsToWrite;
-            ref var segment = ref buffer[_position];
-            segment |= GetBitsFromValue(value, bitsToWrite, remainingBitsInValue) << (BitsPerElement - bitsToWrite - _bitsWritten);
-            Advance(bitsToWrite);
+
+            ref var segment = ref buffer[elementPosition];
+            var bitsInValue = GetBitsFromValue(value, bitsToWrite, remainingBitsInValue);
+            segment &= GetClearBitsMask<uint>(bitIndex, bitsToWrite);
+            segment |= bitsInValue << (BitsPerElement - bitsToWrite - bitIndex);
+            elementPosition += 1;
+            bitIndex = 0;
+            Debug.Assert(remainingBitsInValue == 0 || (position + bitsToWrite) % BitsPerElement == 0, $"Expected to be aligned to a {BitsPerElement}-bit boundary.");
         }
+
+        Count = Math.Max(Count, position + bitCount);
     }
 
     public IEnumerable<bool> AsBitEnumerable()
@@ -121,14 +153,16 @@ public sealed class BitBuffer(int initialCapacity)
         var current = 0;
         foreach (var i in _buffer)
         {
-            for (var currentBit = 0; currentBit < BitsPerElement; currentBit++)
+            for (var currentBit = 1; currentBit <= BitsPerElement; currentBit++)
             {
                 if (current == Count)
                 {
                     yield break;
                 }
 
-                var mask = 1 << (BitsPerElement - currentBit - 1);
+                var mask = 1 << (BitsPerElement - currentBit);
+                var m1 = $"{mask:B32}";
+                var m2 = $"{i:B32}";
                 yield return (i & mask) != 0;
                 current++;
             }
@@ -136,7 +170,7 @@ public sealed class BitBuffer(int initialCapacity)
     }
 
     /// <summary>
-    /// Returns bytes from this <see cref="BitBuffer"/>. The number of bytes returned is rounded up to the nearest full byte,
+    /// Returns bytes from this <see cref="BitWriter"/>. The number of bytes returned is rounded up to the nearest full byte,
     /// with the final byte padded with zeros if necessary
     /// </summary>
     /// <returns></returns>
@@ -218,6 +252,44 @@ public sealed class BitBuffer(int initialCapacity)
         return written;
     }
 
+    /// <summary>
+    /// Set the Count of this bitBuffer to the specified number of bits. If the underlying buffer is expanded, any new bits are
+    /// set to zero.
+    /// <para>
+    /// Under certain conditions, additional non-zeroed data could be exposed. Writing to the buffer, then calling SetCount
+    /// to shrink it will not zero-out the underlying storage used by the buffer.
+    /// </para>
+    /// </summary>
+    /// <param name="bitCount"></param>
+    public void SetCountUnsafe(int bitCount)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(bitCount);
+        EnsureCapacity(bitCount);
+        Count = bitCount;
+    }
+
+    /// <summary>
+    /// Ensure this buffer has space to store <paramref name="capacity"/> bits.
+    /// </summary>
+    /// <param name="capacity"></param>
+    public void SetCapacity(int capacity)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(capacity);
+        if (capacity < Count)
+        {
+            throw new ArgumentException("Cannot set capacity to less than the current count.", nameof(capacity));
+        }
+
+        var oldCapacity = _buffer.Capacity;
+        EnsureCapacity(capacity);
+        var newCapacity = GetElementLengthFromBitsCeil(capacity);
+        if (newCapacity < oldCapacity)
+        {
+            // we can just use TrimExcess here, as we use CollectionsMarshal.SetCount inside EnsureCapacity
+            _buffer.TrimExcess();
+        }
+    }
+
     private static int ReadBytes(uint element, int start, int end, Span<byte> destination)
     {
         Debug.Assert(start % 8 == 0, "Expected start offset to be byte aligned.");
@@ -241,9 +313,10 @@ public sealed class BitBuffer(int initialCapacity)
         return (byte)byteValue;
     }
 
-    private static uint GetBitsFromValue<T>(T value, int bitCount, int remainingBitsInValue) where T : INumber<T>, IBinaryInteger<T>
-    => uint.CreateTruncating((value >> remainingBitsInValue) & GetAllSetBitMask<T>(bitCount));
-    private static T GetAllSetBitMask<T>(int bitCount) where T : INumber<T>, IBinaryInteger<T>
+    private static uint GetBitsFromValue<T>(T value, int bitCount, int remainingBitsInValue) where T : IBinaryInteger<T>
+        => uint.CreateTruncating((value >> remainingBitsInValue) & GetAllSetBitMask<T>(bitCount));
+
+    private static T GetAllSetBitMask<T>(int bitCount) where T : IBinaryInteger<T>
     {
         var maxBits = GetMaxBits<T>();
         var bitCountBits = T.CreateTruncating(bitCount);
@@ -251,14 +324,33 @@ public sealed class BitBuffer(int initialCapacity)
         return maxBits == bitCountBits ? T.AllBitsSet : unchecked((T.One << bitCount) - T.One);
     }
 
-    private static T GetMaxBits<T>() where T : INumber<T>, IBinaryInteger<T>
+    private static T GetMaxBits<T>() where T : IBinaryInteger<T>
     {
         var maxBitsForT = T.LeadingZeroCount(T.One) + T.One;
         Debug.Assert(T.IsPositive(maxBitsForT) || T.IsZero(maxBitsForT));
         return maxBitsForT;
     }
 
-    private static void ThrowForInvalidValue<T>(T value, int bitsToUse) where T : INumber<T>, IBinaryInteger<T>
+    private static T GetClearBitsMask<T>(int bitIndex, int length) where T : IBinaryInteger<T>
+    {
+        Debug.Assert(int.CreateChecked(GetMaxBits<T>()) == BitsPerElement);
+        // Example:
+        // bitIndex = 3
+        // length = 4
+        // m = AllBitsSet >> (12 - 4)
+        // m = 0000_0000_1111
+        // m = m << (12 - 4 - 3)
+        // m = 0001_1110_0000
+        // ~m
+        // 1110_0001_1111
+
+        var mask = GetAllSetBitMask<T>(BitsPerElement);
+        mask >>= BitsPerElement - length;
+        mask <<= BitsPerElement - length - bitIndex;
+        return ~mask;
+    }
+
+    private static void ThrowForInvalidValue<T>(T value, int bitsToUse) where T : IBinaryInteger<T>
     {
         if (T.IsZero(value))
         {
@@ -280,25 +372,9 @@ public sealed class BitBuffer(int initialCapacity)
         }
     }
 
-    private void Advance(int bitsWritten)
-    {
-        Debug.Assert(bitsWritten is >= 0 and <= BitsPerElement);
-        Debug.Assert(_bitsWritten + bitsWritten is >= 0 and <= BitsPerElement);
-
-        _bitsWritten += bitsWritten;
-        Count += bitsWritten;
-        if (_bitsWritten is BitsPerElement)
-        {
-            _bitsWritten = 0;
-            _position++;
-        }
-
-        Debug.Assert(_position <= _buffer.Count);
-    }
-
     private void EnsureCapacity(int requestedCapacity)
     {
-        if (requestedCapacity > _capacity)
+        if (requestedCapacity > _buffer.Count << BitShiftPerElement)
         {
             var currentBitCapactity = _buffer.Count << BitShiftPerElement;
             var newBitCapacity = Math.Max(currentBitCapactity, BitsPerElement);
@@ -306,17 +382,15 @@ public sealed class BitBuffer(int initialCapacity)
             {
                 newBitCapacity = (int)Math.Min(((long)newBitCapacity) * 2, int.MaxValue);
             };
-
-            var intCapacity = GetElementLengthFromBits(newBitCapacity);
             Debug.Assert(newBitCapacity % BitsPerElement == 0);
-            _capacity = newBitCapacity;
-            _buffer.EnsureCapacity(intCapacity);
-            CollectionsMarshal.SetCount(_buffer, intCapacity);
+
+            var bufferCapacity = GetElementLengthFromBitsCeil(newBitCapacity);
+            CollectionsMarshal.SetCount(_buffer, bufferCapacity);
         }
     }
 
-    internal static int GetElementLengthFromBits(int bits) => (int)((uint)(bits - 1 + (1 << BitShiftPerElement)) >> BitShiftPerElement);
-    internal static int GetInt32LengthFromBitsFloor(int bits) => bits >> BitShiftPerElement;
-    internal static int GetElementLengthFromBytesCeil(int bytes) => (int)((uint)(bytes - 1 + (1 << (BytesShiftPerElement - 1))) >> (BytesShiftPerElement - 1));
+    internal static int GetElementLengthFromBitsCeil(int bits) => (int)((uint)(bits - 1 + (1u << BitShiftPerElement)) >> BitShiftPerElement);
+    internal static int GetElementLengthFromBitsFloor(int bits) => bits >> BitShiftPerElement;
+    internal static int GetElementLengthFromBytesCeil(int bytes) => (int)((uint)(bytes - 1 + (1u << (BytesShiftPerElement - 1))) >> (BytesShiftPerElement - 1));
     internal static int GetElementLengthFromBytesFloor(int bytes) => bytes >> (BytesShiftPerElement - 1);
 }

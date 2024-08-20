@@ -62,10 +62,11 @@ public static class QrDataEncoder
             : data.ContainsAnyExcept(NumericCharacters) ? ModeIndicator.Alphanumeric : ModeIndicator.Numeric;
     }
 
+    //TODO: Rename this
     public static IEnumerable<byte> EncodeDataBitStream(QrEncodingInfo qrDataEncoding, ReadOnlySpan<char> data)
     {
         var version = qrDataEncoding.Version;
-        var bitBuffer = new BitBuffer(qrDataEncoding.Version.DataCodewordsCapacity);
+        var bitWriter = new BitWriter(new(qrDataEncoding.Version.DataCodewordsCapacity * 8));
 
         foreach (var segment in qrDataEncoding.DataSegments)
         {
@@ -73,21 +74,21 @@ public static class QrDataEncoder
             switch (segment.Mode)
             {
                 case ModeIndicator.Numeric:
-                    NumericEncoder.Encode(bitBuffer, data[segment.Range]);
+                    NumericEncoder.Encode(bitWriter, data[segment.Range]);
                     break;
                 case ModeIndicator.Alphanumeric:
-                    AlphanumericEncoder.Encode(bitBuffer, data[segment.Range]);
+                    AlphanumericEncoder.Encode(bitWriter, data[segment.Range]);
                     break;
                 case ModeIndicator.Byte:
                     //TODO: Add byte encoder to allow making this more efficient (e.g vectorization) and allow testability
                     //e.g read 4 bytes at a time and write 32 bits
                     foreach (var c in data[segment.Range])
                     {
-                        bitBuffer.WriteBits(c, 8);
+                        bitWriter.WriteBitsBigEndian(c, 8);
                     }
                     break;
                 case ModeIndicator.Kanji:
-                    KanjiEncoder.Encode(bitBuffer, data[segment.Range]);
+                    KanjiEncoder.Encode(bitWriter, data[segment.Range]);
                     break;
                 default:
                     throw new UnreachableException($"Mode '{segment.Mode}' not expected.");
@@ -95,30 +96,30 @@ public static class QrDataEncoder
 #pragma warning restore IDE0010 // Add missing cases
         }
 
-        QrTerminatorBlock.WriteTerminator(bitBuffer, version);
+        QrTerminatorBlock.WriteTerminator(bitWriter, version);
 
-        var codewords = bitBuffer.ByteCount;
+        var codewords = bitWriter.BytesWritten;
         while (codewords <= version.DataCodewordsCapacity - 4)
         {
-            bitBuffer.WriteBits(PadPattern32Bits, 32);
+            bitWriter.WriteBitsBigEndian(PadPattern32Bits, 32);
             codewords += 4;
         }
-
+        //TODO: Add tests for this - this is wrong!
         var alternate = false;
         while (codewords < version.DataCodewordsCapacity)
         {
-            bitBuffer.WriteBits(alternate ? PadPattern8_1 : PadPattern8_2, 8);
+            bitWriter.WriteBitsBigEndian(alternate ? PadPattern8_1 : PadPattern8_2, 8);
             codewords++;
         }
 
-        return bitBuffer.AsByteEnumerable();
+        return bitWriter.Buffer.AsByteEnumerable();
     }
 
     private const byte PadPattern8_1 = 0b1110_1100;
     private const byte PadPattern8_2 = 0b0001_0001;
     private const uint PadPattern32Bits = unchecked((uint)((PadPattern8_1 << 24) | (PadPattern8_2 << 16) | (PadPattern8_1 << 8) | PadPattern8_2));
 
-    public static unsafe BitBuffer EncodeAndInterleaveErrorCorrectionBlocks(QrVersion version, BitBuffer dataCodewordsBitBuffer)
+    public static unsafe BitWriter EncodeAndInterleaveErrorCorrectionBlocks(QrVersion version, BitBuffer dataCodewordsBitBuffer)
     {
         if (dataCodewordsBitBuffer.ByteCount != version.DataCodewordsCapacity)
         {
@@ -128,9 +129,9 @@ public static class QrDataEncoder
         var errorCorrectionCodewordsPerBlock = version.ErrorCorrectionBlocks.ErrorCorrectionCodewordsPerBlock;
         var errorCorrectionBlocks = version.ErrorCorrectionBlocks;
         var maxDataCodewordsInBlocks = errorCorrectionBlocks.MaxDataCodewordsInBlock;
-        var resultBitBuffer = new BitBuffer(version.TotalCodewords >> 2);
+        var resultBitBuffer = new BitWriter(new(version.TotalCodewords >> 2));
 
-        // max number of codewords in a data block is 123, so ensure buffer size is greater than or equal to 123
+        // max number of codewords in a data block is 123, so ensure writer size is greater than or equal to 123
         Span<byte> dataCodewordsDestination = stackalloc byte[128];
 
         var codewordsSeen = 0;
@@ -140,11 +141,10 @@ public static class QrDataEncoder
             {
                 if (i < b.DataCodewordsPerBlock)
                 {
-                    //TODO: Add indexer to BitBuffer?
                     var written = dataCodewordsBitBuffer.GetBytes(codewordsSeen + i, 1, dataCodewordsDestination);
                     Debug.Assert(written == 1);
                     //var dataCodewords = dataCodewordsDestination[..written];
-                    resultBitBuffer.WriteBits(dataCodewordsDestination[0], 8);
+                    resultBitBuffer.WriteBitsBigEndian(dataCodewordsDestination[0], 8);
                 }
                 codewordsSeen += b.DataCodewordsPerBlock;
             }
@@ -166,8 +166,8 @@ public static class QrDataEncoder
             var (written, separator) = BinaryFiniteField.Divide(dataCodewords, generator, divisionDestination);
             var divisionResult = divisionDestination[..written];
             var errorCodewords = divisionResult[separator..];
-            Span<byte> buffer = errorBlocks[blockIndex - 1];
-            errorCodewords.CopyTo(buffer);
+            Span<byte> writer = errorBlocks[blockIndex - 1];
+            errorCodewords.CopyTo(writer);
             blockIndex++;
             codewordsSeen = b.DataCodewordsPerBlock;
         }
@@ -178,7 +178,7 @@ public static class QrDataEncoder
             foreach (var b in errorCorrectionBlocks.EnumerateIndividualBlocks())
             {
                 ReadOnlySpan<byte> bytes = errorBlocks[errorBlockIndex];
-                resultBitBuffer.WriteBits(bytes[i], 8);
+                resultBitBuffer.WriteBitsBigEndian(bytes[i], 8);
                 errorBlockIndex++;
             }
             errorBlockIndex = 0;
