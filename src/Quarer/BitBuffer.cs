@@ -53,7 +53,7 @@ public sealed class BitBuffer
 {
     private const int BitsPerElement = 32;
     private const int BitShiftPerElement = 5;
-    private const int BytesPerElement = 4;
+    private const int BytesPerElement = 32 >> 3;
     private const int BytesShiftPerElement = 3;
 
     private readonly List<uint> _buffer;

@@ -1,5 +1,6 @@
 ﻿namespace Quarer;
 
+//TODO: Make static?
 internal readonly struct QrHeaderBlock
 {
     private QrHeaderBlock(ModeIndicator modeIndicator, ushort characterCountBitCount, int dataCharactersCount)

@@ -1,4 +1,6 @@
-﻿namespace Quarer.Tests;
+﻿using System.Text;
+
+namespace Quarer.Tests;
 
 public sealed class QrDataEncoderTests
 {
@@ -58,18 +60,74 @@ public sealed class QrDataEncoderTests
     }
 
     [Fact]
-    public void EncodeDataBitStream_ValidNumericData_ReturnsExpectedBitStream()
+    public void EncodeDataBits_ValidNumericData_ReturnsExpectedBitStream()
     {
-        var data = "1234567890";
+        var tripletOne = 012;
+        var tripletTwo = 345;
+        var doubleDigit = 67;
+        var data = $"0{tripletOne}{tripletTwo}{doubleDigit}";
         var errorCorrectionLevel = ErrorCorrectionLevel.M;
-        var version = QrVersion.GetVersion(1, errorCorrectionLevel); //34 input data character capacity
-        var characterCount = CharacterCount.GetCharacterCountBitCount(version, ModeIndicator.Numeric);
-        var encodingInfo = new QrEncodingInfo(version, [DataSegment.Create(characterCount, ModeIndicator.Numeric, NumericEncoder.GetBitStreamLength(data), new(0, data.Length))]);
+        var version = QrVersion.GetVersion(1, errorCorrectionLevel);
+        var characterBitCount = CharacterCount.GetCharacterCountBitCount(version, ModeIndicator.Numeric);
+        var encodingInfo = new QrEncodingInfo(version, [DataSegment.Create(characterBitCount, ModeIndicator.Numeric, NumericEncoder.GetBitStreamLength(data), new(0, data.Length))]);
 
-        var bitStream = QrDataEncoder.EncodeDataBitStream(encodingInfo, data).ToArray();
-        // mode indicator, character count, data bits, terminator
-        var expectedCount = 4 + characterCount + NumericEncoder.GetBitStreamLength(new char[34]) + 4;
-        Assert.Equal(expectedCount / 8, bitStream.Length);
+        var bitBuffer = QrDataEncoder.EncodeDataBits(encodingInfo, data);
+        // 16 data codeword capacity
+        Assert.Equal(16, bitBuffer.ByteCount);
+        AssertExtensions.BitsEqual($"""
+            {(int)ModeIndicator.Numeric:B4}
+            {data.Length.ToString($"B{characterBitCount}")}
+            {tripletOne:B10}{tripletTwo:B10}{doubleDigit:B7}
+            {"0000"}
+            {"000"}
+            {QrDataEncoder.PadPattern32Bits:B32}
+            {QrDataEncoder.PadPattern32Bits:B32}
+            {QrDataEncoder.PadPattern8_1:B8}
+            {QrDataEncoder.PadPattern8_2:B8}
+            """, bitBuffer.AsBitEnumerable(), divideIntoBytes: true);
+    }
+
+    [Fact]
+    public void EncodeDataBits_ValidAlphanumericData_ReturnsExpectedBitStream2()
+    {
+        var pair1 = "AB";
+        var pair2 = "BC";
+        var pair3 = "/*";
+        var pair4 = "FG";
+        var pair5 = "$.";
+        var pair6 = "JK";
+        var pair7 = ": ";
+        var data = $"{pair1}{pair2}{pair3}{pair4}{pair5}{pair6}{pair7}";
+        var errorCorrectionLevel = ErrorCorrectionLevel.M;
+        var version = QrVersion.GetVersion(1, errorCorrectionLevel);
+        var characterBitCount = CharacterCount.GetCharacterCountBitCount(version, ModeIndicator.Alphanumeric);
+        var encodingInfo = new QrEncodingInfo(version, [DataSegment.Create(characterBitCount, ModeIndicator.Alphanumeric, AlphanumericEncoder.GetBitStreamLength(data), new(0, data.Length))]);
+
+        var bitBuffer = QrDataEncoder.EncodeDataBits(encodingInfo, data);
+        var sb = new StringBuilder();
+
+        // 16 data codeword capacity
+        Assert.Equal(16, bitBuffer.ByteCount);
+        AssertExtensions.BitsEqual($"""
+            {(int)ModeIndicator.Alphanumeric:B4}
+            {data.Length.ToString($"B{characterBitCount}")}
+            {Bits(pair1)}{Bits(pair2)}{Bits(pair3)}{Bits(pair4)}{Bits(pair5)}{Bits(pair6)}{Bits(pair7)}
+            {"0000"}
+            {"00"}
+            {QrDataEncoder.PadPattern32Bits:B32}
+            """, bitBuffer.AsBitEnumerable(), divideIntoBytes: true);
+
+        string Bits(ReadOnlySpan<char> pair)
+        {
+            var writer = new BitWriter();
+            AlphanumericEncoder.Encode(writer, pair);
+            sb.Clear();
+            foreach (var b in writer.Buffer.AsBitEnumerable())
+            {
+                sb.Append(b ? '1' : '0');
+            }
+            return sb.ToString();
+        }
     }
 
     public static TheoryData<QrVersion, BitBuffer, byte[]> EncodeAndInterleaveErrorCorrectionBlocksData()

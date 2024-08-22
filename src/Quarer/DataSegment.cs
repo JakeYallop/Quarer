@@ -20,7 +20,7 @@ public readonly record struct DataSegment
     public ModeIndicator Mode { get; }
     public Range Range { get; }
     /// <summary>
-    /// Segment length including mode indicator and character count.
+    /// Segment length in bits including mode indicator and character count.
     /// </summary>
     public int FullSegmentLength { get; }
 

@@ -8,8 +8,8 @@ internal static class AssertExtensions
 {
     private const int StackAllocCharThreshold = 256;
 
-    public static void BitsEqual(ref DefaultInterpolatedStringHandler expected, IEnumerable<bool> actualBits) => BitsEqual(expected.ToStringAndClear(), actualBits);
-    public static unsafe void BitsEqual(scoped ReadOnlySpan<char> expected, IEnumerable<bool> actualBits)
+    public static void BitsEqual(ref DefaultInterpolatedStringHandler expected, IEnumerable<bool> actualBits, bool divideIntoBytes = false) => BitsEqual(expected.ToStringAndClear(), actualBits, divideIntoBytes);
+    public static unsafe void BitsEqual(scoped ReadOnlySpan<char> expected, IEnumerable<bool> actualBits, bool divideIntoBytes = false)
     {
         scoped ReadOnlySpan<char> actualBitsBuffer;
         if (actualBits.TryGetNonEnumeratedCount(out var count))
@@ -56,9 +56,18 @@ internal static class AssertExtensions
 
         if (!CollectionsMarshal.AsSpan(expectedBits).SequenceEqual(actualBitsBuffer))
         {
-            var s1 = string.Join(',', expectedBits);
-            var s2 = string.Join(',', actualBitsBuffer.ToArray());
-            throw EqualException.ForMismatchedValues(s1, s2);
+            if (divideIntoBytes)
+            {
+                var s1 = string.Join('|', expectedBits.Chunk(8).Select(chunk => string.Join(',', chunk)));
+                var s2 = string.Join('|', actualBitsBuffer.ToArray().Chunk(8).Select(chunk => string.Join(',', chunk)));
+                throw EqualException.ForMismatchedValues(s1, s2);
+            }
+            else
+            {
+                var s1 = string.Join(',', expectedBits);
+                var s2 = string.Join(',', actualBitsBuffer.ToArray());
+                throw EqualException.ForMismatchedValues(s1, s2);
+            }
         }
     }
 }

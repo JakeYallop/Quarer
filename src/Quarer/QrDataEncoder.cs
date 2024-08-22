@@ -62,32 +62,43 @@ public static class QrDataEncoder
             : data.ContainsAnyExcept(NumericCharacters) ? ModeIndicator.Alphanumeric : ModeIndicator.Numeric;
     }
 
-    //TODO: Rename this
-    public static IEnumerable<byte> EncodeDataBitStream(QrEncodingInfo qrDataEncoding, ReadOnlySpan<char> data)
+    /// <summary>
+    /// Encodes the data codeword stream, including mode indicators, character counts, and a terminator symbol if necessary.
+    /// </summary>
+    /// <param name="qrDataEncoding"></param>
+    /// <param name="data"></param>
+    /// <returns></returns>
+    public static BitBuffer EncodeDataBits(QrEncodingInfo qrDataEncoding, ReadOnlySpan<char> data)
     {
         var version = qrDataEncoding.Version;
         var bitWriter = new BitWriter(new(qrDataEncoding.Version.DataCodewordsCapacity * 8));
 
         foreach (var segment in qrDataEncoding.DataSegments)
         {
+            var dataSlice = data[segment.Range];
 #pragma warning disable IDE0010 // Add missing cases
             switch (segment.Mode)
             {
                 case ModeIndicator.Numeric:
+                    WriteHeader(bitWriter, version, ModeIndicator.Numeric, dataSlice);
                     NumericEncoder.Encode(bitWriter, data[segment.Range]);
                     break;
                 case ModeIndicator.Alphanumeric:
+
+                    WriteHeader(bitWriter, version, ModeIndicator.Alphanumeric, dataSlice);
                     AlphanumericEncoder.Encode(bitWriter, data[segment.Range]);
                     break;
                 case ModeIndicator.Byte:
                     //TODO: Add byte encoder to allow making this more efficient (e.g vectorization) and allow testability
                     //e.g read 4 bytes at a time and write 32 bits
+                    WriteHeader(bitWriter, version, ModeIndicator.Byte, dataSlice);
                     foreach (var c in data[segment.Range])
                     {
                         bitWriter.WriteBitsBigEndian(c, 8);
                     }
                     break;
                 case ModeIndicator.Kanji:
+                    WriteHeader(bitWriter, version, ModeIndicator.Byte, dataSlice);
                     KanjiEncoder.Encode(bitWriter, data[segment.Range]);
                     break;
                 default:
@@ -98,26 +109,44 @@ public static class QrDataEncoder
 
         QrTerminatorBlock.WriteTerminator(bitWriter, version);
 
+        PadBitsInFinalCodeword(bitWriter);
+
         var codewords = bitWriter.BytesWritten;
         while (codewords <= version.DataCodewordsCapacity - 4)
         {
             bitWriter.WriteBitsBigEndian(PadPattern32Bits, 32);
             codewords += 4;
         }
-        //TODO: Add tests for this - this is wrong!
-        var alternate = false;
+
+        var alternate = true;
         while (codewords < version.DataCodewordsCapacity)
         {
             bitWriter.WriteBitsBigEndian(alternate ? PadPattern8_1 : PadPattern8_2, 8);
+            alternate = !alternate;
             codewords++;
         }
 
-        return bitWriter.Buffer.AsByteEnumerable();
+        return bitWriter.Buffer;
+
+        static void WriteHeader(BitWriter writer, QrVersion version, ModeIndicator mode, ReadOnlySpan<char> dataSlice)
+        {
+            var header = QrHeaderBlock.Create(version, mode, mode.GetDataCharacterLength(dataSlice));
+            header.WriteHeader(writer);
+        }
+
+        static void PadBitsInFinalCodeword(BitWriter writer)
+        {
+            var remainingBitsInFinalCodewordAfterTerminator = writer.BitsWritten & 7;
+            if (remainingBitsInFinalCodewordAfterTerminator != 0)
+            {
+                writer.WriteBitsBigEndian(0, 8 - remainingBitsInFinalCodewordAfterTerminator);
+            }
+        }
     }
 
-    private const byte PadPattern8_1 = 0b1110_1100;
-    private const byte PadPattern8_2 = 0b0001_0001;
-    private const uint PadPattern32Bits = unchecked((uint)((PadPattern8_1 << 24) | (PadPattern8_2 << 16) | (PadPattern8_1 << 8) | PadPattern8_2));
+    public const byte PadPattern8_1 = 0b1110_1100;
+    public const byte PadPattern8_2 = 0b0001_0001;
+    public const uint PadPattern32Bits = unchecked((uint)((PadPattern8_1 << 24) | (PadPattern8_2 << 16) | (PadPattern8_1 << 8) | PadPattern8_2));
 
     public static unsafe BitWriter EncodeAndInterleaveErrorCorrectionBlocks(QrVersion version, BitBuffer dataCodewordsBitBuffer)
     {
