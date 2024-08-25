@@ -25,5 +25,7 @@ public sealed class TrackedBitMatrix : BitMatrix
         }
     }
 
-    public bool HasChanged(int x, int y) => Changes[x, y];
+    //TODO: Missing tests for this method
+    public bool IsSet(int x, int y) => Changes[x, y];
+    public bool IsEmpty(int x, int y) => !Changes[x, y];
 }

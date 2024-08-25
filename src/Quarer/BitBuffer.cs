@@ -253,10 +253,10 @@ public sealed class BitBuffer
     }
 
     /// <summary>
-    /// Set the Count of this bitBuffer to the specified number of bits. If the underlying buffer is expanded, any new bits are
+    /// Set the <see cref="Count"/> of this bitBuffer to the specified number of bits. If the underlying buffer is expanded, any new bits are
     /// set to zero.
     /// <para>
-    /// Under certain conditions, additional non-zeroed data could be exposed. Writing to the buffer, then calling SetCount
+    /// Under certain conditions, additional non-zeroed data could be exposed. Writing to the buffer, then calling <c>SetCount</c>
     /// to shrink it will not zero-out the underlying storage used by the buffer.
     /// </para>
     /// </summary>
