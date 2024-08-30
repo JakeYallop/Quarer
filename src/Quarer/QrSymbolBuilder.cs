@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 
 namespace Quarer;
 
@@ -218,22 +219,8 @@ public static class QrCodeSymbolBuilder
         matrix[2, 8] = (formatInformation & 0b001_0000_0000_0000) != 0;
         matrix[1, 8] = (formatInformation & 0b010_0000_0000_0000) != 0;
         matrix[0, 8] = (formatInformation & 0b100_0000_0000_0000) != 0;
-    }
 
-    public static void EncodeVersionInformation(TrackedBitMatrix matrix, QrVersion version)
-    {
-        var versionInformation = VersionInformation[version.Version];
-        var size = matrix.Width;
-
-        for (var i = 0; i <= 2; i++)
-        {
-            for (var j = 0; j < 6; j++)
-            {
-                var v = (versionInformation >> ((j * 3) + i)) & 1;
-                matrix[j, size - 11 + i] = v != 0;
-                matrix[size - 11 + i, j] = v != 0;
-            }
-        }
+        //TODO: Write version of this that uses loops and compare perf vs code size
     }
 
     private static ushort GetFormatInformation(ErrorCorrectionLevel errorCorrectionLevel, byte maskPattern)
@@ -247,6 +234,121 @@ public static class QrCodeSymbolBuilder
             _ => throw new UnreachableException()
         };
         return formatInfo;
+    }
+
+    public static void EncodeVersionInformation(TrackedBitMatrix matrix, QrVersion version)
+    {
+        if (version.Version is <= 7)
+        {
+            return;
+        }
+
+        var versionInformation = VersionInformation[version.Version];
+        var size = version.ModulesPerSide;
+
+        Debug.Assert(matrix.Width == matrix.Height);
+        if (size != matrix.Width)
+        {
+            throw new InvalidOperationException("Matrix size does not match version size.");
+        }
+
+        for (var i = 0; i <= 2; i++)
+        {
+            for (var j = 0; j < 6; j++)
+            {
+                var v = (versionInformation >> ((j * 3) + i)) & 1;
+                matrix[j, size - 11 + i] = v != 0;
+                matrix[size - 11 + i, j] = v != 0;
+            }
+        }
+    }
+
+    public static void EncodeDataBits(TrackedBitMatrix matrix, QrVersion version, BitBuffer data)
+    {
+        if (version.TotalCodewords != data.ByteCount)
+        {
+            throw new InvalidOperationException("Data byte count does not match total codewords for QR code version.");
+        }
+
+#pragma warning disable IDE0057 // Use range operator //https://github.com/dotnet/roslyn/issues/74960
+        Span<byte> yRangeValues = stackalloc byte[187].Slice(0, version.ModulesPerSide);
+        Span<byte> yRangeValuesReverse = stackalloc byte[187].Slice(0, version.ModulesPerSide);
+#pragma warning restore IDE0057 // Use range operator
+
+        Span<byte> xRangeValues = stackalloc byte[187 / 2];
+        var xValuesWritten = XRange(version, xRangeValues);
+        var xRange = (ReadOnlySpan<byte>)xRangeValues[..xValuesWritten];
+        var yRangeTopDown = YRangeTopDown(yRangeValues);
+        var yRangeBottomUp = YRangeBottomUp(yRangeValuesReverse);
+
+        var reverse = false;
+        var bitIndex = 0;
+        foreach (var x in xRange)
+        {
+            var yRange = reverse ? yRangeTopDown : yRangeBottomUp;
+
+            foreach (var y in yRange)
+            {
+                if (matrix.IsEmpty(x, y))
+                {
+                    var bit = data[(bitIndex / 8) + (bitIndex % 8)];
+                    matrix[x, y] = bit;
+                }
+                bitIndex++;
+
+                if (matrix.IsEmpty(x - 1, y))
+                {
+                    var bit = data[(bitIndex / 8) + (bitIndex % 8)];
+                    matrix[x, y - 1] = bit;
+                }
+                bitIndex++;
+            }
+            reverse = !reverse;
+        }
+
+        Debug.Assert(bitIndex == version.TotalCodewords * 8);
+    }
+
+    private static int XRange(QrVersion version, Span<byte> destination)
+    {
+        var index = 0;
+        for (var i = version.ModulesPerSide - 1; i >= 7; i -= 2)
+        {
+            destination[index] = (byte)i;
+            index++;
+        }
+
+        for (var i = 5; i >= 0; i -= 2)
+        {
+            destination[index] = (byte)i;
+            index++;
+        }
+
+        return index + 1;
+    }
+
+    private static ReadOnlySpan<byte> YRangeTopDown(Span<byte> destination)
+    {
+        var yRange = destination;
+        var index = (byte)0;
+        for (var i = 0; i < yRange.Length; i++)
+        {
+            yRange[i] = index;
+            index++;
+        }
+        return yRange;
+    }
+
+    private static ReadOnlySpan<byte> YRangeBottomUp(Span<byte> destination)
+    {
+        var yRange = destination;
+        var index = (byte)0;
+        for (var i = yRange.Length - 1; i >= 0; i--)
+        {
+            yRange[i] = index;
+            index++;
+        }
+        return yRange;
     }
 
     private static ReadOnlySpan<ushort> FormatInformationL =>
