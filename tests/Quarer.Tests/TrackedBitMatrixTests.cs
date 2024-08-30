@@ -2,16 +2,19 @@
 public class TrackedBitMatrixTests
 {
     [Fact]
-    public void Ctor_WrapsExistingBitMatrix()
+    public void Wrap_WrapsExistingBitMatrix()
     {
         var width = 33;
         var height = 31;
         var matrix = new BitMatrix(width, height);
         matrix[0, 0] = true;
         matrix[width - 1, height - 1] = true;
-        var trackedMatrix = new TrackedBitMatrix(matrix);
+        var trackedMatrix = TrackedBitMatrix.Wrap(matrix);
+        matrix[0, 1] = true;
         Assert.True(trackedMatrix[0, 0]);
         Assert.True(trackedMatrix[width - 1, height - 1]);
+        Assert.True(matrix[0, 1]);
+        Assert.True(trackedMatrix[0, 1]);
         Assert.False(trackedMatrix.Changes[0, 0]);
         Assert.False(trackedMatrix.Changes[width - 1, height - 1]);
     }

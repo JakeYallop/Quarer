@@ -14,7 +14,7 @@ public class QrVersion : IEquatable<QrVersion>, IComparable<QrVersion>
     internal QrVersion(byte version, ErrorCorrectionLevel errorCorrectionLevel, QrErrorCorrectionBlocks errorCorrectionBlocks)
     {
         Version = version;
-        AlignmentPatternCenters = AlignmentPatternCentersLookup[version];
+        AlignmentPatternCenters = AlignmentPatternCentersLookup[version - 1];
         ErrorCorrectionLevel = errorCorrectionLevel;
         ErrorCorrectionBlocks = errorCorrectionBlocks;
     }

@@ -20,7 +20,6 @@ internal static class QrVersionLookup
     public static bool TryGetVersionForDataCapacity(int requestedCapacityDataCharacters, ModeIndicator mode, ErrorCorrectionLevel errorCorrectionLevel, [NotNullWhen(true)] out QrVersion? version)
     {
         version = default!;
-        var mappedMode = MapModeIndicator(mode);
         EnsureValidErrorCorrectionLevel(errorCorrectionLevel);
 
         var relevantCapacities = GetRelevantVersions(errorCorrectionLevel);
@@ -35,25 +34,11 @@ internal static class QrVersionLookup
         return true;
     }
 
-    private static int MapModeIndicator(ModeIndicator mode)
-    {
-#pragma warning disable IDE0072 // Add missing cases
-        return mode switch
-        {
-            ModeIndicator.Numeric => 0,
-            ModeIndicator.Alphanumeric => 1,
-            ModeIndicator.Byte => 2,
-            ModeIndicator.Kanji => 3,
-            _ => throw new NotSupportedException($"Mode must be one of {ModeIndicator.Numeric}, {ModeIndicator.Alphanumeric}, {ModeIndicator.Byte} or {ModeIndicator.Kanji}.")
-        };
-#pragma warning restore IDE0072 // Add missing cases
-    }
-
     private static void EnsureValidErrorCorrectionLevel(ErrorCorrectionLevel errorCorrectionLevel)
     {
-        if ((int)errorCorrectionLevel is < 1 or > 4)
+        if ((int)errorCorrectionLevel is < 0 or > 3)
         {
-            ThrowOutOfRangeException(1, 4, "Error correction level");
+            ThrowOutOfRangeException(0, 3, "Error correction level");
         }
     }
 
@@ -91,7 +76,7 @@ internal static class QrVersionLookup
 
     [DoesNotReturn]
     private static void ThrowOutOfRangeException(int min, int max, string description)
-        => throw new ArgumentOutOfRangeException($"{description} must be between {min} and {max}.");
+        => throw new ArgumentOutOfRangeException($"{description} must be between {min} and {max}.", innerException: null);
 
     // individual error blocks must be in ascending order of data codewords per block
     // as this is key for the interleaving process, where smaller data blocks are intrerleaved first

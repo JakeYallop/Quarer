@@ -290,6 +290,19 @@ public sealed class BitBuffer
         }
     }
 
+    //TODO: Tests for this
+    public void CopyTo(BitBuffer destination)
+    {
+        ArgumentNullException.ThrowIfNull(destination);
+        if (Count > destination.Count)
+        {
+            throw new ArgumentException("The destination buffer is too short.", nameof(destination));
+        }
+        var source = CollectionsMarshal.AsSpan(_buffer);
+        var destinationBuffer = CollectionsMarshal.AsSpan(destination._buffer);
+        source.CopyTo(destinationBuffer);
+    }
+
     private static int ReadBytes(uint element, int start, int end, Span<byte> destination)
     {
         Debug.Assert(start % 8 == 0, "Expected start offset to be byte aligned.");

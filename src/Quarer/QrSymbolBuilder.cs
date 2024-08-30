@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Numerics;
 
 namespace Quarer;
 
@@ -6,35 +7,25 @@ namespace Quarer;
 // to create an EncodePositionDetectionPatterns method in such case so 3 separate calls are not needed)
 public static class QrCodeSymbolBuilder
 {
-    public static TrackedBitMatrix BuildSymbol(QrVersion version, BitWriter dataCodewords)
-        => BuildSymbol(version, dataCodewords, new TrackedBitMatrix(version.ModulesPerSide, version.ModulesPerSide));
+    public static TrackedBitMatrix BuildSymbol(QrVersion version, BitWriter dataCodewords, byte maskPattern)
+        => BuildSymbol(new TrackedBitMatrix(version.ModulesPerSide, version.ModulesPerSide), version, dataCodewords, maskPattern);
 
-    public static TrackedBitMatrix BuildSymbol(QrVersion version, BitWriter dataCodewords, TrackedBitMatrix matrix)
+    public static TrackedBitMatrix BuildSymbol(TrackedBitMatrix matrix, QrVersion version, BitWriter dataCodewords, byte maskPattern)
     {
-        QrFunctionPatternsEncoder.EncodePositionDetectionPattern(matrix, PositionDetectionPatternLocation.TopLeft);
-        QrFunctionPatternsEncoder.EncodePositionDetectionPattern(matrix, PositionDetectionPatternLocation.TopRight);
-        QrFunctionPatternsEncoder.EncodePositionDetectionPattern(matrix, PositionDetectionPatternLocation.BottomLeft);
+        EncodePositionDetectionPattern(matrix, PositionDetectionPatternLocation.TopLeft);
+        EncodePositionDetectionPattern(matrix, PositionDetectionPatternLocation.TopRight);
+        EncodePositionDetectionPattern(matrix, PositionDetectionPatternLocation.BottomLeft);
 
-        QrFunctionPatternsEncoder.EncodeStaticDarkModule(matrix);
+        EncodeStaticDarkModule(matrix);
 
-        QrFunctionPatternsEncoder.EncodePositionAdjustmentPatterns(matrix, version);
+        EncodePositionAdjustmentPatterns(matrix, version);
 
-        QrFunctionPatternsEncoder.EncodeTimingPatterns(matrix);
+        EncodeTimingPatterns(matrix);
 
         //TODO: type info, version info, data
         return matrix;
     }
-}
 
-public enum PositionDetectionPatternLocation
-{
-    TopLeft = 1,
-    TopRight,
-    BottomLeft,
-}
-
-public static class QrFunctionPatternsEncoder
-{
     private readonly ref struct Point(int x, int y)
     {
         public int X { get; } = x;
@@ -165,8 +156,163 @@ public static class QrFunctionPatternsEncoder
             matrix[6, i] = bit;
         }
     }
+
+    /// <summary>
+    /// The generator polynomial used in calculating the BCH code for format information.
+    /// <para>
+    /// <c>x^10 + x^8 + x^5 + x^4 + x^2 + x + 1</c>
+    /// </para>
+    /// </summary>
+    public const ushort FormatInformationGeneratorPolynomial = 0b10100110111;
+    /// <summary>
+    /// Mask used for masking format information encoded in a BCH code.
+    /// </summary>
+    public const ushort FormatBchCodeMask = 0b101_0100_0001_0010;
+
+    /// <summary>
+    /// The generator polynomial used in calculating the BCH code for version information.
+    /// <para>
+    /// <c>x^12 + x^11 + x^10 + x^9 + x^8 + x^5 + x^2 + 1</c>
+    /// </para>
+    /// </summary>
+    public const int VersionInformationGeneratorPolynomial = 0b1111100100101;
+
+    public static void EncodeFormatInformation(TrackedBitMatrix matrix, ErrorCorrectionLevel errorCorrectionLevel, byte maskPattern)
+    {
+        var formatInformation = GetFormatInformation(errorCorrectionLevel, maskPattern);
+        var size = matrix.Width;
+        Debug.Assert(matrix.Width == matrix.Height);
+
+        matrix[8, 0] = (formatInformation & 0b000_0000_0000_0001) != 0;
+        matrix[8, 1] = (formatInformation & 0b000_0000_0000_0010) != 0;
+        matrix[8, 2] = (formatInformation & 0b000_0000_0000_0100) != 0;
+        matrix[8, 3] = (formatInformation & 0b000_0000_0000_1000) != 0;
+        matrix[8, 4] = (formatInformation & 0b000_0000_0001_0000) != 0;
+        matrix[8, 5] = (formatInformation & 0b000_0000_0010_0000) != 0;
+        // skipped - timing pattern
+        matrix[8, 7] = (formatInformation & 0b000_0000_0100_0000) != 0;
+        matrix[8, 8] = (formatInformation & 0b000_0000_1000_0000) != 0;
+
+        matrix[8, size - 7] = (formatInformation & 0b000_0001_0000_0000) != 0;
+        matrix[8, size - 7] = (formatInformation & 0b000_0010_0000_0000) != 0;
+        matrix[8, size - 7] = (formatInformation & 0b000_0100_0000_0000) != 0;
+        matrix[8, size - 7] = (formatInformation & 0b000_1000_0000_0000) != 0;
+        matrix[8, size - 7] = (formatInformation & 0b001_0000_0000_0000) != 0;
+        matrix[8, size - 7] = (formatInformation & 0b010_0000_0000_0000) != 0;
+        matrix[8, size - 7] = (formatInformation & 0b100_0000_0000_0000) != 0;
+
+        matrix[size - 1, 8] = (formatInformation & 0b000_0000_0000_0001) != 0;
+        matrix[size - 2, 8] = (formatInformation & 0b000_0000_0000_0010) != 0;
+        matrix[size - 3, 8] = (formatInformation & 0b000_0000_0000_0100) != 0;
+        matrix[size - 4, 8] = (formatInformation & 0b000_0000_0000_1000) != 0;
+        matrix[size - 5, 8] = (formatInformation & 0b000_0000_0001_0000) != 0;
+        matrix[size - 6, 8] = (formatInformation & 0b000_0000_0010_0000) != 0;
+        matrix[size - 7, 8] = (formatInformation & 0b000_0000_0100_0000) != 0;
+        matrix[size - 8, 8] = (formatInformation & 0b000_0000_1000_0000) != 0;
+
+        matrix[7, 8] = (formatInformation & 0b000_0001_0000_0000) != 0;
+        // skipped - timing pattern
+        matrix[5, 8] = (formatInformation & 0b000_0010_0000_0000) != 0;
+        matrix[4, 8] = (formatInformation & 0b000_0100_0000_0000) != 0;
+        matrix[3, 8] = (formatInformation & 0b000_1000_0000_0000) != 0;
+        matrix[2, 8] = (formatInformation & 0b001_0000_0000_0000) != 0;
+        matrix[1, 8] = (formatInformation & 0b010_0000_0000_0000) != 0;
+        matrix[0, 8] = (formatInformation & 0b100_0000_0000_0000) != 0;
+    }
+
+    public static void EncodeVersionInformation(TrackedBitMatrix matrix, QrVersion version)
+    {
+        var versionInformation = VersionInformation[version.Version];
+        var size = matrix.Width;
+
+        for (var i = 0; i <= 2; i++)
+        {
+            for (var j = 0; j < 6; j++)
+            {
+                var v = (versionInformation >> ((j * 3) + i)) & 1;
+                matrix[j, size - 11 + i] = v != 0;
+                matrix[size - 11 + i, j] = v != 0;
+            }
+        }
+    }
+
+    private static ushort GetFormatInformation(ErrorCorrectionLevel errorCorrectionLevel, byte maskPattern)
+    {
+        var formatInfo = errorCorrectionLevel switch
+        {
+            ErrorCorrectionLevel.L => FormatInformationL[maskPattern],
+            ErrorCorrectionLevel.M => FormatInformationM[maskPattern],
+            ErrorCorrectionLevel.Q => FormatInformationQ[maskPattern],
+            ErrorCorrectionLevel.H => FormatInformationH[maskPattern],
+            _ => throw new UnreachableException()
+        };
+        return formatInfo;
+    }
+
+    private static ReadOnlySpan<ushort> FormatInformationL =>
+    [
+        0b111_0111_1100_0100,
+        0b111_0010_1111_0011,
+        0b111_1101_1010_1010,
+        0b111_1000_1001_1101,
+        0b110_0110_0010_1111,
+        0b110_0011_0001_1000,
+        0b110_1100_0100_0001,
+        0b110_1001_0111_0110
+    ];
+
+    private static ReadOnlySpan<ushort> FormatInformationM =>
+    [
+        0b101_0100_0001_0010,
+        0b101_0001_0010_0101,
+        0b101_1110_0111_1100,
+        0b101_1011_0100_1011,
+        0b100_0101_1111_1001,
+        0b100_0000_1100_1110,
+        0b100_1111_1001_0111,
+        0b100_1010_1010_0000
+    ];
+
+    private static ReadOnlySpan<ushort> FormatInformationQ =>
+    [
+        0b011_0101_0101_1111,
+        0b011_0000_0110_1000,
+        0b011_1111_0011_0001,
+        0b011_1010_0000_0110,
+        0b010_0100_1011_0100,
+        0b010_0001_1000_0011,
+        0b010_1110_1101_1010,
+        0b010_1011_1110_1101
+    ];
+
+    private static ReadOnlySpan<ushort> FormatInformationH =>
+    [
+        0b001_0110_1000_1001,
+        0b001_0011_1011_1110,
+        0b001_1100_1110_0111,
+        0b001_1001_1101_0000,
+        0b000_0111_0110_0010,
+        0b000_0010_0101_0101,
+        0b000_1101_0000_1100,
+        0b000_1000_0011_1011
+    ];
+
+    private static ReadOnlySpan<int> VersionInformation => [
+        0, 0, 0, 0, 0, 0, 0, // first 7 versions do not have version information.
+        0x07C94, 0x085BC, 0x09A99, 0x0A4D3, 0x0BBF6,
+        0x0C762, 0x0D847, 0x0E60D, 0x0F928, 0x10B78,
+        0x1145D, 0x12A17, 0x13532, 0x149A6, 0x15683,
+        0x168C9, 0x177EC, 0x18EC4, 0x191E1, 0x1AFAB,
+        0x1B08E, 0x1CC1A, 0x1D33F, 0x1ED75, 0x1F250,
+        0x209D5, 0x216F0, 0x228BA, 0x2379F, 0x24B0B,
+        0x2542E, 0x26A64, 0x27541, 0x28C69
+    ];
+
 }
 
-public static class QrEncodingRegionsEncoder
+public enum PositionDetectionPatternLocation
 {
+    TopLeft = 1,
+    TopRight,
+    BottomLeft,
 }
