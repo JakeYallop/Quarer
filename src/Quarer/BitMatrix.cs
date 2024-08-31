@@ -33,38 +33,40 @@ public class BitMatrix
         }
     }
 
-    //TODO: Tests for this
-    //TODO: Provide an indexable read only view into the matrix so we avoid copying here.
-    //TODO: We shouldn't return a BItBuffer as its writeable.
-    public virtual BitBuffer GetRow(int y)
+    //TODO: Provide an indexable read only view into the matrix so we avoid copying here. We shouldn't return a BitBuffer as its writeable.
+    public virtual BitBuffer GetRow(int row)
     {
+        ArgumentOutOfRangeException.ThrowIfNegative(row);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(row, Height - 1);
+
         var buffer = new BitBuffer(Width);
         buffer.SetCountUnsafe(Width);
-        _values[y].CopyTo(buffer);
+        _values[row].CopyTo(buffer);
         return buffer;
     }
 
-    //TODO: Tests for this
-    //TODO: Provide an indexable read only view into the matrix so we avoid copying here.
-    //TODO: We shouldn't return a BItBuffer as its writeable.
-    public virtual BitBuffer GetColumn(int x)
+    //TODO: Provide an indexable read only view into the matrix so we avoid copying here. We shouldn't return a BitBuffer as its writeable.
+    public virtual BitBuffer GetColumn(int column)
     {
+        ArgumentOutOfRangeException.ThrowIfNegative(column);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(column, Width - 1);
+
         var buffer = new BitBuffer(Height);
         buffer.SetCountUnsafe(Height);
         for (var i = 0; i < Height; i++)
         {
-            buffer[i] = _values[i][x];
+            buffer[i] = _values[i][column];
         }
         return buffer;
     }
 
-    //TODO: Tests for this
     public virtual BitMatrix Clone()
     {
         var buffers = new BitBuffer[_values.Length];
         for (var i = 0; i < _values.Length; i++)
         {
             buffers[i] = new BitBuffer(_values[i].Count);
+            buffers[i].SetCountUnsafe(Width);
             _values[i].CopyTo(buffers[i]);
         }
         return new BitMatrix(buffers, Width, Height);

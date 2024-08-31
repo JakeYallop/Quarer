@@ -1,6 +1,14 @@
-﻿namespace Quarer.Tests;
+﻿using Xunit.Abstractions;
+
+namespace Quarer.Tests;
 public sealed class QrVersionLookupTests
 {
+    private readonly ITestOutputHelper _testOutput;
+    public QrVersionLookupTests(ITestOutputHelper testOutput)
+    {
+        _testOutput = testOutput;
+    }
+
     [Theory]
     [InlineData(254, ModeIndicator.Numeric, ErrorCorrectionLevel.L, 5)]
     [InlineData(255, ModeIndicator.Numeric, ErrorCorrectionLevel.L, 5)]
@@ -110,7 +118,7 @@ public sealed class QrVersionLookupTests
                 {
                     var inputDataCharacters = ModeErrorLevelVersionCapacityLookup[mode][errorLevel][version];
                     var expectedMode = MapMode(mode);
-                    var expectedErrorCorrectionLevel = (ErrorCorrectionLevel)(errorLevel + 1);
+                    var expectedErrorCorrectionLevel = MapErrorCorrectionLevel(errorLevel);
                     var expectedVersion = version + 1;
                     AssertVersion(inputDataCharacters, expectedMode, expectedErrorCorrectionLevel, expectedVersion);
                     AssertVersion(inputDataCharacters - 1, expectedMode, expectedErrorCorrectionLevel, expectedVersion);
@@ -122,8 +130,9 @@ public sealed class QrVersionLookupTests
             }
         }
 
-        static void AssertVersion(int inputDataCharacters, ModeIndicator expectedMode, ErrorCorrectionLevel expectedErrorCorrectionLevel, int expectedVersion)
+        void AssertVersion(int inputDataCharacters, ModeIndicator expectedMode, ErrorCorrectionLevel expectedErrorCorrectionLevel, int expectedVersion)
         {
+            _testOutput.WriteLine($"Running test for {inputDataCharacters}, expectedMode: {expectedMode}, expectedErrorCorrectionLevel: {expectedErrorCorrectionLevel}, expectedVersion: {expectedVersion}");
             var assertionMessage = $"Failed for inputDataCharacters: {inputDataCharacters}, expectedMode: {expectedMode}, expectedErrorCorrectionLevel: {expectedErrorCorrectionLevel}, expectedVersion: {expectedVersion}";
             Assert.True(QrVersionLookup.TryGetVersionForDataCapacity(inputDataCharacters, expectedMode, expectedErrorCorrectionLevel, out var qrVersion), assertionMessage);
             Assert.Equal(expectedVersion, qrVersion.Version);
@@ -141,6 +150,18 @@ public sealed class QrVersionLookupTests
                 _ => throw new ArgumentOutOfRangeException(nameof(index))
             };
         }
+
+        static ErrorCorrectionLevel MapErrorCorrectionLevel(int index)
+        {
+            return index switch
+            {
+                0 => ErrorCorrectionLevel.L,
+                1 => ErrorCorrectionLevel.M,
+                2 => ErrorCorrectionLevel.Q,
+                3 => ErrorCorrectionLevel.H,
+                _ => throw new ArgumentOutOfRangeException(nameof(index))
+            };
+        }
     }
 
     [Fact]
@@ -148,8 +169,8 @@ public sealed class QrVersionLookupTests
         => Assert.False(QrVersionLookup.TryGetVersionForDataCapacity(7089 + 1, ModeIndicator.Numeric, ErrorCorrectionLevel.L, out _));
 
     [Theory]
-    [InlineData((int)ErrorCorrectionLevel.L - 1)]
-    [InlineData((int)ErrorCorrectionLevel.H + 1)]
+    [InlineData(-1)]
+    [InlineData(4)]
     public void TryGetVersionForCapacity_InvalidErrorCorrectionLevel_ThrowsArgumentOutOfRangeException(int errorCorrectionLevel)
         => Assert.Throws<ArgumentOutOfRangeException>(() => QrVersionLookup.TryGetVersionForDataCapacity(1, ModeIndicator.Numeric, (ErrorCorrectionLevel)errorCorrectionLevel, out _));
 
@@ -175,8 +196,8 @@ public sealed class QrVersionLookupTests
     }
 
     [Theory]
-    [InlineData(ErrorCorrectionLevel.L - 1)]
-    [InlineData(ErrorCorrectionLevel.H + 1)]
+    [InlineData((ErrorCorrectionLevel)(-1))]
+    [InlineData((ErrorCorrectionLevel)4)]
     public void GetVersion_InvalidErrorCorrectionLevel_ThrowsNotSupportedException(ErrorCorrectionLevel errorCorrectionLevel)
         => Assert.Throws<ArgumentOutOfRangeException>(() => QrVersionLookup.GetVersion(1, errorCorrectionLevel));
 

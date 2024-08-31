@@ -44,8 +44,8 @@ public class QrVersion : IEquatable<QrVersion>, IComparable<QrVersion>
             var totalCount = 0;
             foreach (var item in ErrorCorrectionBlocks.Blocks)
             {
-                totalDataCodewords += item.DataCodewordsPerBlock * item.BlockCount;
-                totalCount += item.BlockCount;
+                totalDataCodewords += item.DataCodewordsPerBlock * item.Count;
+                totalCount += item.Count;
             }
             var totalCodewords = (ushort)(totalDataCodewords + (totalCount * ErrorCorrectionBlocks.ErrorCorrectionCodewordsPerBlock));
             Interlocked.CompareExchange(ref _totalCodewordsCapacity, totalCodewords, 0);
@@ -65,7 +65,7 @@ public class QrVersion : IEquatable<QrVersion>, IComparable<QrVersion>
             var total = 0;
             foreach (var item in ErrorCorrectionBlocks.Blocks)
             {
-                total += item.DataCodewordsPerBlock * item.BlockCount;
+                total += item.DataCodewordsPerBlock * item.Count;
             }
             Interlocked.CompareExchange(ref _dataCodewordsCapacity, (ushort)total, 0);
             return _dataCodewordsCapacity;
@@ -103,15 +103,14 @@ public class QrVersion : IEquatable<QrVersion>, IComparable<QrVersion>
 
     public class QrErrorCorrectionBlock(byte blockCount, ushort dataCodewordsPerBlock) : IEquatable<QrErrorCorrectionBlock>
     {
-        //TODO: Rename to Count?
-        public byte BlockCount { get; } = blockCount;
+        public byte Count { get; } = blockCount;
         public ushort DataCodewordsPerBlock { get; } = dataCodewordsPerBlock;
 
         public static bool operator ==(QrErrorCorrectionBlock left, QrErrorCorrectionBlock right) => left.Equals(right);
         public static bool operator !=(QrErrorCorrectionBlock left, QrErrorCorrectionBlock right) => !(left == right);
         public override bool Equals([NotNullWhen(true)] object? obj) => obj is QrErrorCorrectionBlock block && Equals(block);
-        public bool Equals([NotNullWhen(true)] QrErrorCorrectionBlock? other) => other is not null && BlockCount == other.BlockCount && DataCodewordsPerBlock == other.DataCodewordsPerBlock;
-        public override int GetHashCode() => HashCode.Combine(BlockCount, DataCodewordsPerBlock);
+        public bool Equals([NotNullWhen(true)] QrErrorCorrectionBlock? other) => other is not null && Count == other.Count && DataCodewordsPerBlock == other.DataCodewordsPerBlock;
+        public override int GetHashCode() => HashCode.Combine(Count, DataCodewordsPerBlock);
     }
 
     public class QrErrorCorrectionBlocks : IEquatable<QrErrorCorrectionBlocks>
@@ -139,7 +138,7 @@ public class QrVersion : IEquatable<QrVersion>, IComparable<QrVersion>
                 ushort count = 0;
                 foreach (var item in Blocks)
                 {
-                    count += item.BlockCount;
+                    count += item.Count;
                 }
                 Interlocked.CompareExchange(ref _blockCount, count, 0);
                 return _blockCount;
@@ -172,7 +171,7 @@ public class QrVersion : IEquatable<QrVersion>, IComparable<QrVersion>
         {
             foreach (var b in Blocks)
             {
-                for (var i = 0; i < b.BlockCount; i++)
+                for (var i = 0; i < b.Count; i++)
                 {
                     yield return b;
                 }

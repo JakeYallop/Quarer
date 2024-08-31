@@ -118,6 +118,7 @@ public sealed class BitBuffer
             }
         }
     }
+
     public void WriteBitsBigEndian<T>(int position, T value, int bitCount) where T : IBinaryInteger<T>
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(position, 0);
@@ -296,7 +297,6 @@ public sealed class BitBuffer
         }
     }
 
-    //TODO: Tests for this
     public void CopyTo(BitBuffer destination)
     {
         ArgumentNullException.ThrowIfNull(destination);

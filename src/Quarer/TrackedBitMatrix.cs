@@ -17,19 +17,17 @@ public sealed class TrackedBitMatrix : BitMatrix
 
     public override bool this[int x, int y]
     {
-        get => Original[x, y];
+        get => base[x, y];
         set
         {
             Changes[x, y] = true;
-            Original[x, y] = value;
+            base[x, y] = value;
         }
     }
 
     public static TrackedBitMatrix Wrap(BitMatrix bitMatrix) => new(bitMatrix, new(bitMatrix.Width, bitMatrix.Height));
 
-    //TODO: Tests for this
-    public override TrackedBitMatrix Clone() => new(Original.Clone(), Changes.Clone());
+    public override TrackedBitMatrix Clone() => new(base.Clone(), Changes.Clone());
 
-    //TODO: Missing tests for this method
     public bool IsEmpty(int x, int y) => !Changes[x, y];
 }

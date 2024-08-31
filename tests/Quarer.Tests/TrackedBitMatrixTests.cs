@@ -87,4 +87,41 @@ public class TrackedBitMatrixTests
         matrix.Changes[width - 1, height - 1] = true;
         Assert.True(matrix.Changes[width - 1, height - 1]);
     }
+
+    [Fact]
+    public void IsEmpty_ReturnsExpectedResult()
+    {
+        var m = new TrackedBitMatrix(33, 31);
+        Assert.True(m.IsEmpty(0, 0));
+
+        m[0, 0] = true;
+        m[0, 1] = false;
+        m[32, 1] = false;
+        m[0, 30] =  true;
+
+        Assert.False(m.IsEmpty(0, 0));
+        Assert.False(m.IsEmpty(0, 1));
+        Assert.False(m.IsEmpty(32, 1));
+        Assert.False(m.IsEmpty(0, 30));
+    }
+
+    [Fact]
+    public void Clone_ReturnsClonedMatrix()
+    {
+        var m = new TrackedBitMatrix(33, 33);
+        m[0, 0] = true;
+        m[32, 32] = true;
+
+        var clone = m.Clone();
+        Assert.True(clone[0, 0]);
+        Assert.True(clone[32, 32]);
+        m[0, 0] = false;
+        m[32, 32] = false;
+        Assert.True(clone[0, 0]);
+        Assert.True(clone[32, 32]);
+        clone[1, 1] = true;
+        clone[2, 2] = true;
+        Assert.False(m[1, 1]);
+        Assert.False(m[2, 2]);
+    }
 }

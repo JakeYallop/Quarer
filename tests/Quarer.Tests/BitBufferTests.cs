@@ -483,4 +483,30 @@ public class BitBufferTests
         bitBuffer.SetCountUnsafe(10);
         Assert.Throws<ArgumentException>(() => bitBuffer.SetCapacity(5));
     }
+
+    [Fact]
+    public void CopyTo_CopiesCorrectValues()
+    {
+        var bitBuffer = new BitBuffer();
+        bitBuffer.WriteBitsBigEndian(0, 0b1010_1010, 8);
+        var destination = new BitBuffer();
+        bitBuffer.CopyTo(destination);
+        AssertExtensions.BitsEqual("1010 1010", destination.AsBitEnumerable());
+    }
+
+    [Fact]
+    public void CopyTo_WhenDestinationIsNull_ThrowsArgumentNullException()
+    {
+        var bitBuffer = new BitBuffer();
+        Assert.Throws<ArgumentNullException>(() => bitBuffer.CopyTo(null!));
+    }
+
+    [Fact]
+    public void CopyTo_WhenDestinationIsTooSmall_ThrowsArgumentException()
+    {
+        var bitBuffer = new BitBuffer();
+        bitBuffer.WriteBitsBigEndian(0, 0b1010_1010, 8);
+        var destination = new BitBuffer();
+        Assert.Throws<ArgumentException>(() => bitBuffer.CopyTo(destination));
+    }
 }

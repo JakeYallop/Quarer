@@ -20,10 +20,11 @@ internal static class QrVersionLookup
     public static bool TryGetVersionForDataCapacity(int requestedCapacityDataCharacters, ModeIndicator mode, ErrorCorrectionLevel errorCorrectionLevel, [NotNullWhen(true)] out QrVersion? version)
     {
         version = default!;
+        //TODO: Tweak this - we should not throw from a Try method.
         EnsureValidErrorCorrectionLevel(errorCorrectionLevel);
 
         var relevantCapacities = GetRelevantVersions(errorCorrectionLevel);
-        var index = BinarySearcher.BinarySearchUpperBound(relevantCapacities.AsSpan(), requestedCapacityDataCharacters, mode, static (x, mode) => CalculateActualCharacterCapacity(x, mode));
+        var index = BinarySearcher.BinarySearchUpperBound(relevantCapacities.AsSpan(), requestedCapacityDataCharacters, mode, static (x, mode) => CalculateApproximateCharacterCapacityInCorrectRange(x, mode));
 
         if (index is -1)
         {
@@ -52,7 +53,7 @@ internal static class QrVersionLookup
         _ => throw new UnreachableException()
     };
 
-    private static int CalculateActualCharacterCapacity(QrVersion version, ModeIndicator mode)
+    private static int CalculateApproximateCharacterCapacityInCorrectRange(QrVersion version, ModeIndicator mode)
     {
 #pragma warning disable IDE0072 // Add missing cases
         const int ModeIndicatorBits = 4;
@@ -63,7 +64,7 @@ internal static class QrVersionLookup
         {
             // 10 bits per 3 characters, 3 / 10, integer division allows us to ignore the remainder cases (4 or 7 bits left over)
             ModeIndicator.Numeric => (int)(capacity * 0.3),
-            // 11 bits per 2 characters, 2.0 / 11.0, integer division allows us to ignore the remainder case (1 character in 6)
+            // 11 bits per 2 characters, 2.0 / 11.0, integer division allows us to ignore the remainder case (1 character in 6 bits)
             ModeIndicator.Alphanumeric => (int)(capacity * 0.18181818181818182d),
             // 8 bits per character
             ModeIndicator.Byte => capacity >> 3,

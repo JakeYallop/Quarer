@@ -3,8 +3,6 @@ using System.Diagnostics;
 
 namespace Quarer;
 
-//TODO: Consider creating a bunch of interfaces so each method is called in the correct order (we would want
-// to create an EncodePositionDetectionPatterns method in such case so 3 separate calls are not needed)
 public static class QrCodeSymbolBuilder
 {
     public static TrackedBitMatrix BuildSymbol(QrVersion version, BitWriter dataCodewords, QrMaskPattern? maskPattern = null)
@@ -449,7 +447,9 @@ public static class QrCodeSymbolBuilder
     private static ReadOnlySpan<byte> FinderPatternAll => [0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 1, 0, 0, 0, 0];
     private static readonly SearchValues<byte> LinePattern = SearchValues.Create([1, 1, 1, 1, 1]);
 
-    //TODO: Evaluate the constant overhead of this vectorization - it could outweigh the benefits of the vectorization
+    //TODO: Evaluate the constant overhead of this vectorization - it could outweigh the benefits of the vectorization itself
+    // a more linear approach could be faster, especially for smaller values, the range of values is from 21 - 187.
+    // we could also implement some custom vectorization that works at the bit level
     private static (int LinePenalty, int PatternPenalty) CalculateLineAndPatternPenalty(BitBuffer line)
     {
         var values = GetValues(line, stackalloc byte[QrVersion.MaxModulesPerSide]);
