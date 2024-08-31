@@ -12,15 +12,6 @@ public sealed class TrackedBitMatrix : BitMatrix
         Changes = new BitMatrix(width, height);
     }
 
-    //TODO: Tests for this
-    /// <summary>
-    /// Create a copy of the <see cref="TrackedBitMatrix"/> <paramref name="trackedBitMatrix"/>.
-    /// </summary>
-    /// <param name="trackedBitMatrix">The matrix to copy.</param>
-    public TrackedBitMatrix(TrackedBitMatrix trackedBitMatrix) : this(new BitMatrix(trackedBitMatrix.Original), new BitMatrix(trackedBitMatrix.Changes))
-    {
-    }
-
     public BitMatrix Original => this;
     public BitMatrix Changes { get; }
 
@@ -35,6 +26,9 @@ public sealed class TrackedBitMatrix : BitMatrix
     }
 
     public static TrackedBitMatrix Wrap(BitMatrix bitMatrix) => new(bitMatrix, new(bitMatrix.Width, bitMatrix.Height));
+
+    //TODO: Tests for this
+    public override TrackedBitMatrix Clone() => new(Original.Clone(), Changes.Clone());
 
     //TODO: Missing tests for this method
     public bool IsEmpty(int x, int y) => !Changes[x, y];

@@ -63,10 +63,10 @@ public sealed class BitBuffer
         _buffer = new(2);
     }
 
-    public BitBuffer(int initialBitCount)
+    public BitBuffer(int initialBitCapacity)
     {
-        ArgumentOutOfRangeException.ThrowIfNegative(initialBitCount);
-        _buffer = new(GetElementLengthFromBitsCeil(initialBitCount));
+        ArgumentOutOfRangeException.ThrowIfNegative(initialBitCapacity);
+        _buffer = new(GetElementLengthFromBitsCeil(initialBitCapacity));
     }
 
     /// <summary>
@@ -161,8 +161,6 @@ public sealed class BitBuffer
                 }
 
                 var mask = 1 << (BitsPerElement - currentBit);
-                var m1 = $"{mask:B32}";
-                var m2 = $"{i:B32}";
                 yield return (i & mask) != 0;
                 current++;
             }
@@ -211,6 +209,14 @@ public sealed class BitBuffer
         return GetBytes(byteOffset, length, destination);
     }
 
+    /// <summary>
+    /// Get the bytes from this <see cref="BitBuffer"/> starting at the specified byte <paramref name="start"/> and reading <paramref name="length"/> bits.
+    /// </summary>
+    /// <param name="start">The starting byte.</param>
+    /// <param name="length">The number of bytes to read.</param>
+    /// <param name="destination">Destination buffer to copy bytes into.</param>
+    /// <returns></returns>
+    /// <exception cref="ArgumentException"></exception>
     public int GetBytes(int start, int length, Span<byte> destination)
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(start, 0);

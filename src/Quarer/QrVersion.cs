@@ -7,6 +7,7 @@ public class QrVersion : IEquatable<QrVersion>, IComparable<QrVersion>
 {
     public const byte MinVersion = 1;
     public const byte MaxVersion = 40;
+    public const int MaxModulesPerSide = 17 + (4 * MaxVersion);
 
     private ushort _totalCodewordsCapacity = 0;
     private ushort _dataCodewordsCapacity = 0;

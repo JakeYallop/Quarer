@@ -1,6 +1,5 @@
-﻿using System.Diagnostics;
-using System.Numerics;
-using System.Runtime.CompilerServices;
+﻿using System.Buffers;
+using System.Diagnostics;
 
 namespace Quarer;
 
@@ -8,10 +7,10 @@ namespace Quarer;
 // to create an EncodePositionDetectionPatterns method in such case so 3 separate calls are not needed)
 public static class QrCodeSymbolBuilder
 {
-    public static TrackedBitMatrix BuildSymbol(QrVersion version, BitWriter dataCodewords, byte maskPattern)
+    public static TrackedBitMatrix BuildSymbol(QrVersion version, BitWriter dataCodewords, QrMaskPattern? maskPattern = null)
         => BuildSymbol(new TrackedBitMatrix(version.ModulesPerSide, version.ModulesPerSide), version, dataCodewords, maskPattern);
 
-    public static TrackedBitMatrix BuildSymbol(TrackedBitMatrix matrix, QrVersion version, BitWriter dataCodewords, byte maskPattern)
+    private static TrackedBitMatrix BuildSymbol(TrackedBitMatrix matrix, QrVersion version, BitWriter dataCodewords, QrMaskPattern? maskPattern = null)
     {
         EncodePositionDetectionPattern(matrix, PositionDetectionPatternLocation.TopLeft);
         EncodePositionDetectionPattern(matrix, PositionDetectionPatternLocation.TopRight);
@@ -23,8 +22,37 @@ public static class QrCodeSymbolBuilder
 
         EncodeTimingPatterns(matrix);
 
-        //TODO: type info, version info, data
-        return matrix;
+        EncodeVersionInformation(matrix, version);
+
+        if (maskPattern is not null)
+        {
+            EncodeFormatInformation(matrix, version.ErrorCorrectionLevel, maskPattern.Value);
+            EncodeDataBits(matrix, version, dataCodewords.Buffer, maskPattern.Value);
+            return matrix;
+        }
+
+        // otherwise, determine the best mask pattern to use
+
+        var patterns = (ReadOnlySpan<QrMaskPattern>)[QrMaskPattern.PatternZero_Checkerboard, QrMaskPattern.PatternOne_HorizontalLines, QrMaskPattern.PatternTwo_VerticalLines, QrMaskPattern.PatternThree_DiagonalLines, QrMaskPattern.PatternFour_LargeCheckerboard, QrMaskPattern.PatternFive_Fields, QrMaskPattern.PatternSix_Diamonds, QrMaskPattern.PatternSeven_Meadow];
+
+        var highestPenalty = int.MaxValue;
+        var resultMatrix = matrix;
+        foreach (var pattern in patterns)
+        {
+            var copiedMatrix = matrix.Clone();
+            // important to encode format information before data bits so that non-empty modules are correctly set
+            EncodeFormatInformation(copiedMatrix, version.ErrorCorrectionLevel, pattern);
+            EncodeDataBits(copiedMatrix, version, dataCodewords.Buffer, pattern);
+
+            var penalty = EvaluateSymbol(matrix);
+            if (penalty < highestPenalty)
+            {
+                highestPenalty = penalty;
+                resultMatrix = copiedMatrix;
+            }
+        }
+
+        return resultMatrix;
     }
 
     private readonly ref struct Point(int x, int y)
@@ -178,9 +206,9 @@ public static class QrCodeSymbolBuilder
     /// </summary>
     public const int VersionInformationGeneratorPolynomial = 0b1111100100101;
 
-    public static void EncodeFormatInformation(TrackedBitMatrix matrix, ErrorCorrectionLevel errorCorrectionLevel, byte maskPattern)
+    public static void EncodeFormatInformation(TrackedBitMatrix matrix, ErrorCorrectionLevel errorCorrectionLevel, QrMaskPattern maskPattern)
     {
-        var formatInformation = GetFormatInformation(errorCorrectionLevel, maskPattern);
+        var formatInformation = GetFormatInformation(errorCorrectionLevel, (byte)maskPattern);
         var size = matrix.Width;
         Debug.Assert(matrix.Width == matrix.Height);
 
@@ -263,7 +291,7 @@ public static class QrCodeSymbolBuilder
         }
     }
 
-    public static void EncodeDataBits(TrackedBitMatrix matrix, QrVersion version, BitBuffer data)
+    public static void EncodeDataBits(TrackedBitMatrix matrix, QrVersion version, BitBuffer data, QrMaskPattern maskPattern)
     {
         if (version.TotalCodewords != data.ByteCount)
         {
@@ -271,11 +299,11 @@ public static class QrCodeSymbolBuilder
         }
 
 #pragma warning disable IDE0057 // Use range operator //https://github.com/dotnet/roslyn/issues/74960
-        Span<byte> yRangeValues = stackalloc byte[187].Slice(0, version.ModulesPerSide);
-        Span<byte> yRangeValuesReverse = stackalloc byte[187].Slice(0, version.ModulesPerSide);
+        Span<byte> yRangeValues = stackalloc byte[QrVersion.MaxModulesPerSide].Slice(0, version.ModulesPerSide);
+        Span<byte> yRangeValuesReverse = stackalloc byte[QrVersion.MaxModulesPerSide].Slice(0, version.ModulesPerSide);
 #pragma warning restore IDE0057 // Use range operator
 
-        Span<byte> xRangeValues = stackalloc byte[187 / 2];
+        Span<byte> xRangeValues = stackalloc byte[QrVersion.MaxModulesPerSide / 2];
         var xValuesWritten = XRange(version, xRangeValues);
         var xRange = (ReadOnlySpan<byte>)xRangeValues[..xValuesWritten];
         var yRangeTopDown = YRangeTopDown(yRangeValues);
@@ -291,15 +319,15 @@ public static class QrCodeSymbolBuilder
             {
                 if (matrix.IsEmpty(x, y))
                 {
-                    var bit = data[(bitIndex / 8) + (bitIndex % 8)];
-                    matrix[x, y] = bit;
+                    var bit = data[(bitIndex / 8) + (7 - (bitIndex % 8))];
+                    matrix[x, y] = GetMaskedBit(bit, maskPattern, x, y);
                 }
                 bitIndex++;
 
                 if (matrix.IsEmpty(x - 1, y))
                 {
-                    var bit = data[(bitIndex / 8) + (bitIndex % 8)];
-                    matrix[x, y - 1] = bit;
+                    var bit = data[(bitIndex / 8) + (7 - (bitIndex % 8))];
+                    matrix[x, y - 1] = GetMaskedBit(bit, maskPattern, x, y);
                 }
                 bitIndex++;
             }
@@ -307,6 +335,23 @@ public static class QrCodeSymbolBuilder
         }
 
         Debug.Assert(bitIndex == version.TotalCodewords * 8);
+    }
+
+    public static bool GetMaskedBit(bool bit, QrMaskPattern mask, int x, int y)
+    {
+        var maskBit = mask switch
+        {
+            QrMaskPattern.PatternZero_Checkerboard => (x + y) % 2 == 0,
+            QrMaskPattern.PatternOne_HorizontalLines => y % 2 == 0,
+            QrMaskPattern.PatternTwo_VerticalLines => x % 3 == 0,
+            QrMaskPattern.PatternThree_DiagonalLines => (x + y) % 3 == 0,
+            QrMaskPattern.PatternFour_LargeCheckerboard => ((y / 2) + (x / 3)) % 2 == 0,
+            QrMaskPattern.PatternFive_Fields => (y * x % 2) + (y * x % 3) == 0,
+            QrMaskPattern.PatternSix_Diamonds => ((x * y % 2) + (x * y % 3)) % 2 == 0,
+            QrMaskPattern.PatternSeven_Meadow => (((x + y) % 2) + (x * y % 3)) % 2 == 0,
+            _ => throw new ArgumentOutOfRangeException(nameof(mask))
+        };
+        return maskBit != bit;
     }
 
     private static int XRange(QrVersion version, Span<byte> destination)
@@ -349,6 +394,116 @@ public static class QrCodeSymbolBuilder
             index++;
         }
         return yRange;
+    }
+
+    public static int EvaluateSymbol(TrackedBitMatrix matrix)
+    {
+        var (rowPenalty, rowPatternPenalty) = CalculateRowPenalty(matrix);
+        var (columnPenalty, columnPatternPenalty) = CalculateColumnPenalty(matrix);
+
+        //TODO: 2x2 blocks of dark modules, proportion of dark modules
+
+        return rowPenalty + columnPenalty + rowPatternPenalty + columnPatternPenalty;
+    }
+
+    /// <summary>
+    /// <c>N - 2</c> penalty for <c>N</c> consecutive dark modules in a line, for <c>N >= 5</c>.
+    /// </summary>
+    /// <param name="matrix"></param>
+    /// <returns></returns>
+    public static (int LinePenalty, int PatternPenalty) CalculateRowPenalty(TrackedBitMatrix matrix)
+    {
+        var linePenaltyTotal = 0;
+        var patternPenaltyTotal = 0;
+        for (var i = 0; i < matrix.Height; i++)
+        {
+            var (linePenalty, patternPenalty) = CalculateLineAndPatternPenalty(matrix.GetRow(i));
+            linePenaltyTotal += linePenalty;
+            patternPenaltyTotal += patternPenalty;
+        }
+
+        return (linePenaltyTotal, patternPenaltyTotal);
+    }
+
+    /// <summary>
+    /// <c>N - 2</c> penalty for <c>N</c> consecutive dark modules in a column, for <c>N >= 5</c>.
+    /// </summary>
+    /// <param name="matrix"></param>
+    /// <returns></returns>
+    public static (int ColumnPenalty, int PatternPenalty) CalculateColumnPenalty(TrackedBitMatrix matrix)
+    {
+        var linePenaltyTotal = 0;
+        var patternPenaltyTotal = 0;
+        for (var i = 0; i < matrix.Height; i++)
+        {
+            var (linePenalty, patternPenalty) = CalculateLineAndPatternPenalty(matrix.GetColumn(i));
+            linePenaltyTotal += linePenalty;
+            patternPenaltyTotal += patternPenalty;
+        }
+
+        return (linePenaltyTotal, patternPenaltyTotal);
+    }
+
+    private static ReadOnlySpan<byte> FinderPatternTrailing => [0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 1];
+    private static ReadOnlySpan<byte> FinderPatternLeading => [1, 0, 1, 1, 1, 0, 1, 0, 0, 0, 0];
+    private static ReadOnlySpan<byte> FinderPatternAll => [0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 1, 0, 0, 0, 0];
+    private static readonly SearchValues<byte> LinePattern = SearchValues.Create([1, 1, 1, 1, 1]);
+
+    //TODO: Evaluate the constant overhead of this vectorization - it could outweigh the benefits of the vectorization
+    private static (int LinePenalty, int PatternPenalty) CalculateLineAndPatternPenalty(BitBuffer line)
+    {
+        var values = GetValues(line, stackalloc byte[QrVersion.MaxModulesPerSide]);
+        AssertConvertedBytes(values);
+
+        var currentIndex = 0;
+        var currentLineModuleCount = 0;
+        var linePenalty = 0;
+
+        var patternCount = values.Count(FinderPatternLeading);
+        patternCount += values.Count(FinderPatternTrailing);
+        patternCount -= values.Count(FinderPatternAll);
+
+        currentIndex = values.IndexOfAny(LinePattern);
+        while (currentIndex != -1 && currentIndex < values.Length)
+        {
+            currentLineModuleCount = 5;
+            currentIndex += currentLineModuleCount + 1;
+            while (currentIndex < values.Length && values[currentIndex] == 1)
+            {
+                currentLineModuleCount++;
+                currentLineModuleCount += 1;
+                currentIndex += currentLineModuleCount + 1;
+            }
+
+            linePenalty += currentLineModuleCount - 2;
+            if (currentIndex < values.Length)
+            {
+                currentIndex = values[(currentIndex + 1)..].IndexOfAny(LinePattern);
+            }
+        }
+
+        return (linePenalty, patternCount * 40);
+
+        static ReadOnlySpan<byte> GetValues(BitBuffer line, Span<byte> destination)
+        {
+            var index = 0;
+            foreach (var b in line.AsBitEnumerable())
+            {
+                // we cannot just bit cast here as the internal representation of a bool is not guaranteed
+                destination[index] = b ? (byte)1 : (byte)0;
+                index++;
+            }
+            return destination[..(index + 1)];
+        }
+
+        [Conditional("DEBUG")]
+        static void AssertConvertedBytes(ReadOnlySpan<byte> bytes)
+        {
+            for (var i = 0; i < bytes.Length; i++)
+            {
+                Debug.Assert(bytes[i] < 2, $"Found value greater than 1 at index {i}. Expected all values to be either 1 or 0. [{string.Join(", ", bytes.Slice(Math.Min(0, i), Math.Max(bytes.Length, i + 5)).ToArray())}");
+            }
+        }
     }
 
     private static ReadOnlySpan<ushort> FormatInformationL =>
