@@ -33,16 +33,28 @@ internal sealed class BitBufferDebugView
         }
     }
 
-    public string BitView
+    public LazyBitView BitView => new(_bitBuffer);
+
+    public class LazyBitView
     {
-        get
+        private readonly BitBuffer _bitBuffer;
+
+        public LazyBitView(BitBuffer bitBuffer)
         {
-            var sb = new StringBuilder(_bitBuffer.Count);
-            foreach (var i in _buffer(_bitBuffer))
+            _bitBuffer = bitBuffer;
+        }
+
+        public string Value
+        {
+            get
             {
-                sb.AppendFormat("{0:B32}", i);
+                var sb = new StringBuilder(_bitBuffer.Count);
+                foreach (var i in _buffer(_bitBuffer))
+                {
+                    sb.AppendFormat("{0:B32}", i);
+                }
+                return sb.ToString();
             }
-            return sb.ToString();
         }
     }
 

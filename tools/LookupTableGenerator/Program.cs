@@ -50,8 +50,8 @@ foreach (var errorCorrectionLevel in (ReadOnlySpan<ErrorCorrectionLevel>)[ErrorC
     {
 
         var bits = ((byte)errorCorrectionLevel << 3) | ((byte)mask);
-        var bchCode = (bits << 10) | CalculateBchCode((byte)bits, QrCodeSymbolBuilder.FormatInformationGeneratorPolynomial);
-        var maskedBchCode = bchCode ^ QrCodeSymbolBuilder.FormatBchCodeMask;
+        var bchCode = (bits << 10) | CalculateBchCode((byte)bits, QrSymbolBuilder.FormatInformationGeneratorPolynomial);
+        var maskedBchCode = bchCode ^ QrSymbolBuilder.FormatBchCodeMask;
         table[(int)mask] = maskedBchCode;
     }
 
@@ -119,7 +119,6 @@ static int[] BuildGeneratorPolynomial(int numberOfSymbols)
 
     return generator.ToArray().Select(x => (int)x).ToArray();
 }
-
 
 /// <summary>
 /// Calculate the BCH (Bose-Chaudhuri-Hocquenghem) code for a value.

@@ -148,7 +148,7 @@ public static class QrDataEncoder
     public const byte PadPattern8_2 = 0b0001_0001;
     public const uint PadPattern32Bits = unchecked((uint)((PadPattern8_1 << 24) | (PadPattern8_2 << 16) | (PadPattern8_1 << 8) | PadPattern8_2));
 
-    public static unsafe BitWriter EncodeAndInterleaveErrorCorrectionBlocks(QrVersion version, BitBuffer dataCodewordsBitBuffer)
+    public static unsafe BitBuffer EncodeAndInterleaveErrorCorrectionBlocks(QrVersion version, BitBuffer dataCodewordsBitBuffer)
     {
         if (dataCodewordsBitBuffer.ByteCount != version.DataCodewordsCapacity)
         {
@@ -181,6 +181,7 @@ public static class QrDataEncoder
         }
 
         // max number of blocks for a symbol is 81, max number of codewords per block is 30
+        // ~4kb of stack space
         Span<ByteBuffer30> errorBlocks = stackalloc ByteBuffer30[81];
         var generator = BinaryFiniteField.GetGeneratorPolynomial(errorCorrectionCodewordsPerBlock);
 
@@ -213,7 +214,7 @@ public static class QrDataEncoder
             errorBlockIndex = 0;
         }
 
-        return resultBitBuffer;
+        return resultBitBuffer.Buffer;
     }
 
     [InlineArray(30)]

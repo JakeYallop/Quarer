@@ -12,12 +12,13 @@ public class QrVersion : IEquatable<QrVersion>, IComparable<QrVersion>
     private ushort _totalCodewordsCapacity = 0;
     private ushort _dataCodewordsCapacity = 0;
 
-    internal QrVersion(byte version, ErrorCorrectionLevel errorCorrectionLevel, QrErrorCorrectionBlocks errorCorrectionBlocks)
+    internal QrVersion(byte version, ErrorCorrectionLevel errorCorrectionLevel, byte remainderBits, QrErrorCorrectionBlocks errorCorrectionBlocks)
     {
         Version = version;
         AlignmentPatternCenters = AlignmentPatternCentersLookup[version - 1];
         ErrorCorrectionLevel = errorCorrectionLevel;
         ErrorCorrectionBlocks = errorCorrectionBlocks;
+        RemainderBits = remainderBits;
     }
 
     public static QrVersion GetVersion(byte version, ErrorCorrectionLevel errorCorrectionLevel)
@@ -71,6 +72,8 @@ public class QrVersion : IEquatable<QrVersion>, IComparable<QrVersion>
             return _dataCodewordsCapacity;
         }
     }
+
+    public byte RemainderBits { get; }
 
     public byte ModulesPerSide => (byte)(17 + (byte)(4 * Version));
 

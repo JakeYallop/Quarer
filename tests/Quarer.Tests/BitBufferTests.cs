@@ -490,6 +490,7 @@ public class BitBufferTests
         var bitBuffer = new BitBuffer();
         bitBuffer.WriteBitsBigEndian(0, 0b1010_1010, 8);
         var destination = new BitBuffer();
+        destination.SetCountUnsafe(8);
         bitBuffer.CopyTo(destination);
         AssertExtensions.BitsEqual("1010 1010", destination.AsBitEnumerable());
     }

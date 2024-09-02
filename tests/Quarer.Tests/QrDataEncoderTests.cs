@@ -187,9 +187,9 @@ public sealed class QrDataEncoderTests
     [MemberData(nameof(EncodeAndInterleaveErrorCorrectionBlocksData))]
     public void EncodeAndInterleaveErrorCorrectionBlocks_ReturnsExpectedResult1(QrVersion version, BitBuffer dataCodewordsBitBuffer, byte[] expectedBytes)
     {
-        var resultBitWriter = QrDataEncoder.EncodeAndInterleaveErrorCorrectionBlocks(version, dataCodewordsBitBuffer);
+        var resultBitBuffer = QrDataEncoder.EncodeAndInterleaveErrorCorrectionBlocks(version, dataCodewordsBitBuffer);
 
-        Assert.Equal(expectedBytes, resultBitWriter.Buffer.AsByteEnumerable().ToArray());
+        Assert.Equal(expectedBytes, resultBitBuffer.AsByteEnumerable().ToArray());
     }
 
     [Fact]
