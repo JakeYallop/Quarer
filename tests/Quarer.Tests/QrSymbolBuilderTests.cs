@@ -157,7 +157,7 @@ public class QrSymbolBuilderTests
         QrSymbolBuilder.EncodePositionDetectionPattern(m, PositionDetectionPatternLocation.TopRight);
         QrSymbolBuilder.EncodePositionDetectionPattern(m, PositionDetectionPatternLocation.BottomLeft);
         QrSymbolBuilder.EncodeTimingPatterns(m);
-        QrSymbolBuilder.EncodeFormatInformation(m, ErrorCorrectionLevel.M, QrMaskPattern.PatternZero_Checkerboard);
+        QrSymbolBuilder.EncodeFormatInformation(m, ErrorCorrectionLevel.M, MaskPattern.PatternZero_Checkerboard);
 
         Assert.Equal("""
             XXXXXXX-------XXXXXXX
@@ -292,7 +292,7 @@ public class QrSymbolBuilderTests
         QrSymbolBuilder.EncodePositionAdjustmentPatterns(m, version);
         QrSymbolBuilder.EncodeTimingPatterns(m);
         QrSymbolBuilder.EncodeStaticDarkModule(m);
-        QrSymbolBuilder.EncodeFormatInformation(m, ErrorCorrectionLevel.M, QrMaskPattern.PatternZero_Checkerboard);
+        QrSymbolBuilder.EncodeFormatInformation(m, ErrorCorrectionLevel.M, MaskPattern.PatternZero_Checkerboard);
         QrSymbolBuilder.EncodeVersionInformation(m, version);
 
         Assert.Equal("""
@@ -367,7 +367,7 @@ public class QrSymbolBuilderTests
         QrSymbolBuilder.EncodeStaticDarkModule(m);
         QrSymbolBuilder.EncodePositionAdjustmentPatterns(m, version);
         QrSymbolBuilder.EncodeTimingPatterns(m);
-        QrSymbolBuilder.EncodeFormatInformation(m, ErrorCorrectionLevel.H, QrMaskPattern.PatternZero_Checkerboard);
+        QrSymbolBuilder.EncodeFormatInformation(m, ErrorCorrectionLevel.H, MaskPattern.PatternZero_Checkerboard);
         QrSymbolBuilder.EncodeVersionInformation(m, version);
 
         var codewordsBuffer = AlternatingCodewordsBuffer(version.TotalCodewords);
@@ -422,7 +422,7 @@ public class QrSymbolBuilderTests
             """, ToString(m), ignoreLineEndingDifferences: true, ignoreAllWhiteSpace: true);
     }
 
-    private static (TrackedBitMatrix, QrVersion) Get1MSymbolWithoutData(QrMaskPattern maskPattern)
+    private static (TrackedBitMatrix, QrVersion) Get1MSymbolWithoutData(MaskPattern maskPattern)
     {
         var version = QrVersion.GetVersion(1, ErrorCorrectionLevel.M);
         var m = new TrackedBitMatrix(version.ModulesPerSide, version.ModulesPerSide);
@@ -442,9 +442,9 @@ public class QrSymbolBuilderTests
     [Fact]
     public void Encode_EncodeDataBits_WithCheckerboardMasking_EncodesExpectedSymbol()
     {
-        var (m, version) = Get1MSymbolWithoutData(QrMaskPattern.PatternZero_Checkerboard);
+        var (m, version) = Get1MSymbolWithoutData(MaskPattern.PatternZero_Checkerboard);
         var codewordsBuffer = AllZeroBuffer(version.TotalCodewords);
-        QrSymbolBuilder.EncodeDataBits(m, version, codewordsBuffer, QrMaskPattern.PatternZero_Checkerboard);
+        QrSymbolBuilder.EncodeDataBits(m, version, codewordsBuffer, MaskPattern.PatternZero_Checkerboard);
         Assert.Equal("""
             XXXXXXX---X-X-XXXXXXX
             X-----X-XX-X--X-----X
@@ -473,9 +473,9 @@ public class QrSymbolBuilderTests
     [Fact]
     public void Encode_EncodeDataBits_WithHorizontalLinesMasking_EncodesExpectedSymbol()
     {
-        var (m, version) = Get1MSymbolWithoutData(QrMaskPattern.PatternOne_HorizontalLines);
+        var (m, version) = Get1MSymbolWithoutData(MaskPattern.PatternOne_HorizontalLines);
         var codewordsBuffer = AllZeroBuffer(version.TotalCodewords);
-        QrSymbolBuilder.EncodeDataBits(m, version, codewordsBuffer, QrMaskPattern.PatternOne_HorizontalLines);
+        QrSymbolBuilder.EncodeDataBits(m, version, codewordsBuffer, MaskPattern.PatternOne_HorizontalLines);
         Assert.Equal("""
             XXXXXXX-XXXXX-XXXXXXX
             X-----X-------X-----X
@@ -504,9 +504,9 @@ public class QrSymbolBuilderTests
     [Fact]
     public void Encode_EncodeDataBits_WithVerticalLinesMasking_EncodesExpectedSymbol()
     {
-        var (m, version) = Get1MSymbolWithoutData(QrMaskPattern.PatternTwo_VerticalLines);
+        var (m, version) = Get1MSymbolWithoutData(MaskPattern.PatternTwo_VerticalLines);
         var codewordsBuffer = AllZeroBuffer(version.TotalCodewords);
-        QrSymbolBuilder.EncodeDataBits(m, version, codewordsBuffer, QrMaskPattern.PatternTwo_VerticalLines);
+        QrSymbolBuilder.EncodeDataBits(m, version, codewordsBuffer, MaskPattern.PatternTwo_VerticalLines);
         Assert.Equal("""
             XXXXXXX--X--X-XXXXXXX
             X-----X--X--X-X-----X
@@ -535,9 +535,9 @@ public class QrSymbolBuilderTests
     [Fact]
     public void Encode_EncodeDataBits_WithDiagonalLinesMasking_EncodesExpectedSymbol()
     {
-        var (m, version) = Get1MSymbolWithoutData(QrMaskPattern.PatternTwo_VerticalLines);
+        var (m, version) = Get1MSymbolWithoutData(MaskPattern.PatternTwo_VerticalLines);
         var codewordsBuffer = AllZeroBuffer(version.TotalCodewords);
-        QrSymbolBuilder.EncodeDataBits(m, version, codewordsBuffer, QrMaskPattern.PatternThree_DiagonalLines);
+        QrSymbolBuilder.EncodeDataBits(m, version, codewordsBuffer, MaskPattern.PatternThree_DiagonalLines);
         Assert.Equal("""
             XXXXXXX--X--X-XXXXXXX
             X-----X----X--X-----X
@@ -566,9 +566,9 @@ public class QrSymbolBuilderTests
     [Fact]
     public void Encode_EncodeDataBits_WithLargeCheckboardMasking_EncodesExpectedSymbol()
     {
-        var (m, version) = Get1MSymbolWithoutData(QrMaskPattern.PatternTwo_VerticalLines);
+        var (m, version) = Get1MSymbolWithoutData(MaskPattern.PatternTwo_VerticalLines);
         var codewordsBuffer = AllZeroBuffer(version.TotalCodewords);
-        QrSymbolBuilder.EncodeDataBits(m, version, codewordsBuffer, QrMaskPattern.PatternFour_LargeCheckerboard);
+        QrSymbolBuilder.EncodeDataBits(m, version, codewordsBuffer, MaskPattern.PatternFour_LargeCheckerboard);
         Assert.Equal("""
             XXXXXXX-----X-XXXXXXX
             X-----X-----X-X-----X
@@ -597,9 +597,9 @@ public class QrSymbolBuilderTests
     [Fact]
     public void Encode_EncodeDataBits_WithFieldsMasking_EncodesExpectedSymbol()
     {
-        var (m, version) = Get1MSymbolWithoutData(QrMaskPattern.PatternTwo_VerticalLines);
+        var (m, version) = Get1MSymbolWithoutData(MaskPattern.PatternTwo_VerticalLines);
         var codewordsBuffer = AllZeroBuffer(version.TotalCodewords);
-        QrSymbolBuilder.EncodeDataBits(m, version, codewordsBuffer, QrMaskPattern.PatternFive_Fields);
+        QrSymbolBuilder.EncodeDataBits(m, version, codewordsBuffer, MaskPattern.PatternFive_Fields);
         Assert.Equal("""
             XXXXXXX--XXXX-XXXXXXX
             X-----X-----X-X-----X
@@ -628,9 +628,9 @@ public class QrSymbolBuilderTests
     [Fact]
     public void Encode_EncodeDataBits_WithDiamondsMasking_EncodesExpectedSymbol()
     {
-        var (m, version) = Get1MSymbolWithoutData(QrMaskPattern.PatternTwo_VerticalLines);
+        var (m, version) = Get1MSymbolWithoutData(MaskPattern.PatternTwo_VerticalLines);
         var codewordsBuffer = AllZeroBuffer(version.TotalCodewords);
-        QrSymbolBuilder.EncodeDataBits(m, version, codewordsBuffer, QrMaskPattern.PatternSix_Diamonds);
+        QrSymbolBuilder.EncodeDataBits(m, version, codewordsBuffer, MaskPattern.PatternSix_Diamonds);
         Assert.Equal("""
             XXXXXXX--XXXX-XXXXXXX
             X-----X-----X-X-----X
@@ -659,9 +659,9 @@ public class QrSymbolBuilderTests
     [Fact]
     public void Encode_EncodeDataBits_WithMeadowMasking_EncodesExpectedSymbol()
     {
-        var (m, version) = Get1MSymbolWithoutData(QrMaskPattern.PatternTwo_VerticalLines);
+        var (m, version) = Get1MSymbolWithoutData(MaskPattern.PatternTwo_VerticalLines);
         var codewordsBuffer = AllZeroBuffer(version.TotalCodewords);
-        QrSymbolBuilder.EncodeDataBits(m, version, codewordsBuffer, QrMaskPattern.PatternSeven_Meadow);
+        QrSymbolBuilder.EncodeDataBits(m, version, codewordsBuffer, MaskPattern.PatternSeven_Meadow);
         Assert.Equal("""
             XXXXXXX---X-X-XXXXXXX
             X-----X--XXX--X-----X

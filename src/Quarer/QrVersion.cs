@@ -3,7 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Quarer;
 
-public class QrVersion : IEquatable<QrVersion>, IComparable<QrVersion>
+public sealed class QrVersion : IEquatable<QrVersion>, IComparable<QrVersion>
 {
     public const byte MinVersion = 1;
     public const byte MaxVersion = 40;

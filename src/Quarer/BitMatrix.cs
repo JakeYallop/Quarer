@@ -1,4 +1,6 @@
 ﻿namespace Quarer;
+
+//TODO: Implement IEquatable and debugger display/type proxy
 public class BitMatrix
 {
     private readonly BitBuffer[] _values;

@@ -1,48 +1,20 @@
-﻿using System.Buffers;
-using System.Diagnostics;
-using System.Text.Unicode;
+﻿using System.Diagnostics.CodeAnalysis;
 
 namespace Quarer;
 
-#pragma warning disable
-public class QrCode
+public sealed class QrCode(QrVersion version, MaskPattern maskPattern, BitMatrix data) : IEquatable<QrCode>
 {
-    private const int StackAllocByteThreshold = 512;
+    public QrVersion Version { get; } = version;
+    public MaskPattern MaskPattern { get; } = maskPattern;
+    public BitMatrix Data { get; } = data;
+    public ErrorCorrectionLevel ErrorCorrectionLevel => Version.ErrorCorrectionLevel;
+    public int Width => Version.ModulesPerSide;
+    public int Height => Version.ModulesPerSide;
 
-    private QrCode()
-    {
-    }
+    public static bool operator ==(QrCode? left, QrCode? right) => left is null ? right is null : left.Equals(right);
+    public static bool operator !=(QrCode? left, QrCode? right) => !(left == right);
 
-    public static void Generate(ReadOnlySpan<char> data, ModeIndicator mode, QrVersion qrVersion)
-    {
-        if (mode != ModeIndicator.Numeric)
-        {
-            throw new NotSupportedException("Non-numeric modes are currently not supported.");
-        }
-
-        //TODO: Use array pool here?
-        Span<byte> utf8Data = data.Length <= StackAllocByteThreshold ? stackalloc byte[StackAllocByteThreshold].Slice(0, data.Length) : new byte[data.Length];
-        var status = Utf8.FromUtf16(data, utf8Data, out _, out var bytesWritten, replaceInvalidSequences: true);
-        if (status != OperationStatus.Done)
-        {
-            throw new InvalidOperationException($"Conversion to UTF-8 failed. Reason: '{status}'");
-        }
-        EncodeNumeric(qrVersion, mode, utf8Data);
-    }
-
-    private static object EncodeNumeric(QrVersion version, ModeIndicator mode, Span<byte> utf8Data)
-    {
-        //convert from ASCII values (48 - 57), to digit values (0 - 9)
-        foreach (ref var b in utf8Data)
-        {
-            Debug.Assert(b is >= 48 and <= 57, "Invalid digit in input data.");
-            b = (byte)(b - '0');
-        }
-
-        var writer = new BitWriter();
-        var header = QrHeaderBlock.Create(version, mode, utf8Data.Length);
-        header.WriteHeader(writer);
-        ReadOnlySpan<byte> roData = utf8Data;
-        return writer.Buffer.AsBitEnumerable().ToArray();
-    }
+    public bool Equals([NotNullWhen(true)] QrCode? other) => other is not null && Version == other.Version && MaskPattern == other.MaskPattern && Data == other.Data;
+    public override bool Equals(object? obj) => obj is QrCode other && Equals(other);
+    public override int GetHashCode() => HashCode.Combine(Version, MaskPattern, Data);
 }

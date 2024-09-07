@@ -37,15 +37,15 @@ Console.WriteLine("Pre-calculated BCH codes lookup for format information:");
 foreach (var errorCorrectionLevel in (ReadOnlySpan<ErrorCorrectionLevel>)[ErrorCorrectionLevel.L, ErrorCorrectionLevel.M, ErrorCorrectionLevel.Q, ErrorCorrectionLevel.H])
 {
     var table = new int[8];
-    foreach (var mask in (ReadOnlySpan<QrMaskPattern>)[
-        QrMaskPattern.PatternZero_Checkerboard,
-        QrMaskPattern.PatternOne_HorizontalLines,
-        QrMaskPattern.PatternTwo_VerticalLines,
-        QrMaskPattern.PatternThree_DiagonalLines,
-        QrMaskPattern.PatternFour_LargeCheckerboard,
-        QrMaskPattern.PatternFive_Fields,
-        QrMaskPattern.PatternSix_Diamonds,
-        QrMaskPattern.PatternSeven_Meadow
+    foreach (var mask in (ReadOnlySpan<MaskPattern>)[
+        MaskPattern.PatternZero_Checkerboard,
+        MaskPattern.PatternOne_HorizontalLines,
+        MaskPattern.PatternTwo_VerticalLines,
+        MaskPattern.PatternThree_DiagonalLines,
+        MaskPattern.PatternFour_LargeCheckerboard,
+        MaskPattern.PatternFive_Fields,
+        MaskPattern.PatternSix_Diamonds,
+        MaskPattern.PatternSeven_Meadow
         ])
     {
 

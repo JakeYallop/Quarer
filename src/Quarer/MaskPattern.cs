@@ -1,4 +1,5 @@
-﻿public enum QrMaskPattern : byte
+﻿namespace Quarer;
+public enum MaskPattern : byte
 {
     //From ISO/IEC 18004:2015 Third edition Table 10. In the specification, i = y and j = x
 

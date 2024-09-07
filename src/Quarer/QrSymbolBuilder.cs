@@ -5,10 +5,10 @@ namespace Quarer;
 
 public static class QrSymbolBuilder
 {
-    public static TrackedBitMatrix BuildSymbol(QrVersion version, BitWriter dataCodewords, QrMaskPattern? maskPattern = null)
+    public static TrackedBitMatrix BuildSymbol(QrVersion version, BitWriter dataCodewords, MaskPattern? maskPattern = null)
         => BuildSymbol(new TrackedBitMatrix(version.ModulesPerSide, version.ModulesPerSide), version, dataCodewords, maskPattern);
 
-    private static TrackedBitMatrix BuildSymbol(TrackedBitMatrix matrix, QrVersion version, BitWriter dataCodewords, QrMaskPattern? maskPattern = null)
+    private static TrackedBitMatrix BuildSymbol(TrackedBitMatrix matrix, QrVersion version, BitWriter dataCodewords, MaskPattern? maskPattern = null)
     {
         EncodePositionDetectionPattern(matrix, PositionDetectionPatternLocation.TopLeft);
         EncodePositionDetectionPattern(matrix, PositionDetectionPatternLocation.TopRight);
@@ -31,7 +31,7 @@ public static class QrSymbolBuilder
 
         // otherwise, determine the best mask pattern to use
 
-        var patterns = (ReadOnlySpan<QrMaskPattern>)[QrMaskPattern.PatternZero_Checkerboard, QrMaskPattern.PatternOne_HorizontalLines, QrMaskPattern.PatternTwo_VerticalLines, QrMaskPattern.PatternThree_DiagonalLines, QrMaskPattern.PatternFour_LargeCheckerboard, QrMaskPattern.PatternFive_Fields, QrMaskPattern.PatternSix_Diamonds, QrMaskPattern.PatternSeven_Meadow];
+        var patterns = (ReadOnlySpan<MaskPattern>)[MaskPattern.PatternZero_Checkerboard, MaskPattern.PatternOne_HorizontalLines, MaskPattern.PatternTwo_VerticalLines, MaskPattern.PatternThree_DiagonalLines, MaskPattern.PatternFour_LargeCheckerboard, MaskPattern.PatternFive_Fields, MaskPattern.PatternSix_Diamonds, MaskPattern.PatternSeven_Meadow];
 
         var highestPenalty = int.MaxValue;
         var resultMatrix = matrix;
@@ -218,7 +218,7 @@ public static class QrSymbolBuilder
     /// </summary>
     public const int VersionInformationGeneratorPolynomial = 0b1111100100101;
 
-    public static void EncodeFormatInformation(TrackedBitMatrix matrix, ErrorCorrectionLevel errorCorrectionLevel, QrMaskPattern maskPattern)
+    public static void EncodeFormatInformation(TrackedBitMatrix matrix, ErrorCorrectionLevel errorCorrectionLevel, MaskPattern maskPattern)
     {
         var formatInformation = GetFormatInformation(errorCorrectionLevel, (byte)maskPattern);
         var size = matrix.Width;
@@ -303,7 +303,7 @@ public static class QrSymbolBuilder
         }
     }
 
-    public static void EncodeDataBits(TrackedBitMatrix matrix, QrVersion version, BitBuffer data, QrMaskPattern? maskPattern)
+    public static void EncodeDataBits(TrackedBitMatrix matrix, QrVersion version, BitBuffer data, MaskPattern? maskPattern)
     {
         if (version.TotalCodewords != data.ByteCount)
         {
@@ -322,7 +322,7 @@ public static class QrSymbolBuilder
 
         var maskPatternValue = maskPattern.GetValueOrDefault();
         //TODO: Optimize this further - derive actual mask operation here, and store in a function, rather than going through a switch statement inside GetMaskedBit each time
-        var maskFunction = maskPattern.HasValue ? GetMaskedBit : (Func<bool, QrMaskPattern, int, int, bool>)(static (bit, _, _, _) => bit);
+        var maskFunction = maskPattern.HasValue ? GetMaskedBit : (Func<bool, MaskPattern, int, int, bool>)(static (bit, _, _, _) => bit);
         var reverse = false;
         var bitIndex = 0;
         foreach (var x in xRange)
@@ -366,18 +366,18 @@ public static class QrSymbolBuilder
         Debug.Assert(bitIndex == (version.TotalCodewords * 8));
     }
 
-    public static bool GetMaskedBit(bool bit, QrMaskPattern mask, int x, int y)
+    public static bool GetMaskedBit(bool bit, MaskPattern mask, int x, int y)
     {
         var maskBit = mask switch
         {
-            QrMaskPattern.PatternZero_Checkerboard => (x + y) % 2 == 0,
-            QrMaskPattern.PatternOne_HorizontalLines => y % 2 == 0,
-            QrMaskPattern.PatternTwo_VerticalLines => x % 3 == 0,
-            QrMaskPattern.PatternThree_DiagonalLines => (x + y) % 3 == 0,
-            QrMaskPattern.PatternFour_LargeCheckerboard => ((y / 2) + (x / 3)) % 2 == 0,
-            QrMaskPattern.PatternFive_Fields => (y * x % 2) + (y * x % 3) == 0,
-            QrMaskPattern.PatternSix_Diamonds => ((x * y % 2) + (x * y % 3)) % 2 == 0,
-            QrMaskPattern.PatternSeven_Meadow => (((x + y) % 2) + (x * y % 3)) % 2 == 0,
+            MaskPattern.PatternZero_Checkerboard => (x + y) % 2 == 0,
+            MaskPattern.PatternOne_HorizontalLines => y % 2 == 0,
+            MaskPattern.PatternTwo_VerticalLines => x % 3 == 0,
+            MaskPattern.PatternThree_DiagonalLines => (x + y) % 3 == 0,
+            MaskPattern.PatternFour_LargeCheckerboard => ((y / 2) + (x / 3)) % 2 == 0,
+            MaskPattern.PatternFive_Fields => (y * x % 2) + (y * x % 3) == 0,
+            MaskPattern.PatternSix_Diamonds => ((x * y % 2) + (x * y % 3)) % 2 == 0,
+            MaskPattern.PatternSeven_Meadow => (((x + y) % 2) + (x * y % 3)) % 2 == 0,
             _ => throw new ArgumentOutOfRangeException(nameof(mask))
         };
         return maskBit != bit;
@@ -484,6 +484,11 @@ public static class QrSymbolBuilder
     // we could also implement some custom vectorization that works at the bit level
     private static (int LinePenalty, int PatternPenalty) CalculateLineAndPatternPenalty(BitBuffer line)
     {
+        if (line.Count > QrVersion.MaxModulesPerSide)
+        {
+            throw new InvalidOperationException("Line length exceeds maximum expected modules per side.");
+        }
+
         var values = GetValues(line, stackalloc char[QrVersion.MaxModulesPerSide]);
         AssertConvertedBytes(values);
 
@@ -590,7 +595,7 @@ public static class QrSymbolBuilder
 
     private static ReadOnlySpan<byte> RatioPointsLookup =>
     [
-         0,  0,  0,  0,  0, 0, 10, 10, 10, 10, 10, 20, 20, 20, 20, 20, // 0 - 15
+         0,  0,  0,  0,  0,  0, 10, 10, 10, 10, 10, 20, 20, 20, 20, 20, // 0 - 15
         30, 30, 30, 30, 30, 40, 40, 40, 40, 40, 50, 50, 50, 50, 50, // 16 - 30
         60, 60, 60, 60, 60, 70, 70, 70, 70, 70, 80, 80, 80, 80, 80, // 31 - 45
         90, 90, 90, 90, 90, // 46 - 50 (inclusive)
