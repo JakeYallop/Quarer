@@ -42,7 +42,7 @@ public static class QrSymbolBuilder
             EncodeFormatInformation(copiedMatrix, version.ErrorCorrectionLevel, pattern);
             EncodeDataBits(copiedMatrix, version, dataCodewords.Buffer, pattern);
 
-            var penalty = EvaluateSymbol(matrix);
+            var penalty = CalculatePenalty(matrix);
             if (penalty < highestPenalty)
             {
                 highestPenalty = penalty;
@@ -356,7 +356,7 @@ public static class QrSymbolBuilder
                 if (matrix.IsEmpty(x - 1, y))
                 {
                     var bit = data[(bitIndex & ~0b111) + (7 - (bitIndex % 8))];
-                    matrix[x - 1, y] = maskFunction(bit, maskPatternValue, x, y);
+                    matrix[x - 1, y] = maskFunction(bit, maskPatternValue, x - 1, y);
                     bitIndex++;
                 }
             }
@@ -425,14 +425,14 @@ public static class QrSymbolBuilder
         return yRange[..index];
     }
 
-    public static int EvaluateSymbol(TrackedBitMatrix matrix)
+    public static int CalculatePenalty(BitMatrix matrix)
     {
         var (rowPenalty, rowPatternPenalty) = CalculateRowPenalty(matrix);
         var (columnPenalty, columnPatternPenalty) = CalculateColumnPenalty(matrix);
+        var blocksPenalty = CalculateBlocksPenalty(matrix);
+        var ratioPenalty = CalculateRatioPenalty(matrix);
 
-        //TODO: 2x2 blocks of dark modules, proportion of dark modules
-
-        return rowPenalty + columnPenalty + rowPatternPenalty + columnPatternPenalty;
+        return rowPenalty + columnPenalty + rowPatternPenalty + columnPatternPenalty + blocksPenalty + ratioPenalty;
     }
 
     /// <summary>
@@ -440,7 +440,7 @@ public static class QrSymbolBuilder
     /// </summary>
     /// <param name="matrix"></param>
     /// <returns></returns>
-    public static (int LinePenalty, int PatternPenalty) CalculateRowPenalty(TrackedBitMatrix matrix)
+    public static (int LinePenalty, int PatternPenalty) CalculateRowPenalty(BitMatrix matrix)
     {
         var linePenaltyTotal = 0;
         var patternPenaltyTotal = 0;
@@ -459,11 +459,11 @@ public static class QrSymbolBuilder
     /// </summary>
     /// <param name="matrix"></param>
     /// <returns></returns>
-    public static (int ColumnPenalty, int PatternPenalty) CalculateColumnPenalty(TrackedBitMatrix matrix)
+    public static (int ColumnPenalty, int PatternPenalty) CalculateColumnPenalty(BitMatrix matrix)
     {
         var linePenaltyTotal = 0;
         var patternPenaltyTotal = 0;
-        for (var i = 0; i < matrix.Height; i++)
+        for (var i = 0; i < matrix.Width; i++)
         {
             var (linePenalty, patternPenalty) = CalculateLineAndPatternPenalty(matrix.GetColumn(i));
             linePenaltyTotal += linePenalty;
@@ -473,68 +473,146 @@ public static class QrSymbolBuilder
         return (linePenaltyTotal, patternPenaltyTotal);
     }
 
-    private static ReadOnlySpan<byte> FinderPatternTrailing => [0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 1];
-    private static ReadOnlySpan<byte> FinderPatternLeading => [1, 0, 1, 1, 1, 0, 1, 0, 0, 0, 0];
-    private static ReadOnlySpan<byte> FinderPatternAll => [0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 1, 0, 0, 0, 0];
-    private static readonly SearchValues<byte> LinePattern = SearchValues.Create([1, 1, 1, 1, 1]);
+    private static ReadOnlySpan<char> FinderPatternTrailing => [(char)0, (char)0, (char)0, (char)0, (char)1, (char)0, (char)1, (char)1, (char)1, (char)0, (char)1];
+    private static ReadOnlySpan<char> FinderPatternLeading => [(char)1, (char)0, (char)1, (char)1, (char)1, (char)0, (char)1, (char)0, (char)0, (char)0, (char)0];
+    private static ReadOnlySpan<char> FinderPatternAll => [(char)0, (char)0, (char)0, (char)0, (char)1, (char)0, (char)1, (char)1, (char)1, (char)0, (char)1, (char)0, (char)0, (char)0, (char)0];
+    private static readonly SearchValues<string> DarkLinePattern = SearchValues.Create([new string([(char)1, (char)1, (char)1, (char)1, (char)1])], StringComparison.Ordinal);
+    private static readonly SearchValues<string> LightLinePattern = SearchValues.Create([new string([(char)0, (char)0, (char)0, (char)0, (char)0])], StringComparison.Ordinal);
 
     //TODO: Evaluate the constant overhead of this vectorization - it could outweigh the benefits of the vectorization itself
     // a more linear approach could be faster, especially for smaller values, the range of values is from 21 - 187.
     // we could also implement some custom vectorization that works at the bit level
     private static (int LinePenalty, int PatternPenalty) CalculateLineAndPatternPenalty(BitBuffer line)
     {
-        var values = GetValues(line, stackalloc byte[QrVersion.MaxModulesPerSide]);
+        var values = GetValues(line, stackalloc char[QrVersion.MaxModulesPerSide]);
         AssertConvertedBytes(values);
 
-        var currentIndex = 0;
-        var currentLineModuleCount = 0;
         var linePenalty = 0;
 
         var patternCount = values.Count(FinderPatternLeading);
         patternCount += values.Count(FinderPatternTrailing);
         patternCount -= values.Count(FinderPatternAll);
 
-        currentIndex = values.IndexOfAny(LinePattern);
-        while (currentIndex != -1 && currentIndex < values.Length)
-        {
-            currentLineModuleCount = 5;
-            currentIndex += currentLineModuleCount + 1;
-            while (currentIndex < values.Length && values[currentIndex] == 1)
-            {
-                currentLineModuleCount++;
-                currentLineModuleCount += 1;
-                currentIndex += currentLineModuleCount + 1;
-            }
-
-            linePenalty += currentLineModuleCount - 2;
-            if (currentIndex < values.Length)
-            {
-                currentIndex = values[(currentIndex + 1)..].IndexOfAny(LinePattern);
-            }
-        }
+        linePenalty += ProcessLine(values, DarkLinePattern, (char)1);
+        linePenalty += ProcessLine(values, LightLinePattern, (char)0);
 
         return (linePenalty, patternCount * 40);
 
-        static ReadOnlySpan<byte> GetValues(BitBuffer line, Span<byte> destination)
+        static int ProcessLine(ReadOnlySpan<char> values, SearchValues<string> searchPattern, char moduleType)
+        {
+            var currentIndex = 0;
+            var currentLineModuleCount = 0;
+            var linePenalty = 0;
+
+            currentIndex = values.IndexOfAny(searchPattern);
+            while (currentIndex != -1 && currentIndex < values.Length)
+            {
+                currentLineModuleCount = 5;
+                currentIndex += currentLineModuleCount;
+                while (currentIndex < values.Length && values[currentIndex] == moduleType)
+                {
+                    currentLineModuleCount++;
+                    currentIndex++;
+                }
+
+                linePenalty += currentLineModuleCount - 2;
+                if (currentIndex < values.Length)
+                {
+                    values = values[(currentIndex + 1)..];
+                    currentIndex = values.IndexOfAny(searchPattern);
+                }
+            }
+
+            return linePenalty;
+        }
+
+        static ReadOnlySpan<char> GetValues(BitBuffer line, Span<char> destination)
         {
             var index = 0;
             foreach (var b in line.AsBitEnumerable())
             {
                 // we cannot just bit cast here as the internal representation of a bool is undefined
-                destination[index] = b ? (byte)1 : (byte)0;
+                destination[index] = b ? (char)1 : (char)0;
+
+                //var bit = Unsafe.BitCast<bool, byte>(b);
+                //// map bit to 0 if zero, 1 if non-zero
+                //bit = unchecked((byte)((bit | (uint)-bit) >> 31));
+                //destination[index] = (char)bit;
+
                 index++;
             }
-            return destination[..(index + 1)];
+            return destination[..index];
         }
 
         [Conditional("DEBUG")]
-        static void AssertConvertedBytes(ReadOnlySpan<byte> bytes)
+        static void AssertConvertedBytes(ReadOnlySpan<char> bytes)
         {
             for (var i = 0; i < bytes.Length; i++)
             {
                 Debug.Assert(bytes[i] < 2, $"Found value greater than 1 at index {i}. Expected all values to be either 1 or 0. [{string.Join(", ", bytes.Slice(Math.Min(0, i), Math.Max(bytes.Length, i + 5)).ToArray())}");
             }
         }
+    }
+
+    /// <summary>
+    /// Calculates the penalty for 2x2 blocks of dark or light modules in a symbol.
+    /// </summary>
+    /// <param name="matrix"></param>
+    /// <returns></returns>
+    public static int CalculateBlocksPenalty(BitMatrix matrix)
+    {
+        var blocksPenalty = 0;
+        for (var y = 0; y < matrix.Height - 1; y++)
+        {
+            var x = 0;
+            var row1 = matrix[x, y] ? (byte)1 : (byte)0;
+            var row2 = matrix[x, y + 1] ? (byte)1 : (byte)0;
+
+            byte pattern = 0;
+            pattern |= (byte)(row1 << 3);
+            pattern |= (byte)(row2 << 2);
+
+            x++;
+            for (; x < matrix.Width; x++)
+            {
+                pattern = (byte)(pattern >> 2);
+                pattern |= (byte)((matrix[x, y] ? 1 : 0) << 3);
+                pattern |= (byte)((matrix[x, y + 1] ? 1 : 0) << 2);
+
+                if (pattern is 0b0000 or 0b1111)
+                {
+                    blocksPenalty += 3;
+                }
+            }
+        }
+        return blocksPenalty;
+    }
+
+    private static ReadOnlySpan<byte> RatioPointsLookup =>
+    [
+         0,  0,  0,  0,  0, 0, 10, 10, 10, 10, 10, 20, 20, 20, 20, 20, // 0 - 15
+        30, 30, 30, 30, 30, 40, 40, 40, 40, 40, 50, 50, 50, 50, 50, // 16 - 30
+        60, 60, 60, 60, 60, 70, 70, 70, 70, 70, 80, 80, 80, 80, 80, // 31 - 45
+        90, 90, 90, 90, 90, // 46 - 50 (inclusive)
+    ];
+    public static int CalculateRatioPenalty(BitMatrix matrix)
+    {
+        var darkModules = 0;
+        for (var i = 0; i < matrix.Height; i++)
+        {
+            for (var j = 0; j < matrix.Width; j++)
+            {
+                if (matrix[j, i])
+                {
+                    darkModules++;
+                }
+            }
+        }
+
+        var totalModules = matrix.Width * matrix.Height;
+
+        var ratio = int.Abs((darkModules * 100 / totalModules) - 50);
+        return RatioPointsLookup[ratio];
     }
 
     private static ReadOnlySpan<ushort> FormatInformationL =>
