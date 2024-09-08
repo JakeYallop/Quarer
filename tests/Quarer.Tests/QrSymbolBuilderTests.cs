@@ -1,4 +1,4 @@
-﻿using System.Text;
+﻿using static Quarer.Tests.MatrixTestUtilities;
 
 namespace Quarer.Tests;
 
@@ -36,7 +36,7 @@ public class QrSymbolBuilderTests
             X-XXX-X--------------
             X-----X--------------
             XXXXXXX--------------
-            """, ToString(m), ignoreLineEndingDifferences: true, ignoreAllWhiteSpace: true);
+            """, MatrixToString(m), ignoreLineEndingDifferences: true, ignoreAllWhiteSpace: true);
     }
 
     [Fact]
@@ -71,7 +71,7 @@ public class QrSymbolBuilderTests
             XXXXXXXX-------------
             XXXXXXXX-------------
             XXXXXXXX-------------
-            """, ChangesToString(m), ignoreLineEndingDifferences: true, ignoreAllWhiteSpace: true);
+            """, ChangesMatrixToString(m), ignoreLineEndingDifferences: true, ignoreAllWhiteSpace: true);
     }
 
     [Fact]
@@ -107,7 +107,7 @@ public class QrSymbolBuilderTests
             X-XXX-X--------------
             X-----X--------------
             XXXXXXX--------------
-            """, ToString(m), ignoreLineEndingDifferences: true, ignoreAllWhiteSpace: true);
+            """, MatrixToString(m), ignoreLineEndingDifferences: true, ignoreAllWhiteSpace: true);
     }
 
     [Fact]
@@ -144,7 +144,7 @@ public class QrSymbolBuilderTests
             X-XXX-X--------------
             X-----X--------------
             XXXXXXX--------------
-            """, ToString(m), ignoreLineEndingDifferences: true, ignoreAllWhiteSpace: true);
+            """, MatrixToString(m), ignoreLineEndingDifferences: true, ignoreAllWhiteSpace: true);
     }
 
     [Fact]
@@ -181,7 +181,7 @@ public class QrSymbolBuilderTests
             X-XXX-X-X------------
             X-----X--------------
             XXXXXXX-X------------
-            """, ToString(m), ignoreLineEndingDifferences: true, ignoreAllWhiteSpace: true);
+            """, MatrixToString(m), ignoreLineEndingDifferences: true, ignoreAllWhiteSpace: true);
     }
 
     [Fact]
@@ -277,7 +277,7 @@ public class QrSymbolBuilderTests
             X-XXX-X--------------------------------------
             X-----X--------------------------------------
             XXXXXXX--------------------------------------
-            """, ToString(m), ignoreLineEndingDifferences: true, ignoreAllWhiteSpace: true);
+            """, MatrixToString(m), ignoreLineEndingDifferences: true, ignoreAllWhiteSpace: true);
     }
 
     [Fact]
@@ -321,7 +321,7 @@ public class QrSymbolBuilderTests
             X-XXX-X-X----------------
             X-----X------------------
             XXXXXXX-X----------------
-            """, ToString(m), ignoreLineEndingDifferences: true, ignoreAllWhiteSpace: true);
+            """, MatrixToString(m), ignoreLineEndingDifferences: true, ignoreAllWhiteSpace: true);
 
         var codewordsBuffer = AlternatingCodewordsBuffer(version.TotalCodewords);
         QrSymbolBuilder.EncodeDataBits(m, version, codewordsBuffer, maskPattern: null);
@@ -352,7 +352,7 @@ public class QrSymbolBuilderTests
             X-XXX-X-X--XX--------XX--
             X-----X----XX--XXXX--XX--
             XXXXXXX-X--X---XXXX--XX--
-            """, ToString(m));
+            """, MatrixToString(m));
     }
 
     [Fact]
@@ -419,7 +419,7 @@ public class QrSymbolBuilderTests
             X-XXX-X-X--XX--XX--XXXX------------XX----XX--
             X-----X----XX--XX------XXXXXXXXXXXXXX----XX--
             XXXXXXX----------------XXXXXXXXXXXXXX----XX--
-            """, ToString(m), ignoreLineEndingDifferences: true, ignoreAllWhiteSpace: true);
+            """, MatrixToString(m), ignoreLineEndingDifferences: true, ignoreAllWhiteSpace: true);
     }
 
     private static (TrackedBitMatrix, QrVersion) Get1MSymbolWithoutData(MaskPattern maskPattern)
@@ -467,7 +467,7 @@ public class QrSymbolBuilderTests
             X-XXX-X-X-X-X-X-X-X-X
             X-----X--X-X-X-X-X-X-
             XXXXXXX-X-X-X-X-X-X-X
-            """, ToString(m));
+            """, MatrixToString(m));
     }
 
     [Fact]
@@ -498,7 +498,7 @@ public class QrSymbolBuilderTests
             X-XXX-X-XXXXXXXXXXXXX
             X-----X--------------
             XXXXXXX-XXXXXXXXXXXXX
-            """, ToString(m));
+            """, MatrixToString(m));
     }
 
     [Fact]
@@ -529,7 +529,7 @@ public class QrSymbolBuilderTests
             X-XXX-X-XX--X--X--X--
             X-----X--X--X--X--X--
             XXXXXXX-XX--X--X--X--
-            """, ToString(m));
+            """, MatrixToString(m));
     }
 
     [Fact]
@@ -560,7 +560,7 @@ public class QrSymbolBuilderTests
             X-XXX-X-XX--X--X--X--
             X-----X----X--X--X--X
             XXXXXXX-X-X--X--X--X-
-            """, ToString(m));
+            """, MatrixToString(m));
     }
 
     [Fact]
@@ -591,7 +591,7 @@ public class QrSymbolBuilderTests
             X-XXX-X-XXXX---XXX---
             X-----X--XXX---XXX---
             XXXXXXX-X---XXX---XXX
-            """, ToString(m));
+            """, MatrixToString(m));
     }
 
     [Fact]
@@ -622,7 +622,7 @@ public class QrSymbolBuilderTests
             X-XXX-X-XXXXXXXXXXXXX
             X-----X-----X-----X--
             XXXXXXX-XX--X--X--X--
-            """, ToString(m));
+            """, MatrixToString(m));
     }
 
     [Fact]
@@ -653,7 +653,7 @@ public class QrSymbolBuilderTests
             X-XXX-X-XXXXXXXXXXXXX
             X-----X-----XXX---XXX
             XXXXXXX-XXX-XX-XX-XX-
-            """, ToString(m));
+            """, MatrixToString(m));
     }
 
     [Fact]
@@ -684,33 +684,7 @@ public class QrSymbolBuilderTests
             X-XXX-X-X-X-X-X-X-X-X
             X-----X--XXX---XXX---
             XXXXXXX-X-XXX---XXX--
-            """, ToString(m));
-    }
-
-    private static BitMatrix InputToMatrix(string input)
-    {
-        BitMatrix? matrix = null;
-        var span = input.AsSpan();
-        var height = span.Count("\n") + 1;
-        var y = 0;
-        var lineLength = 0;
-        foreach (var line in span.EnumerateLines())
-        {
-            matrix ??= new BitMatrix(line.Length, height);
-            lineLength = lineLength == 0 ? line.Length : lineLength;
-
-            if (lineLength != line.Length)
-            {
-                throw new ArgumentException("All lines must have the same length.");
-            }
-
-            for (var x = 0; x < line.Length; x++)
-            {
-                matrix[x, y] = line[x] == 'X';
-            }
-            y++;
-        }
-        return matrix!;
+            """, MatrixToString(m));
     }
 
     [Theory]
@@ -896,62 +870,29 @@ public class QrSymbolBuilderTests
         Assert.Equal(expectedPenalty, penalty);
     }
 
-    private static string ToString(BitMatrix m)
+    private static BitMatrix InputToMatrix(string input)
     {
-        var sb = new StringBuilder(m.Width * m.Height);
-        for (var y = 0; y < m.Height; y++)
+        BitMatrix? matrix = null;
+        var span = input.AsSpan();
+        var height = span.Count("\n") + 1;
+        var y = 0;
+        var lineLength = 0;
+        foreach (var line in span.EnumerateLines())
         {
-            for (var x = 0; x < m.Width; x++)
+            matrix ??= new BitMatrix(line.Length, height);
+            lineLength = lineLength == 0 ? line.Length : lineLength;
+
+            if (lineLength != line.Length)
             {
-                sb.Append(m[x, y] ? 'X' : '-');
+                throw new ArgumentException("All lines must have the same length.");
             }
 
-            if (y + 1 < m.Height)
+            for (var x = 0; x < line.Length; x++)
             {
-                sb.AppendLine();
+                matrix[x, y] = line[x] == 'X';
             }
+            y++;
         }
-        return sb.ToString();
-    }
-
-    private static string ChangesToString(TrackedBitMatrix m)
-    {
-        var sb = new StringBuilder(m.Width * m.Height);
-        for (var y = 0; y < m.Height; y++)
-        {
-            for (var x = 0; x < m.Width; x++)
-            {
-                sb.Append(m.IsEmpty(x, y) ? '-' : 'X');
-            }
-
-            if (y + 1 < m.Height)
-            {
-                sb.AppendLine();
-            }
-        }
-        return sb.ToString();
-    }
-
-    private static BitBuffer AlternatingCodewordsBuffer(int n)
-    {
-        var buffer = new BitBuffer(n * 8);
-        var writer = new BitWriter(buffer);
-        for (var i = 0; i < n; i++)
-        {
-            var b = (byte)(i % 2 == 0 ? 0 : 255);
-            writer.WriteBitsBigEndian(b, 8);
-        }
-        return buffer;
-    }
-
-    private static BitBuffer AllZeroBuffer(int n)
-    {
-        var buffer = new BitBuffer(n * 8);
-        var writer = new BitWriter(buffer);
-        for (var i = 0; i < n; i++)
-        {
-            writer.WriteBitsBigEndian(0, 8);
-        }
-        return buffer;
+        return matrix!;
     }
 }

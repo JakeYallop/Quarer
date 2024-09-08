@@ -1,5 +1,7 @@
-﻿using System.Buffers.Binary;
+﻿using System;
+using System.Buffers.Binary;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -35,21 +37,14 @@ internal sealed class BitBufferDebugView
 
     public LazyBitView BitView => new(_bitBuffer);
 
-    public class LazyBitView
+    public class LazyBitView(BitBuffer bitBuffer)
     {
-        private readonly BitBuffer _bitBuffer;
-
-        public LazyBitView(BitBuffer bitBuffer)
-        {
-            _bitBuffer = bitBuffer;
-        }
-
         public string Value
         {
             get
             {
-                var sb = new StringBuilder(_bitBuffer.Count);
-                foreach (var i in _buffer(_bitBuffer))
+                var sb = new StringBuilder(bitBuffer.Count);
+                foreach (var i in _buffer(bitBuffer))
                 {
                     sb.AppendFormat("{0:B32}", i);
                 }
@@ -61,7 +56,7 @@ internal sealed class BitBufferDebugView
 }
 
 [DebuggerTypeProxy(typeof(BitBufferDebugView))]
-public sealed class BitBuffer
+public sealed class BitBuffer : IEquatable<BitBuffer>
 {
     private const int BitsPerElement = 32;
     private const int BitShiftPerElement = 5;
@@ -420,8 +415,143 @@ public sealed class BitBuffer
         }
     }
 
-    internal static int GetElementLengthFromBitsCeil(int bits) => (int)((uint)(bits - 1 + (1u << BitShiftPerElement)) >> BitShiftPerElement);
-    internal static int GetElementLengthFromBitsFloor(int bits) => bits >> BitShiftPerElement;
-    internal static int GetElementLengthFromBytesCeil(int bytes) => (int)((uint)(bytes - 1 + (1u << (BytesShiftPerElement - 1))) >> (BytesShiftPerElement - 1));
-    internal static int GetElementLengthFromBytesFloor(int bytes) => bytes >> (BytesShiftPerElement - 1);
+    public static bool operator ==(BitBuffer? left, BitBuffer? right) => left is null ? right is null : left.Equals(right);
+    public static bool operator !=(BitBuffer? left, BitBuffer? right) => !(left == right);
+    public override bool Equals([NotNullWhen(true)] object? obj) => obj is BitBuffer other && Equals(other);
+    public bool Equals(BitBuffer? other)
+    {
+        if (other is null)
+        {
+            return false;
+        }
+
+        if (ReferenceEquals(this, other))
+        {
+            return true;
+        }
+
+        if (Count != other.Count)
+        {
+            return false;
+        }
+
+        var buffer = CollectionsMarshal.AsSpan(_buffer);
+        var otherBuffer = CollectionsMarshal.AsSpan(other._buffer);
+
+        if (((uint)Count & (BitsPerElement - 1)) == 0u)
+        {
+            return buffer.SequenceEqual(otherBuffer);
+        }
+
+        var elementCount = GetElementLengthFromBitsCeil(Count);
+        if (!buffer[..(elementCount - 1)].SequenceEqual(otherBuffer[..(elementCount - 1)]))
+        {
+            return false;
+        }
+
+        var finalElement = buffer[elementCount - 1];
+        var otherFinalElement = otherBuffer[elementCount - 1];
+
+        var bitsInFinalElement = Count & (BitsPerElement - 1);
+        var remainingLength = bitsInFinalElement;
+
+        Debug.Assert(remainingLength < BitsPerElement, "Expected remaining length to be less than BitsPerElement, as any length above it should have already been handled.");
+        if (remainingLength >= 16)
+        {
+            const int ShiftForUshort = BitsPerElement - 16;
+            if (ushort.CreateTruncating(finalElement >> ShiftForUshort) != ushort.CreateTruncating(otherFinalElement >> ShiftForUshort))
+            {
+                return false;
+            }
+            finalElement <<= 16;
+            otherFinalElement <<= 16;
+            remainingLength -= 16;
+        }
+        Debug.Assert(remainingLength < 16, "Expected remaining length to be < 16, as any length above it should have already been handled.");
+
+        if (remainingLength >= 8)
+        {
+            const int ShiftForByte = BitsPerElement - 8;
+            if (byte.CreateTruncating(finalElement >> ShiftForByte) != byte.CreateTruncating(otherFinalElement >> ShiftForByte))
+            {
+                return false;
+            }
+            finalElement <<= 8;
+            otherFinalElement <<= 8;
+            remainingLength -= 8;
+        }
+        Debug.Assert(remainingLength < 8, "Expected remaining length to be < 8, as any length above it should have already been handled.");
+
+        for (var i = 0; i < remainingLength; i++)
+        {
+            var bit = finalElement & (1 << (BitsPerElement - i - 1));
+            var otherBit = otherFinalElement & (1 << (BitsPerElement - i - 1));
+            if (bit != otherBit)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    public override int GetHashCode()
+    {
+        var buffer = CollectionsMarshal.AsSpan(_buffer);
+        var hashCode = new HashCode();
+
+        if (((uint)Count & (BitsPerElement - 1)) == 0u)
+        {
+            foreach (var i in buffer)
+            {
+                hashCode.Add(i);
+            }
+            return hashCode.ToHashCode();
+        }
+
+        var elementCount = GetElementLengthFromBitsCeil(Count);
+        var fullElements = buffer[..(elementCount - 1)];
+        foreach (var i in fullElements)
+        {
+            hashCode.Add(i);
+        }
+
+        var finalElement = buffer[elementCount - 1];
+
+        var bitsInFinalElement = Count & (BitsPerElement - 1);
+        var remainingLength = bitsInFinalElement;
+
+        Debug.Assert(remainingLength < BitsPerElement, "Expected remaining length to be less than BitsPerElement, as any length above it should have already been handled.");
+        if (remainingLength >= 16)
+        {
+            const int ShiftForUshort = BitsPerElement - 16;
+            hashCode.Add(ushort.CreateTruncating(finalElement >> ShiftForUshort));
+            finalElement <<= 16;
+            remainingLength -= 16;
+        }
+        Debug.Assert(remainingLength < 16, "Expected remaining length to be < 16, as any length above it should have already been handled.");
+
+        if (remainingLength >= 8)
+        {
+            const int ShiftForByte = BitsPerElement - 8;
+            hashCode.Add(byte.CreateTruncating(finalElement >> ShiftForByte));
+            finalElement <<= 8;
+            remainingLength -= 8;
+        }
+        Debug.Assert(remainingLength < 8, "Expected remaining length to be < 8, as any length above it should have already been handled.");
+
+        for (var i = 0; i < remainingLength; i++)
+        {
+            var bit = finalElement & (1 << (BitsPerElement - i - 1));
+            hashCode.Add(bit);
+        }
+
+        return hashCode.ToHashCode();
+    }
+
+    private static int GetElementLengthFromBitsCeil(int bits) => (int)((uint)(bits - 1 + (1u << BitShiftPerElement)) >> BitShiftPerElement);
+    private static int GetElementLengthFromBitsFloor(int bits) => bits >> BitShiftPerElement;
+    private static int GetElementLengthFromBytesCeil(int bytes) => (int)((uint)(bytes - 1 + (1u << (BytesShiftPerElement - 1))) >> (BytesShiftPerElement - 1));
+    private static int GetElementLengthFromBytesFloor(int bytes) => bytes >> (BytesShiftPerElement - 1);
+
 }

@@ -15,6 +15,6 @@ public sealed class QrCode(QrVersion version, MaskPattern maskPattern, BitMatrix
     public static bool operator !=(QrCode? left, QrCode? right) => !(left == right);
 
     public bool Equals([NotNullWhen(true)] QrCode? other) => other is not null && Version == other.Version && MaskPattern == other.MaskPattern && Data == other.Data;
-    public override bool Equals(object? obj) => obj is QrCode other && Equals(other);
+    public override bool Equals([NotNullWhen(true)] object? obj) => obj is QrCode other && Equals(other);
     public override int GetHashCode() => HashCode.Combine(Version, MaskPattern, Data);
 }

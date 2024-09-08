@@ -1,5 +1,7 @@
 ﻿namespace Quarer.Tests;
 
+using System.Diagnostics;
+
 public class BitMatrixTests
 {
     [Fact]
@@ -139,5 +141,117 @@ public class BitMatrixTests
     {
         var matrix = new BitMatrix(33, 31);
         Assert.Throws<ArgumentOutOfRangeException>(() => matrix.GetColumn(33));
+    }
+
+    [Theory]
+    [InlineData(1, 1, "X")]
+    [InlineData(1, 2, "X-")]
+    [InlineData(1, 2, "-X")]
+    [InlineData(1, 3, "-X-")]
+    [InlineData(3, 3, "-X-X-X-X-")]
+    [InlineData(10, 10, "--")]
+    public void Equals_ReturnsExpectedResult(int width, int height, string contents)
+    {
+        var m1 = InputToMatrix(width, height, contents);
+        var m2 = InputToMatrix(width, height, contents);
+        var result = m1.Equals((object)m2);
+        Assert.True(result);
+    }
+
+    [Theory]
+    [InlineData(1, 1, "X")]
+    [InlineData(1, 2, "X-")]
+    [InlineData(1, 2, "-X")]
+    [InlineData(1, 3, "-X-")]
+    [InlineData(3, 3, "-X-X-X-X-")]
+    [InlineData(10, 10, "--")]
+    public void GetHashCode_Equal_ReturnsSameHashcode(int width, int height, string contents)
+    {
+        var m1 = InputToMatrix(width, height, contents);
+        var m2 = InputToMatrix(width, height, contents);
+        var m1HashCode = m1.GetHashCode();
+        var m2HashCode = m2.GetHashCode();
+        Assert.Equal(m1HashCode, m2HashCode);
+    }
+
+    [Theory]
+    [InlineData(1, 1, "X", 1, 2, "")]
+    [InlineData(1, 3, "", 1, 2, "")]
+    [InlineData(2, 1, "", 1, 2, "")]
+    [InlineData(2, 2, "XX--", 2, 2, "X-X-")]
+    [InlineData(3, 3, "X-X-X-X-X-", 3, 2, "X-X-X-")]
+    public void GetHashCode_NotEqual_ReturnsDifferentHashcode(int width, int height, string contents, int width2, int height2, string contents2)
+    {
+        var m1 = InputToMatrix(width, height, contents);
+        var m2 = InputToMatrix(width2, height2, contents2);
+        var m1HashCode = m1.GetHashCode();
+        var m2HashCode = m2.GetHashCode();
+        Assert.NotEqual(m1HashCode, m2HashCode);
+    }
+
+    [Theory]
+    [InlineData(1, 1, "X")]
+    [InlineData(1, 2, "X-")]
+    [InlineData(1, 2, "-X")]
+    [InlineData(1, 3, "-X-")]
+    [InlineData(3, 3, "-X-X-X-X-")]
+    [InlineData(10, 10, "--")]
+    public void Equals_IEquatable_ReturnsExpectedResult(int width, int height, string contents)
+    {
+        var m1 = InputToMatrix(width, height, contents);
+        var m2 = InputToMatrix(width, height, contents);
+        var result = m1.Equals(m2);
+        Assert.True(result);
+    }
+
+    [Theory]
+    [InlineData(1, 1, "X")]
+    [InlineData(1, 2, "X-")]
+    [InlineData(1, 2, "-X")]
+    [InlineData(1, 3, "-X-")]
+    [InlineData(3, 3, "-X-X-X-X-")]
+    [InlineData(10, 10, "--")]
+    public void Op_Equality_ReturnsExpectedResult(int width, int height, string contents)
+    {
+        var m1 = InputToMatrix(width, height, contents);
+        var m2 = InputToMatrix(width, height, contents);
+        var result = m1 == m2;
+        Assert.True(result);
+    }
+
+    [Theory]
+    [InlineData(1, 1, "X", 1, 2, "")]
+    [InlineData(1, 3, "", 1, 2, "")]
+    [InlineData(2, 1, "", 1, 2, "")]
+    [InlineData(2, 2, "XX--", 2, 2, "X-X-")]
+    [InlineData(3, 3, "X-X-X-X-X-", 3, 2, "X-X-X-")]
+    public void Op_Inequality_ReturnsExpectedResult(int width, int height, string contents, int width2, int height2, string contents2)
+    {
+        var m1 = InputToMatrix(width, height, contents);
+        var m2 = InputToMatrix(width2, height2, contents2);
+        var result = m1 != m2;
+        Assert.True(result);
+    }
+
+    private static BitMatrix InputToMatrix(int width, int height, string input)
+    {
+        var matrix = new BitMatrix(width, height);
+        var written = 0;
+        for (var y = 0; y < matrix.Height; y++)
+        {
+            for (var x = 0; x < matrix.Width; x++)
+            {
+                if (written == input.Length)
+                {
+                    break;
+                }
+
+                Debug.Assert(input[written] is 'X' or '-', "Expected input to consist of only 'X' and '-'.");
+                matrix[x, y] = input[written] == 'X';
+                written++;
+            }
+        }
+
+        return matrix!;
     }
 }

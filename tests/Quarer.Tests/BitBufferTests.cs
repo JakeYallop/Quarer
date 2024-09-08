@@ -510,4 +510,132 @@ public class BitBufferTests
         var destination = new BitBuffer();
         Assert.Throws<ArgumentException>(() => bitBuffer.CopyTo(destination));
     }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("0000")]
+    [InlineData("0101")]
+    [InlineData("1111_1111_1111_1111_1111_1111_1111_1111_0001")]
+    public void Equals_ReturnsExpectedResult(string contents)
+    {
+        var buffer1 = InputToBuffer(contents);
+        var buffer2 = InputToBuffer(contents);
+        var result = buffer1.Equals((object)buffer2);
+        Assert.True(result);
+    }
+
+    [Fact]
+    public void Equals_AfterSetCount_WithUnusedNonZeroBits_ReturnsExpectedResult()
+    {
+        var buffer1 = InputToBuffer("1111_1111_1111_1111_1111_1111_1111_1111_0001"); //36 bits
+        var buffer2 = InputToBuffer("1111_1111_1111_1111"); //16 bits
+
+        buffer1.SetCountUnsafe(16);
+
+        Assert.True(buffer1.Equals(buffer2));
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("0000")]
+    [InlineData("0101")]
+    [InlineData("1111_1111_1111_1111_1111_1111_1111_1111_0001")]
+    [InlineData("1111_1111_1111_1111_1111_1111_1111_1111_0001_1000_0001_1001_1010_1010_11")] //32 + 16 + 8 + 2 bits
+    public void Equals_IEquatable_ReturnsExpectedResult(string contents)
+    {
+        var buffer1 = InputToBuffer(contents);
+        var buffer2 = InputToBuffer(contents);
+        var result = buffer1.Equals(buffer2);
+        Assert.True(result);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("0000")]
+    [InlineData("0101")]
+    [InlineData("1111_1111_1111_1111_1111_1111_1111_1111_0001")]
+    public void Op_Equality_ReturnsExpectedResult(string contents)
+    {
+        var buffer1 = InputToBuffer(contents);
+        var buffer2 = InputToBuffer(contents);
+        var result = buffer1 == buffer2;
+        Assert.True(result);
+    }
+
+    [Theory]
+    [InlineData("", "1")]
+    [InlineData("0000", "0101")]
+    [InlineData("1111_1111_1111_1111_1111_1111_1111_1110", "1111_1111_1111_1111_1111_1111_1111_1111")]
+    [InlineData("1111_1111_1111_1111_1111_1111_1111_1111_1", "1111_1111_1111_1111_1111_1111_1111_1111_0")]
+    public void Op_Inequality_ReturnsExpectedResult(string contents, string contents2)
+    {
+        var buffer1 = InputToBuffer(contents);
+        var buffer2 = InputToBuffer(contents2);
+        var result = buffer1 != buffer2;
+        Assert.True(result);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("0000")]
+    [InlineData("0101")]
+    [InlineData("1111_1111_1111_1111_1111_1111_1111_1111_0001")]
+    [InlineData("1111_1111_1111_1111_1111_1111_1111_1111_0001_1000_0001_1001_1010_1010_11")] //32 + 16 + 8 + 2 bits
+    public void GetHashCode_Equal_ReturnsSameHashcode(string contents)
+    {
+        var buffer1 = InputToBuffer(contents);
+        var buffer2 = InputToBuffer(contents);
+        var hashCode1 = buffer1.GetHashCode();
+        var hashCode2 = buffer2.GetHashCode();
+        Assert.Equal(hashCode1, hashCode2);
+    }
+
+    [Theory]
+    [InlineData("", "1")]
+    [InlineData("0000", "0101")]
+    [InlineData("1111_1111_1111_1111_1111_1111_1111_1110", "1111_1111_1111_1111_1111_1111_1111_1111")]
+    [InlineData("1111_1111_1111_1111_1111_1111_1111_1111_0001_1000_0001_1001_1010_1010_11", "1111_1111_1111_1111_1111_1111_1111_1111_0001_1000_0001_1001_1010_1010_10")]
+    public void GetHashCode_NotEqual_ReturnsDifferentHashcode(string contents, string contents2)
+    {
+        var buffer1 = InputToBuffer(contents);
+        var buffer2 = InputToBuffer(contents2);
+        var hashCode1 = buffer1.GetHashCode();
+        var hashCode2 = buffer2.GetHashCode();
+        Assert.NotEqual(hashCode1, hashCode2);
+    }
+
+    [Fact]
+    public void HashCode_AfterSetCount_WithUnusedNonZeroBits_ReturnsExpectedResult()
+    {
+        var buffer1 = InputToBuffer("1111_1111_1111_1111_1111_1111_1111_1111_0001"); //36 bits
+        var buffer2 = InputToBuffer("1111_1111_1111_1111"); //16 bits
+
+        buffer1.SetCountUnsafe(16);
+
+        var hashCode1 = buffer1.GetHashCode();
+        var hashCode2 = buffer2.GetHashCode();
+        Assert.Equal(hashCode1, hashCode2);
+    }
+
+    private static BitBuffer InputToBuffer(string input)
+    {
+        var bitbuffer = new BitBuffer(input.Length);
+        var writer = new BitWriter(bitbuffer);
+        foreach (var c in input)
+        {
+            if (c is '_' or ' ')
+            {
+                continue;
+            }
+
+            if (c is not '0' and not '1')
+            {
+                throw new ArgumentException("Input must be a binary string.", nameof(input));
+            }
+
+            writer.WriteBitsBigEndian(c is '1' ? 1 : 0, 1);
+        }
+
+        return bitbuffer;
+    }
 }

@@ -1,7 +1,9 @@
-﻿namespace Quarer;
+﻿using System.Diagnostics.CodeAnalysis;
+
+namespace Quarer;
 
 //TODO: Implement IEquatable and debugger display/type proxy
-public class BitMatrix
+public class BitMatrix : IEquatable<BitMatrix>
 {
     private readonly BitBuffer[] _values;
 
@@ -33,6 +35,14 @@ public class BitMatrix
 
             return arr;
         }
+    }
+
+    public int Width { get; }
+    public int Height { get; }
+    public virtual bool this[int x, int y]
+    {
+        get => _values[y][x];
+        set => _values[y][x] = value;
     }
 
     //TODO: Provide an indexable read only view into the matrix so we avoid copying here. We shouldn't return a BitBuffer as its writeable.
@@ -74,11 +84,22 @@ public class BitMatrix
         return new BitMatrix(buffers, Width, Height);
     }
 
-    public int Width { get; }
-    public int Height { get; }
-    public virtual bool this[int x, int y]
+    public static bool operator ==(BitMatrix? left, BitMatrix? right) => left is null ? right is null : left.Equals(right);
+    public static bool operator !=(BitMatrix? left, BitMatrix? right) => !(left == right);
+    public bool Equals([NotNullWhen(true)] BitMatrix? other) => other is not null &&
+        Width == other.Width &&
+        Height == other.Height &&
+        _values.SequenceEqual(other._values);
+    public override bool Equals([NotNullWhen(true)] object? obj) => obj is BitMatrix other && Equals(other);
+    public override int GetHashCode()
     {
-        get => _values[y][x];
-        set => _values[y][x] = value;
+        var hashCode = new HashCode();
+        hashCode.Add(Width);
+        hashCode.Add(Height);
+        foreach (var buffer in _values)
+        {
+            hashCode.Add(buffer);
+        }
+        return hashCode.ToHashCode();
     }
 }
