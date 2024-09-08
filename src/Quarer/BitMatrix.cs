@@ -1,8 +1,48 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
+using System.Text;
 
 namespace Quarer;
 
-//TODO: Implement IEquatable and debugger display/type proxy
+internal sealed class BitMatrixDebugView
+{
+    private readonly BitMatrix _bitMatrix;
+
+    public BitMatrixDebugView(BitMatrix bitMatrix)
+    {
+        _bitMatrix = bitMatrix;
+    }
+
+    public string Matrix
+    {
+        get
+        {
+            var sb = new StringBuilder(_bitMatrix.Width * _bitMatrix.Height);
+            for (var y = 0; y < _bitMatrix.Height; y++)
+            {
+                for (var x = 0; x < _bitMatrix.Width; x++)
+                {
+                    sb.Append(_bitMatrix[x, y] ? 'X' : '-');
+                    if (x + 1 < _bitMatrix.Width)
+                    {
+                        sb.Append(' ');
+                    }
+                }
+
+                if (y + 1 < _bitMatrix.Height)
+                {
+                    sb.AppendLine();
+                }
+            }
+            var s = sb.ToString();
+            sb.Clear();
+            return s;
+        }
+    }
+}
+
+[DebuggerTypeProxy(typeof(BitMatrixDebugView))]
 public class BitMatrix : IEquatable<BitMatrix>
 {
     private readonly BitBuffer[] _values;
