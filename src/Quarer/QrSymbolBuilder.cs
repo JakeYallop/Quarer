@@ -1,14 +1,15 @@
 ﻿using System.Buffers;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 
 namespace Quarer;
 
 public static class QrSymbolBuilder
 {
-    public static TrackedBitMatrix BuildSymbol(QrVersion version, BitWriter dataCodewords, MaskPattern? maskPattern = null)
+    public static (BitMatrix Matrix, MaskPattern SelectedMaskPattern) BuildSymbol(QrVersion version, BitBuffer dataCodewords, MaskPattern? maskPattern = null)
         => BuildSymbol(new TrackedBitMatrix(version.ModulesPerSide, version.ModulesPerSide), version, dataCodewords, maskPattern);
 
-    private static TrackedBitMatrix BuildSymbol(TrackedBitMatrix matrix, QrVersion version, BitWriter dataCodewords, MaskPattern? maskPattern = null)
+    private static (TrackedBitMatrix Matrix, MaskPattern SelectedMaskPattern) BuildSymbol(TrackedBitMatrix matrix, QrVersion version, BitBuffer dataCodewords, MaskPattern? maskPattern = null)
     {
         EncodePositionDetectionPattern(matrix, PositionDetectionPatternLocation.TopLeft);
         EncodePositionDetectionPattern(matrix, PositionDetectionPatternLocation.TopRight);
@@ -25,8 +26,8 @@ public static class QrSymbolBuilder
         if (maskPattern is not null)
         {
             EncodeFormatInformation(matrix, version.ErrorCorrectionLevel, maskPattern.Value);
-            EncodeDataBits(matrix, version, dataCodewords.Buffer, maskPattern.Value);
-            return matrix;
+            EncodeDataBits(matrix, version, dataCodewords, maskPattern.Value);
+            return (matrix, maskPattern.Value);
         }
 
         // otherwise, determine the best mask pattern to use
@@ -35,22 +36,25 @@ public static class QrSymbolBuilder
 
         var highestPenalty = int.MaxValue;
         var resultMatrix = matrix;
+        var selectedMaskPattern = patterns[0];
+        //TODO: Add tests this logic (e.g using a known symbol where we know what the best masking pattern is)
         foreach (var pattern in patterns)
         {
             var copiedMatrix = matrix.Clone();
             // important to encode format information before data bits so that non-empty modules are correctly set
             EncodeFormatInformation(copiedMatrix, version.ErrorCorrectionLevel, pattern);
-            EncodeDataBits(copiedMatrix, version, dataCodewords.Buffer, pattern);
+            EncodeDataBits(copiedMatrix, version, dataCodewords, pattern);
 
             var penalty = CalculatePenalty(matrix);
             if (penalty < highestPenalty)
             {
                 highestPenalty = penalty;
                 resultMatrix = copiedMatrix;
+                selectedMaskPattern = pattern;
             }
         }
 
-        return resultMatrix;
+        return (resultMatrix, selectedMaskPattern);
     }
 
     private readonly ref struct Point(int x, int y)
@@ -259,8 +263,6 @@ public static class QrSymbolBuilder
         matrix[2, 8] = (formatInformation & 0b001_0000_0000_0000) != 0;
         matrix[1, 8] = (formatInformation & 0b010_0000_0000_0000) != 0;
         matrix[0, 8] = (formatInformation & 0b100_0000_0000_0000) != 0;
-
-        //TODO: Write version of this that uses loops and compare perf vs code size
     }
 
     private static ushort GetFormatInformation(ErrorCorrectionLevel errorCorrectionLevel, byte maskPattern)
@@ -303,6 +305,7 @@ public static class QrSymbolBuilder
         }
     }
 
+    //TOOO: Document expectations (all other non-data modules non-empty (or empty and reserved))
     public static void EncodeDataBits(TrackedBitMatrix matrix, QrVersion version, BitBuffer data, MaskPattern? maskPattern)
     {
         if (version.TotalCodewords != data.ByteCount)
@@ -343,7 +346,7 @@ public static class QrSymbolBuilder
 
                 if (matrix.IsEmpty(x, y))
                 {
-                    var bit = data[(bitIndex & ~0b111) + (7 - (bitIndex % 8))];
+                    var bit = data[bitIndex];
                     matrix[x, y] = maskFunction(bit, maskPatternValue, x, y);
                     bitIndex++;
                 }
@@ -355,7 +358,7 @@ public static class QrSymbolBuilder
 
                 if (matrix.IsEmpty(x - 1, y))
                 {
-                    var bit = data[(bitIndex & ~0b111) + (7 - (bitIndex % 8))];
+                    var bit = data[bitIndex];
                     matrix[x - 1, y] = maskFunction(bit, maskPatternValue, x - 1, y);
                     bitIndex++;
                 }

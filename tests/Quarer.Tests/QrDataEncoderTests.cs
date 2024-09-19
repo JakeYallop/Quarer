@@ -29,6 +29,7 @@ public sealed class QrDataEncoderTests
         Assert.Single(result.Result.DataSegments);
         Assert.Equal(ModeIndicator.Numeric, result.Result.DataSegments[0].Mode);
         Assert.Equal(AnalysisResult.Success, result.AnalysisResult);
+        Assert.Equal(1, result.Result.Version.Version);
     }
 
     [Fact]
@@ -44,6 +45,23 @@ public sealed class QrDataEncoderTests
         Assert.Single(result.Result.DataSegments);
         Assert.Equal(ModeIndicator.Alphanumeric, result.Result.DataSegments[0].Mode);
         Assert.Equal(AnalysisResult.Success, result.AnalysisResult);
+        Assert.Equal(1, result.Result.Version.Version);
+    }
+
+    [Fact]
+    public void AnalyzeSimple_ValidAlphanumericData_ReturnsCorrectEncoding2()
+    {
+        var data = "HELLO WORLD 123456790";
+        var errorCorrectionLevel = ErrorCorrectionLevel.H;
+
+        var result = QrDataEncoder.AnalyzeSimple(data, errorCorrectionLevel);
+
+        Assert.True(result.Success);
+        Assert.NotNull(result);
+        Assert.Single(result.Result.DataSegments);
+        Assert.Equal(ModeIndicator.Alphanumeric, result.Result.DataSegments[0].Mode);
+        Assert.Equal(AnalysisResult.Success, result.AnalysisResult);
+        Assert.Equal(3, result.Result.Version.Version);
     }
 
     [Fact]

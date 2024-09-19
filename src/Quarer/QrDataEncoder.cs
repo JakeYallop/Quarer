@@ -7,32 +7,6 @@ using Quarer.Numerics;
 
 namespace Quarer;
 
-public sealed class DataAnalysisResult
-{
-    private DataAnalysisResult(QrEncodingInfo encoding) : this(encoding, AnalysisResult.Success)
-    {
-    }
-
-    private DataAnalysisResult(QrEncodingInfo? encoding, AnalysisResult result)
-    {
-        Result = encoding;
-        AnalysisResult = result;
-    }
-
-    public QrEncodingInfo? Result { get; }
-    public AnalysisResult AnalysisResult { get; }
-    [MemberNotNullWhen(true, nameof(Result))]
-    public bool Success => AnalysisResult is AnalysisResult.Success;
-
-    public static DataAnalysisResult Invalid(AnalysisResult result)
-        => result == AnalysisResult.Success
-            ? throw new ArgumentException("Cannot create an invalid result from a success.", nameof(result))
-            : new(null, result);
-
-    public static DataAnalysisResult Successful(QrEncodingInfo encoding)
-        => new(encoding);
-}
-
 public static class QrDataEncoder
 {
     public static readonly SearchValues<char> AlphanumericCharacters = SearchValues.Create(AlphanumericEncoder.Characters);
@@ -42,17 +16,31 @@ public static class QrDataEncoder
     {
         //For now, just use a single mode for the full set of data.
         var mode = DeriveMode(data);
-        var dataLength = mode.GetBitStreamLength(data);
+        var dataLength = mode.GetDataCharacterLength(data);
         if (!QrVersionLookup.TryGetVersionForDataCapacity(dataLength, mode, requestedErrorCorrectionLevel, out var version))
         {
             return DataAnalysisResult.Invalid(AnalysisResult.DataTooLarge);
         }
 
+        var bitstreamLength = mode.GetBitStreamLength(data);
+        var encoding = CreateDataSegment(data, bitstreamLength, version, mode);
+        return DataAnalysisResult.Successful(encoding);
+    }
+
+    internal static QrEncodingInfo CreateSimpleDataEncoding(ReadOnlySpan<char> data, QrVersion version, ModeIndicator mode)
+    {
+        Debug.Assert(QrVersionLookup.VersionCanFitData(version, data, mode), "Expected version to be large enough to contain data.");
+        var dataLength = mode.GetBitStreamLength(data);
+        return CreateDataSegment(data, dataLength, version, mode);
+    }
+
+    private static QrEncodingInfo CreateDataSegment(ReadOnlySpan<char> data, int bitstreamLength, QrVersion version, ModeIndicator mode)
+    {
         var characterCount = CharacterCount.GetCharacterCountBitCount(version, mode);
-        var segment = DataSegment.Create(characterCount, mode, dataLength, new Range(0, data.Length));
+        var segment = DataSegment.Create(characterCount, mode, bitstreamLength, new Range(0, data.Length));
         var segments = ImmutableArray.Create(segment);
         var encoding = new QrEncodingInfo(version, segments);
-        return DataAnalysisResult.Successful(encoding);
+        return encoding;
     }
 
     public static ModeIndicator DeriveMode(ReadOnlySpan<char> data)
@@ -130,8 +118,7 @@ public static class QrDataEncoder
 
         static void WriteHeader(BitWriter writer, QrVersion version, ModeIndicator mode, ReadOnlySpan<char> dataSlice)
         {
-            var header = QrHeaderBlock.Create(version, mode, mode.GetDataCharacterLength(dataSlice));
-            header.WriteHeader(writer);
+            QrHeaderBlock.WriteHeader(writer, version, mode, mode.GetDataCharacterLength(dataSlice));
         }
 
         static void PadBitsInFinalCodeword(BitWriter writer)
@@ -158,7 +145,7 @@ public static class QrDataEncoder
         var errorCorrectionCodewordsPerBlock = version.ErrorCorrectionBlocks.ErrorCorrectionCodewordsPerBlock;
         var errorCorrectionBlocks = version.ErrorCorrectionBlocks;
         var maxDataCodewordsInBlocks = errorCorrectionBlocks.MaxDataCodewordsInBlock;
-        var resultBitBuffer = new BitWriter(new(version.TotalCodewords >> 2));
+        var resultBitBuffer = new BitWriter(new(version.TotalCodewords * 8));
 
         // max number of codewords in a data block is 123, so ensure writer size is greater than or equal to 123
         Span<byte> dataCodewordsDestination = stackalloc byte[128];
@@ -229,3 +216,30 @@ public enum AnalysisResult
     Success = 1,
     DataTooLarge
 }
+
+public sealed class DataAnalysisResult
+{
+    private DataAnalysisResult(QrEncodingInfo encoding) : this(encoding, AnalysisResult.Success)
+    {
+    }
+
+    private DataAnalysisResult(QrEncodingInfo? encoding, AnalysisResult result)
+    {
+        Result = encoding;
+        AnalysisResult = result;
+    }
+    //TODO: Rename to Value
+    public QrEncodingInfo? Result { get; }
+    public AnalysisResult AnalysisResult { get; }
+    [MemberNotNullWhen(true, nameof(Result))]
+    public bool Success => AnalysisResult is AnalysisResult.Success;
+
+    public static DataAnalysisResult Invalid(AnalysisResult result)
+        => result == AnalysisResult.Success
+            ? throw new ArgumentException("Cannot create an invalid result from a success.", nameof(result))
+            : new(null, result);
+
+    public static DataAnalysisResult Successful(QrEncodingInfo encoding)
+        => new(encoding);
+}
+

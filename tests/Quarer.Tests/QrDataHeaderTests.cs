@@ -6,15 +6,17 @@ public sealed class QrDataHeaderTests
     [Fact]
     public void WriteHeader_ThrowsExceptionForUnsupportedMode()
     {
+        var bitWriter = new BitWriter();
+
         foreach (var mode in Enum.GetValues<ModeIndicator>())
         {
             if (mode is not (ModeIndicator.Eci or ModeIndicator.Fnc1FirstPosition or ModeIndicator.Fnc1SecondPosition or ModeIndicator.StructuredAppend or ModeIndicator.Terminator))
             {
-                QrHeaderBlock.Create(QrVersion.GetVersion(1, ErrorCorrectionLevel.Q), mode, 0);
+                QrHeaderBlock.WriteHeader(bitWriter, QrVersion.GetVersion(1, ErrorCorrectionLevel.Q), mode, 0);
             }
             else
             {
-                Assert.Throws<NotSupportedException>(() => QrHeaderBlock.Create(QrVersion.GetVersion(1, ErrorCorrectionLevel.Q), mode, 0));
+                _ = Assert.Throws<NotSupportedException>(() => QrHeaderBlock.WriteHeader(bitWriter, QrVersion.GetVersion(1, ErrorCorrectionLevel.Q), mode, 0));
             }
         }
     }
@@ -40,14 +42,14 @@ public sealed class QrDataHeaderTests
     }
 
     [Theory]
+#pragma warning disable xUnit1044 // Avoid using TheoryData type arguments that are not serializable
     [MemberData(nameof(Data))]
+#pragma warning restore xUnit1044 // Avoid using TheoryData type arguments that are not serializable
     public void WriteHeader_WritesCorrectData(QrVersion version, ModeIndicator mode, int inputDataCount, string expectedBitString)
     {
         var writer = new BitWriter();
-        var header = QrHeaderBlock.Create(version, mode, inputDataCount);
         var bitsForCharacterCount = CharacterCount.GetCharacterCountBitCount(version, mode);
-
-        header.WriteHeader(writer);
+        QrHeaderBlock.WriteHeader(writer, version, mode, inputDataCount);
 
         Assert.Equal(4 + bitsForCharacterCount, writer.BitsWritten);
         AssertExtensions.BitsEqual(expectedBitString, writer.Buffer.AsBitEnumerable());

@@ -9,7 +9,7 @@ public static class ModeIndicatorExtensions
         {
             ModeIndicator.Numeric => NumericEncoder.GetBitStreamLength(data),
             ModeIndicator.Alphanumeric => AlphanumericEncoder.GetBitStreamLength(data),
-            //TODO: This is right, but feels wierd, maybe we need a byte overload?
+            //TODO: This is right for char, but feels wierd, maybe we need a ROS<byte> overload?
             ModeIndicator.Byte => data.Length * 2 * 8,
             ModeIndicator.Kanji => KanjiEncoder.GetBitStreamLength(data),
             _ => throw new NotSupportedException($"Mode must be one of {ModeIndicator.Numeric}, {ModeIndicator.Alphanumeric}, {ModeIndicator.Byte} or {ModeIndicator.Kanji}.")
@@ -22,7 +22,7 @@ public static class ModeIndicatorExtensions
         {
             ModeIndicator.Numeric => data.Length,
             ModeIndicator.Alphanumeric => data.Length,
-            //TODO: This is right, but feels wierd, maybe we need a ROS<byte> overload?
+            //TODO: This is right for char, but feels wierd, maybe we need a ROS<byte> overload?
             ModeIndicator.Byte => data.Length * 2,
             ModeIndicator.Kanji => data.Length,
             _ => throw new NotSupportedException($"Mode must be one of {ModeIndicator.Numeric}, {ModeIndicator.Alphanumeric}, {ModeIndicator.Byte} or {ModeIndicator.Kanji}.")

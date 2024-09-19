@@ -48,7 +48,7 @@ internal sealed class BitBufferDebugView
                 {
                     sb.AppendFormat("{0:B32}", i);
                 }
-                return sb.ToString();
+                return sb.ToString(0, bitBuffer.Count);
             }
         }
     }
@@ -60,8 +60,8 @@ public sealed class BitBuffer : IEquatable<BitBuffer>
 {
     private const int BitsPerElement = 32;
     private const int BitShiftPerElement = 5;
-    private const int BytesPerElement = 32 >> 3;
-    private const int BytesShiftPerElement = 3;
+    private const int BytesPerElement = BitsPerElement / 8;
+    private const int BytesShiftPerElement = 2;
 
     private readonly List<uint> _buffer;
 
@@ -257,7 +257,7 @@ public sealed class BitBuffer : IEquatable<BitBuffer>
             written += BytesPerElement;
         }
 
-        var bitsRemainingInFinalElement = (length - written) << BytesShiftPerElement;
+        var bitsRemainingInFinalElement = (length - written) * 8;
         if (bitsRemainingInFinalElement > 0)
         {
             written += ReadBytes(_buffer[currentElement], 0, bitsRemainingInFinalElement, slicedDestination);
@@ -551,7 +551,7 @@ public sealed class BitBuffer : IEquatable<BitBuffer>
 
     private static int GetElementLengthFromBitsCeil(int bits) => (int)((uint)(bits - 1 + (1u << BitShiftPerElement)) >> BitShiftPerElement);
     private static int GetElementLengthFromBitsFloor(int bits) => bits >> BitShiftPerElement;
-    private static int GetElementLengthFromBytesCeil(int bytes) => (int)((uint)(bytes - 1 + (1u << (BytesShiftPerElement - 1))) >> (BytesShiftPerElement - 1));
-    private static int GetElementLengthFromBytesFloor(int bytes) => bytes >> (BytesShiftPerElement - 1);
+    private static int GetElementLengthFromBytesCeil(int bytes) => (int)((uint)(bytes - 1 + (1u << BytesShiftPerElement)) >> BytesShiftPerElement);
+    private static int GetElementLengthFromBytesFloor(int bytes) => bytes >> BytesShiftPerElement;
 
 }

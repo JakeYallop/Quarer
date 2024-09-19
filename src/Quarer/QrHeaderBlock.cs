@@ -1,16 +1,9 @@
 ﻿namespace Quarer;
 
-//TODO: Make static?
-internal readonly struct QrHeaderBlock
+internal static class QrHeaderBlock
 {
-    private QrHeaderBlock(ModeIndicator modeIndicator, ushort characterCountBitCount, int dataCharactersCount)
-    {
-        ModeIndicator = modeIndicator;
-        CharacterCountBitCount = characterCountBitCount;
-        InputDataLength = dataCharactersCount;
-    }
-
-    public static QrHeaderBlock Create(QrVersion version, ModeIndicator mode, int inputDataLength)
+    //TODO: Support ECI, FNC, StructuredAppend etc.
+    public static void WriteHeader(BitWriter writer, QrVersion version, ModeIndicator mode, int inputDataLength)
     {
         if (mode is ModeIndicator.Eci or ModeIndicator.Fnc1FirstPosition or ModeIndicator.Fnc1SecondPosition or ModeIndicator.StructuredAppend)
         {
@@ -18,19 +11,7 @@ internal readonly struct QrHeaderBlock
         }
 
         var characterBitCount = CharacterCount.GetCharacterCountBitCount(version, mode);
-        return new QrHeaderBlock(mode, characterBitCount, inputDataLength);
+        writer.WriteBitsBigEndian((byte)mode, 4);
+        writer.WriteBitsBigEndian(inputDataLength, characterBitCount);
     }
-
-    public ModeIndicator ModeIndicator { get; }
-    public ushort CharacterCountBitCount { get; }
-    public int InputDataLength { get; }
-
-    public void WriteHeader(BitWriter writer)
-    {
-        writer.WriteBitsBigEndian((byte)ModeIndicator, 4);
-        writer.WriteBitsBigEndian(InputDataLength, CharacterCountBitCount);
-    }
-
-    //TODO: Support ECI, FNC, StructuredAppend etc.
-    //TODO: Add IEquatable/Equality if this is used in dictionaries or searched for anywhere.
 }

@@ -2,7 +2,6 @@
 
 namespace Quarer;
 
-//TODO: Consider making this a class (or struct) with instance methods (even though it has no state) for a tiny bit of extra perf (assuming a thunk is needed for invoking the static methods)
 internal static class NumericEncoder
 {
     public static void Encode(BitWriter writer, scoped ReadOnlySpan<char> data)

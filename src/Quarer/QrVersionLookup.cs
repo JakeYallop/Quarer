@@ -13,7 +13,7 @@ internal static class QrVersionLookup
         }
         EnsureValidErrorCorrectionLevel(errorCorrectionLevel);
 
-        return GetRelevantVersions(errorCorrectionLevel)[version - 1];
+        return GetVersionsForErrorLevel(errorCorrectionLevel)[version - 1];
     }
 
     //TODO: Needs to account for ECI + others
@@ -23,8 +23,8 @@ internal static class QrVersionLookup
         //TODO: Tweak this - we should not throw from a Try method.
         EnsureValidErrorCorrectionLevel(errorCorrectionLevel);
 
-        var relevantCapacities = GetRelevantVersions(errorCorrectionLevel);
-        var index = BinarySearcher.BinarySearchUpperBound(relevantCapacities.AsSpan(), requestedCapacityDataCharacters, mode, static (x, mode) => CalculateApproximateCharacterCapacityInCorrectRange(x, mode));
+        var relevantCapacities = GetVersionsForErrorLevel(errorCorrectionLevel);
+        var index = BinarySearcher.BinarySearchUpperBound(relevantCapacities.AsSpan(), requestedCapacityDataCharacters, mode, static (qrVersion, mode) => CalculateApproximateCharacterCapacityWithinRange(qrVersion, mode));
 
         if (index is -1)
         {
@@ -35,6 +35,16 @@ internal static class QrVersionLookup
         return true;
     }
 
+    //TODO: Needs to account for ECI + others
+    //TODO: Tests for this
+    internal static bool VersionCanFitData(QrVersion version, ReadOnlySpan<char> data, ModeIndicator mode)
+    {
+        const int ModeIndicatorBits = 4;
+        var characterCount = CharacterCount.GetCharacterCountBitCount(version, mode);
+        var capacity = (version.DataCodewordsCapacity * 8) - ModeIndicatorBits - characterCount;
+        return capacity >= mode.GetBitStreamLength(data);
+    }
+
     private static void EnsureValidErrorCorrectionLevel(ErrorCorrectionLevel errorCorrectionLevel)
     {
         if ((int)errorCorrectionLevel is < 0 or > 3)
@@ -43,7 +53,7 @@ internal static class QrVersionLookup
         }
     }
 
-    private static ImmutableArray<QrVersion> GetRelevantVersions(ErrorCorrectionLevel level)
+    private static ImmutableArray<QrVersion> GetVersionsForErrorLevel(ErrorCorrectionLevel level)
     => level switch
     {
         ErrorCorrectionLevel.L => QrVersionsLookupL,
@@ -53,12 +63,12 @@ internal static class QrVersionLookup
         _ => throw new UnreachableException()
     };
 
-    private static int CalculateApproximateCharacterCapacityInCorrectRange(QrVersion version, ModeIndicator mode)
+    private static int CalculateApproximateCharacterCapacityWithinRange(QrVersion version, ModeIndicator mode)
     {
 #pragma warning disable IDE0072 // Add missing cases
         const int ModeIndicatorBits = 4;
         var characterCount = CharacterCount.GetCharacterCountBitCount(version, mode);
-        var capacity = (version.DataCodewordsCapacity << 3) - ModeIndicatorBits - characterCount;
+        var capacity = (version.DataCodewordsCapacity * 8) - ModeIndicatorBits - characterCount;
 
         return mode switch
         {

@@ -19,6 +19,7 @@ public class QrVersionTests
         var errorCorrectionLevel = (ErrorCorrectionLevel)Random.Shared.Next(0, 4);
         var v1 = QrVersion.GetVersion(version, errorCorrectionLevel);
         var v2 = QrVersion.GetVersion(version, errorCorrectionLevel);
+        Assert.True(v1 == v2);
     }
 
     [Fact]

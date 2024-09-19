@@ -356,6 +356,60 @@ public class QrSymbolBuilderTests
     }
 
     [Fact]
+    public void Encode_EncodeDataBits_WithSpecificPatternInCodewords_EncodesExpectedSymbol1M()
+    {
+        var version = QrVersion.GetVersion(1, ErrorCorrectionLevel.M);
+        var m = new TrackedBitMatrix(version.ModulesPerSide, version.ModulesPerSide);
+
+        QrSymbolBuilder.EncodePositionDetectionPattern(m, PositionDetectionPatternLocation.TopLeft);
+        QrSymbolBuilder.EncodePositionDetectionPattern(m, PositionDetectionPatternLocation.TopRight);
+        QrSymbolBuilder.EncodePositionDetectionPattern(m, PositionDetectionPatternLocation.BottomLeft);
+        QrSymbolBuilder.EncodePositionAdjustmentPatterns(m, version);
+        QrSymbolBuilder.EncodeTimingPatterns(m);
+        QrSymbolBuilder.EncodeStaticDarkModule(m);
+        QrSymbolBuilder.EncodeFormatInformation(m, ErrorCorrectionLevel.M, MaskPattern.PatternZero_Checkerboard);
+        QrSymbolBuilder.EncodeVersionInformation(m, version);
+        var codewordsBuffer = Buffer(version.TotalCodewords);
+        QrSymbolBuilder.EncodeDataBits(m, version, codewordsBuffer, maskPattern: null);
+
+        Assert.Equal("""
+            XXXXXXX-------XXXXXXX
+            X-----X-XX----X-----X
+            X-XXX-X----X--X-XXX-X
+            X-XXX-X-------X-XXX-X
+            X-XXX-X-X-----X-XXX-X
+            X-----X--X----X-----X
+            XXXXXXX-X-X-X-XXXXXXX
+            -----------X---------
+            X-X-X-X---------X--X-
+            ---------------------
+            X---X-X--X---X---X---
+            --X----X---X---X---X-
+            ------X--------------
+            --------X------------
+            XXXXXXX--X---X---X---
+            X-----X----X---X---X-
+            X-XXX-X-X------------
+            X-XXX-X--------------
+            X-XXX-X-XX---X---X---
+            X-----X----X---X---X-
+            XXXXXXX-X------------
+            """, MatrixToString(m));
+
+        static BitBuffer Buffer(int n)
+        {
+            var buffer = new BitBuffer(n * 8);
+            var writer = new BitWriter(buffer);
+            for (var i = 0; i < n; i++)
+            {
+                var b = (byte)0b00010000;
+                writer.WriteBitsBigEndian(b, 8);
+            }
+            return buffer;
+        }
+    }
+
+    [Fact]
     public void Encode_EncodeDataBits_EncodesExpectedSymbol7H()
     {
         var version = QrVersion.GetVersion(7, ErrorCorrectionLevel.H);
