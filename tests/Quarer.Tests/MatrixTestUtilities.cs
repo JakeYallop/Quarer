@@ -10,7 +10,11 @@ internal static class MatrixTestUtilities
         {
             for (var x = 0; x < m.Width; x++)
             {
-                sb.Append(m[x, y] ? 'X' : '-');
+                sb.Append(m[x, y] ? "X" : '-');
+                if (x + 1 < m.Width)
+                {
+                    sb.Append(' ');
+                }
             }
 
             if (y + 1 < m.Height)
@@ -29,6 +33,10 @@ internal static class MatrixTestUtilities
             for (var x = 0; x < m.Width; x++)
             {
                 sb.Append(m.IsEmpty(x, y) ? '-' : 'X');
+                if (x + 1 < m.Width)
+                {
+                    sb.Append(' ');
+                }
             }
 
             if (y + 1 < m.Height)

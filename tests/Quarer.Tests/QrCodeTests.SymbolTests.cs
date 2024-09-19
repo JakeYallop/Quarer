@@ -13,27 +13,27 @@ public partial class QrCodeTests
         Assert.Equal(1, code.Version.Version);
         Assert.Equal(MaskPattern.PatternZero_Checkerboard, code.MaskPattern);
         Assert.Equal("""
-            XXXXXXX---XXX-XXXXXXX
-            X-----X-XXX---X-----X
-            X-XXX-X--XX---X-XXX-X
-            X-XXX-X--X-XX-X-XXX-X
-            X-XXX-X-XX-XX-X-XXX-X
-            X-----X----X--X-----X
-            XXXXXXX-X-X-X-XXXXXXX
-            ---------------------
-            X-X-X-X---X-X---X--X-
-            XX-X----X-XX-X-X---X-
-            ---XX-XXX-XX-XXX-XXX-
-            XX--XX-X-X-XXX-XX--X-
-            --X--XXX-XXX-XXX----X
-            --------X-X---X----X-
-            XXXXXXX-----X---X---X
-            X-----X---X---X--X-XX
-            X-XXX-X-XXX-X-X-XXX-X
-            X-XXX-X--X-X-X-X-XXX-
-            X-XXX-X-XX-X-XXX--X-X
-            X-----X----XXX-XXX---
-            XXXXXXX-X--X-XXX--X-X
+            X X X X X X X - - - X X X - X X X X X X X
+            X - - - - - X - X X X - - - X - - - - - X
+            X - X X X - X - - X X - - - X - X X X - X
+            X - X X X - X - - X - X X - X - X X X - X
+            X - X X X - X - X X - X X - X - X X X - X
+            X - - - - - X - - - - X - - X - - - - - X
+            X X X X X X X - X - X - X - X X X X X X X
+            - - - - - - - - - - - - - - - - - - - - -
+            X - X - X - X - - - X - X - - - X - - X -
+            X X - X - - - - X - X X - X - X - - - X -
+            - - - X X - X X X - X X - X X X - X X X -
+            X X - - X X - X - X - X X X - X X - - X -
+            - - X - - X X X - X X X - X X X - - - - X
+            - - - - - - - - X - X - - - X - - - - X -
+            X X X X X X X - - - - - X - - - X - - - X
+            X - - - - - X - - - X - - - X - - X - X X
+            X - X X X - X - X X X - X - X - X X X - X
+            X - X X X - X - - X - X - X - X - X X X -
+            X - X X X - X - X X - X - X X X - - X - X
+            X - - - - - X - - - - X X X - X X X - - -
+            X X X X X X X - X - - X - X X X - - X - X
             """, MatrixToString(code.Data));
     }
 
@@ -48,27 +48,27 @@ public partial class QrCodeTests
         Assert.Equal(1, code.Version.Version);
         Assert.Equal(MaskPattern.PatternZero_Checkerboard, code.MaskPattern);
         Assert.Equal("""
-            XXXXXXX---XXX-XXXXXXX
-            X-----X-XXX---X-----X
-            X-XXX-X--XX---X-XXX-X
-            X-XXX-X--X-XX-X-XXX-X
-            X-XXX-X-XX-XX-X-XXX-X
-            X-----X----X--X-----X
-            XXXXXXX-X-X-X-XXXXXXX
-            ---------------------
-            X-X-X-X---X-X---X--X-
-            XX-X----X-XX-X-X---X-
-            ---XX-XXX-XX-XXX-XXX-
-            XX--XX-X-X-XXX-XX--X-
-            --X--XXX-XXX-XXX----X
-            --------X-X---X----X-
-            XXXXXXX-----X---X---X
-            X-----X---X---X--X-XX
-            X-XXX-X-XXX-X-X-XXX-X
-            X-XXX-X--X-X-X-X-XXX-
-            X-XXX-X-XX-X-XXX--X-X
-            X-----X----XXX-XXX---
-            XXXXXXX-X--X-XXX--X-X
+            X X X X X X X - - - X X X - X X X X X X X
+            X - - - - - X - X X X - - - X - - - - - X
+            X - X X X - X - - X X - - - X - X X X - X
+            X - X X X - X - - X - X X - X - X X X - X
+            X - X X X - X - X X - X X - X - X X X - X
+            X - - - - - X - - - - X - - X - - - - - X
+            X X X X X X X - X - X - X - X X X X X X X
+            - - - - - - - - - - - - - - - - - - - - -
+            X - X - X - X - - - X - X - - - X - - X -
+            X X - X - - - - X - X X - X - X - - - X -
+            - - - X X - X X X - X X - X X X - X X X -
+            X X - - X X - X - X - X X X - X X - - X -
+            - - X - - X X X - X X X - X X X - - - - X
+            - - - - - - - - X - X - - - X - - - - X -
+            X X X X X X X - - - - - X - - - X - - - X
+            X - - - - - X - - - X - - - X - - X - X X
+            X - X X X - X - X X X - X - X - X X X - X
+            X - X X X - X - - X - X - X - X - X X X -
+            X - X X X - X - X X - X - X X X - - X - X
+            X - - - - - X - - - - X X X - X X X - - -
+            X X X X X X X - X - - X - X X X - - X - X
             """, MatrixToString(code.Data));
     }
 }
