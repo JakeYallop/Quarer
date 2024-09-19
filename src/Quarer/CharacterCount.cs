@@ -1,5 +1,6 @@
 ﻿namespace Quarer;
 
+//TODO: Move to method or extension method on QrVersion?
 internal static class CharacterCount
 {
     internal static ReadOnlySpan<ushort> CharacterCountNumeric => [10, 12, 14];

@@ -1,15 +1,14 @@
 ﻿using System.Buffers;
 using System.Diagnostics;
-using System.Runtime.CompilerServices;
 
 namespace Quarer;
 
 public static class QrSymbolBuilder
 {
-    public static (BitMatrix Matrix, MaskPattern SelectedMaskPattern) BuildSymbol(QrVersion version, BitBuffer dataCodewords, MaskPattern? maskPattern = null)
-        => BuildSymbol(new TrackedBitMatrix(version.ModulesPerSide, version.ModulesPerSide), version, dataCodewords, maskPattern);
+    public static (BitMatrix Matrix, MaskPattern SelectedMaskPattern) BuildSymbol(BitBuffer dataCodewords, QrVersion version, ErrorCorrectionLevel errorCorrectionLevel, MaskPattern? maskPattern = null)
+        => BuildSymbol(new TrackedBitMatrix(version.ModulesPerSide, version.ModulesPerSide), dataCodewords, version, errorCorrectionLevel, maskPattern);
 
-    private static (TrackedBitMatrix Matrix, MaskPattern SelectedMaskPattern) BuildSymbol(TrackedBitMatrix matrix, QrVersion version, BitBuffer dataCodewords, MaskPattern? maskPattern = null)
+    private static (TrackedBitMatrix Matrix, MaskPattern SelectedMaskPattern) BuildSymbol(TrackedBitMatrix matrix, BitBuffer dataCodewords, QrVersion version, ErrorCorrectionLevel errorCorrectionLevel, MaskPattern? maskPattern = null)
     {
         EncodePositionDetectionPattern(matrix, PositionDetectionPatternLocation.TopLeft);
         EncodePositionDetectionPattern(matrix, PositionDetectionPatternLocation.TopRight);
@@ -25,7 +24,7 @@ public static class QrSymbolBuilder
 
         if (maskPattern is not null)
         {
-            EncodeFormatInformation(matrix, version.ErrorCorrectionLevel, maskPattern.Value);
+            EncodeFormatInformation(matrix, errorCorrectionLevel, maskPattern.Value);
             EncodeDataBits(matrix, version, dataCodewords, maskPattern.Value);
             return (matrix, maskPattern.Value);
         }
@@ -42,7 +41,7 @@ public static class QrSymbolBuilder
         {
             var copiedMatrix = matrix.Clone();
             // important to encode format information before data bits so that non-empty modules are correctly set
-            EncodeFormatInformation(copiedMatrix, version.ErrorCorrectionLevel, pattern);
+            EncodeFormatInformation(copiedMatrix, errorCorrectionLevel, pattern);
             EncodeDataBits(copiedMatrix, version, dataCodewords, pattern);
 
             var penalty = CalculatePenalty(matrix);

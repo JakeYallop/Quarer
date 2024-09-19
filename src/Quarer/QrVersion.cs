@@ -9,95 +9,52 @@ public sealed partial class QrVersion : IEquatable<QrVersion>, IComparable<QrVer
     public const byte MaxVersion = 40;
     public const int MaxModulesPerSide = 17 + (4 * MaxVersion);
 
-    private ushort _totalCodewordsCapacity = 0;
-    private ushort _dataCodewordsCapacity = 0;
-
-    internal QrVersion(byte version, ErrorCorrectionLevel errorCorrectionLevel, byte remainderBits, QrErrorCorrectionBlocks errorCorrectionBlocks)
+    internal QrVersion(byte version, ushort totalCodewords, byte remainderBits)
     {
         Version = version;
         AlignmentPatternCenters = AlignmentPatternCentersLookup[version - 1];
-        ErrorCorrectionLevel = errorCorrectionLevel;
-        ErrorCorrectionBlocks = errorCorrectionBlocks;
         RemainderBits = remainderBits;
+        TotalCodewords = totalCodewords;
     }
 
-    public static QrVersion GetVersion(byte version, ErrorCorrectionLevel errorCorrectionLevel)
+    public static QrVersion GetVersion(byte version)
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(version, 1);
         ArgumentOutOfRangeException.ThrowIfGreaterThan(version, 40);
 
-        return QrVersionLookup.GetVersion(version, errorCorrectionLevel);
+        return QrVersionsLookup[version - 1];
     }
 
     public byte Version { get; }
     public ImmutableArray<byte> AlignmentPatternCenters { get; }
-    public ErrorCorrectionLevel ErrorCorrectionLevel { get; }
-    public ushort TotalCodewords
-    {
-        get
-        {
-            if (_totalCodewordsCapacity is not 0)
-            {
-                return _totalCodewordsCapacity;
-            }
-
-            var totalDataCodewords = 0;
-            var totalCount = 0;
-            foreach (var item in ErrorCorrectionBlocks.Blocks)
-            {
-                totalDataCodewords += item.DataCodewordsPerBlock * item.Count;
-                totalCount += item.Count;
-            }
-            var totalCodewords = (ushort)(totalDataCodewords + (totalCount * ErrorCorrectionBlocks.ErrorCorrectionCodewordsPerBlock));
-            Interlocked.CompareExchange(ref _totalCodewordsCapacity, totalCodewords, 0);
-            return _totalCodewordsCapacity;
-        }
-    }
-
-    public ushort DataCodewordsCapacity
-    {
-        get
-        {
-            if (_dataCodewordsCapacity is not 0)
-            {
-                return _dataCodewordsCapacity;
-            }
-
-            var total = 0;
-            foreach (var item in ErrorCorrectionBlocks.Blocks)
-            {
-                total += item.DataCodewordsPerBlock * item.Count;
-            }
-            Interlocked.CompareExchange(ref _dataCodewordsCapacity, (ushort)total, 0);
-            return _dataCodewordsCapacity;
-        }
-    }
-
+    public ushort TotalCodewords { get; }
     public byte RemainderBits { get; }
-
     public byte ModulesPerSide => (byte)(17 + (byte)(4 * Version));
 
-    public QrErrorCorrectionBlocks ErrorCorrectionBlocks { get; }
+    public QrErrorCorrectionBlocks GetErrorCorrectionBlocks(ErrorCorrectionLevel errorCorrectionLevel)
+        => QrVersionLookup.GetErrorCorrectionBlocks(Version, errorCorrectionLevel);
+
+    public ushort GetDataCodewordsCapacity(ErrorCorrectionLevel errorCorrectionLevel)
+    {
+        //TODO: hardcode this on startup instead
+        var total = 0;
+        foreach (var item in GetErrorCorrectionBlocks(errorCorrectionLevel).Blocks)
+        {
+            total += item.DataCodewordsPerBlock * item.Count;
+        }
+        return (ushort)total;
+    }
 
     public static bool operator ==(QrVersion? left, QrVersion? right) => left is null ? right is null : left.Equals(right);
     public static bool operator !=(QrVersion? left, QrVersion? right) => !(left == right);
 
     /// <inheritdoc />
-    public int CompareTo(QrVersion? other)
-    {
-        if (other is null)
-        {
-            return 1;
-        }
-
-        var versionComparison = Version.CompareTo(other.Version);
-        return versionComparison is not 0 ? versionComparison : ErrorCorrectionLevel.CompareTo(other.ErrorCorrectionLevel);
-    }
+    public int CompareTo(QrVersion? other) => other is null ? 1 : Version.CompareTo(other.Version);
 
     /// <inheritdoc cref="object.Equals(object?)" />
     public override bool Equals([NotNullWhen(true)] object? obj) => obj != null && obj is QrVersion qrVersion && Equals(qrVersion);
     /// <inheritdoc />
-    public bool Equals([NotNullWhen(true)] QrVersion? other) => other is not null && Version == other.Version && ErrorCorrectionLevel == other.ErrorCorrectionLevel;
+    public bool Equals([NotNullWhen(true)] QrVersion? other) => other is not null && Version == other.Version;
     public override int GetHashCode() => Version.GetHashCode();
 
     private static readonly ImmutableArray<ImmutableArray<byte>> AlignmentPatternCentersLookup =
@@ -142,5 +99,49 @@ public sealed partial class QrVersion : IEquatable<QrVersion>, IComparable<QrVer
         [6, 32, 58, 84, 110, 136, 162], // version 38
         [6, 26, 54, 82, 110, 138, 166], // version 39
         [6, 30, 58, 86, 114, 142, 170], // version 40
+    ];
+
+    private static readonly ImmutableArray<QrVersion> QrVersionsLookup =
+    [
+        new(1, 26, 0),
+        new(2, 44 , 7),
+        new(3, 70, 7),
+        new(4, 100, 7),
+        new(5, 134, 7),
+        new(6, 172, 7),
+        new(7, 196, 0),
+        new(8, 242, 0),
+        new(9, 292, 0),
+        new(10, 346, 0),
+        new(11, 404, 0),
+        new(12, 466, 0),
+        new(13, 532, 0),
+        new(14, 581, 3),
+        new(15, 655, 3),
+        new(16, 733, 3),
+        new(17, 815, 3),
+        new(18, 901, 3),
+        new(19, 991, 3),
+        new(20, 1085, 3),
+        new(21, 1156, 4),
+        new(22, 1258, 4),
+        new(23, 1364, 4),
+        new(24, 1474, 4),
+        new(25, 1588, 4),
+        new(26, 1706, 4),
+        new(27, 1828, 4),
+        new(28, 1921, 3),
+        new(29, 2051, 3),
+        new(30, 2185, 3),
+        new(31, 2323, 3),
+        new(32, 2465, 3),
+        new(33, 2611, 3),
+        new(34, 2761, 3),
+        new(35, 2876, 0),
+        new(36, 3034, 0),
+        new(37, 3196, 0),
+        new(38, 3362, 0),
+        new(39, 3532, 0),
+        new(40, 3706, 0),
     ];
 }

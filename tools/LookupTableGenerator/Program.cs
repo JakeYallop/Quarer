@@ -13,10 +13,10 @@ PrintRow("LogTable", logTable);
 var requiredSymbols = new HashSet<int>();
 for (var i = QrVersion.MinVersion; i <= QrVersion.MaxVersion; i++)
 {
-    requiredSymbols.Add(QrVersionLookup.GetVersion(i, ErrorCorrectionLevel.L).ErrorCorrectionBlocks.ErrorCorrectionCodewordsPerBlock);
-    requiredSymbols.Add(QrVersionLookup.GetVersion(i, ErrorCorrectionLevel.M).ErrorCorrectionBlocks.ErrorCorrectionCodewordsPerBlock);
-    requiredSymbols.Add(QrVersionLookup.GetVersion(i, ErrorCorrectionLevel.Q).ErrorCorrectionBlocks.ErrorCorrectionCodewordsPerBlock);
-    requiredSymbols.Add(QrVersionLookup.GetVersion(i, ErrorCorrectionLevel.H).ErrorCorrectionBlocks.ErrorCorrectionCodewordsPerBlock);
+    requiredSymbols.Add(QrVersion.GetVersion(i).GetErrorCorrectionBlocks(ErrorCorrectionLevel.L).ErrorCorrectionCodewordsPerBlock);
+    requiredSymbols.Add(QrVersion.GetVersion(i).GetErrorCorrectionBlocks(ErrorCorrectionLevel.M).ErrorCorrectionCodewordsPerBlock);
+    requiredSymbols.Add(QrVersion.GetVersion(i).GetErrorCorrectionBlocks(ErrorCorrectionLevel.Q).ErrorCorrectionCodewordsPerBlock);
+    requiredSymbols.Add(QrVersion.GetVersion(i).GetErrorCorrectionBlocks(ErrorCorrectionLevel.H).ErrorCorrectionCodewordsPerBlock);
 }
 
 Console.WriteLine();

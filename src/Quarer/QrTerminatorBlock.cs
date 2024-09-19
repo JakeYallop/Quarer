@@ -9,26 +9,27 @@ internal static class QrTerminatorBlock
     /// </summary>
     /// <param name="bitWriter"></param>
     /// <param name="version"></param>
-    public static void WriteTerminator(BitWriter bitWriter, QrVersion version)
+    public static void WriteTerminator(BitWriter bitWriter, QrVersion version, ErrorCorrectionLevel errorCorrectionLevel)
     {
         var (codewords, remainder) = int.DivRem(bitWriter.BitsWritten, 8);
-        Debug.Assert(version.DataCodewordsCapacity >= codewords, "Data too large for version.");
+        var dataCodewordsCapacity = version.GetDataCodewordsCapacity(errorCorrectionLevel);
+        Debug.Assert(dataCodewordsCapacity >= codewords, "Data too large for version.");
 
         if (remainder > 0)
         {
             codewords += 1;
         }
 
-        Debug.Assert(version.DataCodewordsCapacity >= codewords, "Data too large for version.");
+        Debug.Assert(dataCodewordsCapacity >= codewords, "Data too large for version.");
         // No space to write the terminator
-        if (version.DataCodewordsCapacity == codewords && remainder == 0)
+        if (dataCodewordsCapacity == codewords && remainder == 0)
         {
             return;
         }
 
         var remainingBits = 8 - remainder;
         //TODO: Maybe we can just get rid of this branch entirely?
-        if (version.DataCodewordsCapacity > codewords)
+        if (dataCodewordsCapacity > codewords)
         {
             // we have space to write the new terminator
             bitWriter.WriteBitsBigEndian(0, 4);

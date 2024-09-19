@@ -85,9 +85,9 @@ public sealed class QrDataEncoderTests
         var doubleDigit = 67;
         var data = $"0{tripletOne}{tripletTwo}{doubleDigit}";
         var errorCorrectionLevel = ErrorCorrectionLevel.M;
-        var version = QrVersion.GetVersion(1, errorCorrectionLevel);
+        var version = QrVersion.GetVersion(1);
         var characterBitCount = CharacterCount.GetCharacterCountBitCount(version, ModeIndicator.Numeric);
-        var encodingInfo = new QrEncodingInfo(version, [DataSegment.Create(characterBitCount, ModeIndicator.Numeric, NumericEncoder.GetBitStreamLength(data), new(0, data.Length))]);
+        var encodingInfo = new QrEncodingInfo(version, errorCorrectionLevel, [DataSegment.Create(characterBitCount, ModeIndicator.Numeric, NumericEncoder.GetBitStreamLength(data), new(0, data.Length))]);
 
         var bitBuffer = QrDataEncoder.EncodeDataBits(encodingInfo, data);
         // 16 data codeword capacity
@@ -117,9 +117,9 @@ public sealed class QrDataEncoderTests
         var pair7 = ": ";
         var data = $"{pair1}{pair2}{pair3}{pair4}{pair5}{pair6}{pair7}";
         var errorCorrectionLevel = ErrorCorrectionLevel.M;
-        var version = QrVersion.GetVersion(1, errorCorrectionLevel);
+        var version = QrVersion.GetVersion(1);
         var characterBitCount = CharacterCount.GetCharacterCountBitCount(version, ModeIndicator.Alphanumeric);
-        var encodingInfo = new QrEncodingInfo(version, [DataSegment.Create(characterBitCount, ModeIndicator.Alphanumeric, AlphanumericEncoder.GetBitStreamLength(data), new(0, data.Length))]);
+        var encodingInfo = new QrEncodingInfo(version, errorCorrectionLevel, [DataSegment.Create(characterBitCount, ModeIndicator.Alphanumeric, AlphanumericEncoder.GetBitStreamLength(data), new(0, data.Length))]);
 
         var bitBuffer = QrDataEncoder.EncodeDataBits(encodingInfo, data);
         var sb = new StringBuilder();
@@ -148,12 +148,12 @@ public sealed class QrDataEncoderTests
         }
     }
 
-    public static TheoryData<QrVersion, BitBuffer, byte[]> EncodeAndInterleaveErrorCorrectionBlocksData()
+    public static TheoryData<QrVersion, ErrorCorrectionLevel, BitBuffer, byte[]> EncodeAndInterleaveErrorCorrectionBlocksData()
     {
         return new()
         {
             {
-                QrVersion.GetVersion(1, ErrorCorrectionLevel.H),
+                QrVersion.GetVersion(1), ErrorCorrectionLevel.H,
                 Buffer([32, 65, 205, 69, 41, 220, 46, 128, 236]),
                 [
                     //data codewords
@@ -163,7 +163,7 @@ public sealed class QrDataEncoderTests
                 ]
             },
             {
-                QrVersion.GetVersion(5, ErrorCorrectionLevel.H),
+                QrVersion.GetVersion(5), ErrorCorrectionLevel.H,
                 Buffer(
                 [
                     //each line is one data block
@@ -203,9 +203,9 @@ public sealed class QrDataEncoderTests
 
     [Theory]
     [MemberData(nameof(EncodeAndInterleaveErrorCorrectionBlocksData))]
-    public void EncodeAndInterleaveErrorCorrectionBlocks_ReturnsExpectedResult1(QrVersion version, BitBuffer dataCodewordsBitBuffer, byte[] expectedBytes)
+    public void EncodeAndInterleaveErrorCorrectionBlocks_ReturnsExpectedResult1(QrVersion version, ErrorCorrectionLevel errorCorrectionLevel, BitBuffer dataCodewordsBitBuffer, byte[] expectedBytes)
     {
-        var resultBitBuffer = QrDataEncoder.EncodeAndInterleaveErrorCorrectionBlocks(version, dataCodewordsBitBuffer);
+        var resultBitBuffer = QrDataEncoder.EncodeAndInterleaveErrorCorrectionBlocks(dataCodewordsBitBuffer, version, errorCorrectionLevel);
 
         Assert.Equal(expectedBytes, resultBitBuffer.AsByteEnumerable().ToArray());
     }
@@ -213,8 +213,8 @@ public sealed class QrDataEncoderTests
     [Fact]
     public void EncodeAndInterleaveErrorCorrectionBlocks_BitWriterInputSizeDoesNotMatchExpectedSizeFromVersion_ThrowsArgumentException()
     {
-        var version = QrVersion.GetVersion(1, ErrorCorrectionLevel.H);
+        var version = QrVersion.GetVersion(1);
         var dataCodewordsBitBuffer = new BitBuffer(1);
-        Assert.Throws<ArgumentException>(() => QrDataEncoder.EncodeAndInterleaveErrorCorrectionBlocks(version, dataCodewordsBitBuffer));
+        Assert.Throws<ArgumentException>(() => QrDataEncoder.EncodeAndInterleaveErrorCorrectionBlocks(dataCodewordsBitBuffer, version, ErrorCorrectionLevel.H));
     }
 }

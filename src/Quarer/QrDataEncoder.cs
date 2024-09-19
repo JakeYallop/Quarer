@@ -23,23 +23,23 @@ public static class QrDataEncoder
         }
 
         var bitstreamLength = mode.GetBitStreamLength(data);
-        var encoding = CreateDataSegment(data, bitstreamLength, version, mode);
+        var encoding = CreateDataSegment(data, bitstreamLength, version, requestedErrorCorrectionLevel, mode);
         return DataAnalysisResult.Successful(encoding);
     }
 
-    internal static QrEncodingInfo CreateSimpleDataEncoding(ReadOnlySpan<char> data, QrVersion version, ModeIndicator mode)
+    internal static QrEncodingInfo CreateSimpleDataEncoding(ReadOnlySpan<char> data, QrVersion version, ErrorCorrectionLevel errorCorrectionLevel, ModeIndicator mode)
     {
-        Debug.Assert(QrVersionLookup.VersionCanFitData(version, data, mode), "Expected version to be large enough to contain data.");
+        Debug.Assert(QrVersionLookup.VersionCanFitData(version, data, errorCorrectionLevel, mode), "Expected version to be large enough to contain data.");
         var dataLength = mode.GetBitStreamLength(data);
-        return CreateDataSegment(data, dataLength, version, mode);
+        return CreateDataSegment(data, dataLength, version, errorCorrectionLevel, mode);
     }
 
-    private static QrEncodingInfo CreateDataSegment(ReadOnlySpan<char> data, int bitstreamLength, QrVersion version, ModeIndicator mode)
+    private static QrEncodingInfo CreateDataSegment(ReadOnlySpan<char> data, int bitstreamLength, QrVersion version, ErrorCorrectionLevel errorCorrectionLevel, ModeIndicator mode)
     {
         var characterCount = CharacterCount.GetCharacterCountBitCount(version, mode);
         var segment = DataSegment.Create(characterCount, mode, bitstreamLength, new Range(0, data.Length));
         var segments = ImmutableArray.Create(segment);
-        var encoding = new QrEncodingInfo(version, segments);
+        var encoding = new QrEncodingInfo(version, errorCorrectionLevel, segments);
         return encoding;
     }
 
@@ -59,7 +59,8 @@ public static class QrDataEncoder
     public static BitBuffer EncodeDataBits(QrEncodingInfo qrDataEncoding, ReadOnlySpan<char> data)
     {
         var version = qrDataEncoding.Version;
-        var bitWriter = new BitWriter(new(qrDataEncoding.Version.DataCodewordsCapacity * 8));
+        var dataCodewordsCapacity = qrDataEncoding.Version.GetDataCodewordsCapacity(qrDataEncoding.ErrorCorrectionLevel);
+        var bitWriter = new BitWriter(new(dataCodewordsCapacity * 8));
 
         foreach (var segment in qrDataEncoding.DataSegments)
         {
@@ -95,19 +96,19 @@ public static class QrDataEncoder
 #pragma warning restore IDE0010 // Add missing cases
         }
 
-        QrTerminatorBlock.WriteTerminator(bitWriter, version);
+        QrTerminatorBlock.WriteTerminator(bitWriter, version, qrDataEncoding.ErrorCorrectionLevel);
 
         PadBitsInFinalCodeword(bitWriter);
 
         var codewords = bitWriter.BytesWritten;
-        while (codewords <= version.DataCodewordsCapacity - 4)
+        while (codewords <= dataCodewordsCapacity - 4)
         {
             bitWriter.WriteBitsBigEndian(PadPattern32Bits, 32);
             codewords += 4;
         }
 
         var alternate = true;
-        while (codewords < version.DataCodewordsCapacity)
+        while (codewords < dataCodewordsCapacity)
         {
             bitWriter.WriteBitsBigEndian(alternate ? PadPattern8_1 : PadPattern8_2, 8);
             alternate = !alternate;
@@ -135,15 +136,15 @@ public static class QrDataEncoder
     public const byte PadPattern8_2 = 0b0001_0001;
     public const uint PadPattern32Bits = unchecked((uint)((PadPattern8_1 << 24) | (PadPattern8_2 << 16) | (PadPattern8_1 << 8) | PadPattern8_2));
 
-    public static unsafe BitBuffer EncodeAndInterleaveErrorCorrectionBlocks(QrVersion version, BitBuffer dataCodewordsBitBuffer)
+    public static unsafe BitBuffer EncodeAndInterleaveErrorCorrectionBlocks(BitBuffer dataCodewordsBitBuffer, QrVersion version, ErrorCorrectionLevel errorCorrectionLevel)
     {
-        if (dataCodewordsBitBuffer.ByteCount != version.DataCodewordsCapacity)
+        if (dataCodewordsBitBuffer.ByteCount != version.GetDataCodewordsCapacity(errorCorrectionLevel))
         {
             throw new ArgumentException("Size of input data and size of version do not match.", nameof(dataCodewordsBitBuffer));
         }
 
-        var errorCorrectionCodewordsPerBlock = version.ErrorCorrectionBlocks.ErrorCorrectionCodewordsPerBlock;
-        var errorCorrectionBlocks = version.ErrorCorrectionBlocks;
+        var errorCorrectionBlocks = version.GetErrorCorrectionBlocks(errorCorrectionLevel);
+        var errorCorrectionCodewordsPerBlock = errorCorrectionBlocks.ErrorCorrectionCodewordsPerBlock;
         var maxDataCodewordsInBlocks = errorCorrectionBlocks.MaxDataCodewordsInBlock;
         var resultBitBuffer = new BitWriter(new(version.TotalCodewords * 8));
 

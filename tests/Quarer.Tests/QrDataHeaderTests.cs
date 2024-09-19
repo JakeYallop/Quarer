@@ -12,11 +12,11 @@ public sealed class QrDataHeaderTests
         {
             if (mode is not (ModeIndicator.Eci or ModeIndicator.Fnc1FirstPosition or ModeIndicator.Fnc1SecondPosition or ModeIndicator.StructuredAppend or ModeIndicator.Terminator))
             {
-                QrHeaderBlock.WriteHeader(bitWriter, QrVersion.GetVersion(1, ErrorCorrectionLevel.Q), mode, 0);
+                QrHeaderBlock.WriteHeader(bitWriter, QrVersion.GetVersion(1), mode, 0);
             }
             else
             {
-                _ = Assert.Throws<NotSupportedException>(() => QrHeaderBlock.WriteHeader(bitWriter, QrVersion.GetVersion(1, ErrorCorrectionLevel.Q), mode, 0));
+                _ = Assert.Throws<NotSupportedException>(() => QrHeaderBlock.WriteHeader(bitWriter, QrVersion.GetVersion(1), mode, 0));
             }
         }
     }
@@ -27,9 +27,9 @@ public sealed class QrDataHeaderTests
         foreach (var mode in (ReadOnlySpan<ModeIndicator>)[ModeIndicator.Numeric, ModeIndicator.Alphanumeric, ModeIndicator.Byte, ModeIndicator.Byte])
         {
             foreach (var version in (ReadOnlySpan<QrVersion>)[
-                QrVersion.GetVersion(1, ErrorCorrectionLevel.M),
-                QrVersion.GetVersion(10, ErrorCorrectionLevel.Q),
-                QrVersion.GetVersion(29, ErrorCorrectionLevel.H)])
+                QrVersion.GetVersion(1),
+                QrVersion.GetVersion(10),
+                QrVersion.GetVersion(29)])
             {
                 var inputDataLength = 0b100100;
                 var characterCount = CharacterCount.GetCharacterCountBitCount(version, mode);

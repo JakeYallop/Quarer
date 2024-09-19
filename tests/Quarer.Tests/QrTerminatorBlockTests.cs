@@ -15,12 +15,14 @@ public sealed class QrTerminatorBlockTests
     [Fact]
     public void WriteTerminator_WritesTerminator()
     {
-        var version = QrVersion.GetVersion(1, ErrorCorrectionLevel.L);
-        var initialCapacity = version.DataCodewordsCapacity - 3;
+        var version = QrVersion.GetVersion(1);
+        var errorCorrectionLevel = ErrorCorrectionLevel.L;
+        var dataCodewordsCapacity = version.GetDataCodewordsCapacity(errorCorrectionLevel);
+        var initialCapacity = dataCodewordsCapacity - 3;
         var writer = GetBuffer(initialCapacity);
 
         var count = writer.BitsWritten;
-        QrTerminatorBlock.WriteTerminator(writer, version);
+        QrTerminatorBlock.WriteTerminator(writer, version, errorCorrectionLevel);
         Assert.Equal(initialCapacity + 1, writer.BytesWritten);
         Assert.Equal(count + 4, writer.BitsWritten);
         AssertExtensions.BitsEqual("0000", writer.Buffer.AsBitEnumerable().TakeLast(4));
@@ -33,13 +35,14 @@ public sealed class QrTerminatorBlockTests
     [InlineData(4)]
     public void WriteTerminator_AtCodewordCapacity_ButLastPartialByteHasSpace_WritesTerminator(int filledBitsInLastByte)
     {
-        var version = QrVersion.GetVersion(1, ErrorCorrectionLevel.M);
-        var initialCapacity = version.DataCodewordsCapacity - 1;
+        var version = QrVersion.GetVersion(1);
+        var errorCorrectionLevel = ErrorCorrectionLevel.M;
+        var initialCapacity = version.GetDataCodewordsCapacity(errorCorrectionLevel) - 1;
         var writer = GetBuffer(initialCapacity);
         writer.WriteBitsBigEndian(1 << (filledBitsInLastByte - 1), filledBitsInLastByte);
 
         var count = writer.BitsWritten;
-        QrTerminatorBlock.WriteTerminator(writer, version);
+        QrTerminatorBlock.WriteTerminator(writer, version, errorCorrectionLevel);
         Assert.Equal(initialCapacity + 1, writer.Buffer.ByteCount);
         Assert.Equal(count + 4, writer.BitsWritten);
         AssertExtensions.BitsEqual("0000", writer.Buffer.AsBitEnumerable().TakeLast(4));
@@ -52,14 +55,15 @@ public sealed class QrTerminatorBlockTests
     [InlineData(7)]
     public void WriteTerminator_AtCodewordCapacity_LastPartialByteHas4BitsOrLessSpace_FillsRemainingSpace(int filledBitsInLastByte)
     {
-        var version = QrVersion.GetVersion(1, ErrorCorrectionLevel.Q);
-        var initialCapacity = version.DataCodewordsCapacity - 1;
+        var version = QrVersion.GetVersion(1);
+        var errorCorrectionLevel = ErrorCorrectionLevel.Q;
+        var initialCapacity = version.GetDataCodewordsCapacity(errorCorrectionLevel) - 1;
         var writer = GetBuffer(initialCapacity);
         writer.WriteBitsBigEndian(1 << (filledBitsInLastByte - 1), filledBitsInLastByte);
         var remainingBits = 8 - filledBitsInLastByte;
 
         var count = writer.BitsWritten;
-        QrTerminatorBlock.WriteTerminator(writer, version);
+        QrTerminatorBlock.WriteTerminator(writer, version, errorCorrectionLevel);
         Assert.Equal(initialCapacity + 1, writer.Buffer.ByteCount);
         Assert.Equal(count + remainingBits, writer.BitsWritten);
         AssertExtensions.BitsEqual(new string('0', remainingBits), writer.Buffer.AsBitEnumerable().TakeLast(remainingBits));
@@ -68,12 +72,13 @@ public sealed class QrTerminatorBlockTests
     [Fact]
     public void WriteTerminator_AtCodewordCapacity_NoSpaceForTerminator_DoesNotWriteAnything()
     {
-        var version = QrVersion.GetVersion(1, ErrorCorrectionLevel.H);
-        var writer = GetBuffer(version.DataCodewordsCapacity);
+        var version = QrVersion.GetVersion(1);
+        var errorCorrectionLevel = ErrorCorrectionLevel.H;
+        var writer = GetBuffer(version.GetDataCodewordsCapacity(errorCorrectionLevel));
 
         var count = writer.BitsWritten;
-        QrTerminatorBlock.WriteTerminator(writer, version);
-        Assert.Equal(version.DataCodewordsCapacity, writer.Buffer.ByteCount);
+        QrTerminatorBlock.WriteTerminator(writer, version, errorCorrectionLevel);
+        Assert.Equal(version.GetDataCodewordsCapacity(errorCorrectionLevel), writer.Buffer.ByteCount);
         Assert.Equal(count, writer.BitsWritten);
     }
 

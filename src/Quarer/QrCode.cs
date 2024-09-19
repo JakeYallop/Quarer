@@ -6,17 +6,18 @@ public sealed class QrCode : IEquatable<QrCode>
 {
     private const string QrCodeDataTooLargeMessage = "Failed to create QR code, provided data is too large to fit within the QR code capacity using the available encoding capabilities.";
 
-    internal QrCode(QrVersion version, MaskPattern maskPattern, BitMatrix data)
+    internal QrCode(QrVersion version, BitMatrix data, ErrorCorrectionLevel errorCorrectionLevel, MaskPattern maskPattern)
     {
         Version = version;
         MaskPattern = maskPattern;
         Data = data;
+        ErrorCorrectionLevel = errorCorrectionLevel;
     }
 
-    public QrVersion Version { get; }
-    public MaskPattern MaskPattern { get; }
     public BitMatrix Data { get; }
-    public ErrorCorrectionLevel ErrorCorrectionLevel => Version.ErrorCorrectionLevel;
+    public QrVersion Version { get; }
+    public ErrorCorrectionLevel ErrorCorrectionLevel { get; }
+    public MaskPattern MaskPattern { get; }
     public int Width => Version.ModulesPerSide;
     public int Height => Version.ModulesPerSide;
 
@@ -50,12 +51,11 @@ public sealed class QrCode : IEquatable<QrCode>
         return result.Success ? result.Value : throw new QrCodeException(QrCodeDataTooLargeMessage);
     }
 
-    public static QrCode Create(ReadOnlySpan<char> data, QrVersion version)
+    public static QrCode Create(ReadOnlySpan<char> data, QrVersion version, ErrorCorrectionLevel errorCorrectionLevel)
     {
-        var result = TryCreate(data, version);
+        var result = TryCreate(data, version, errorCorrectionLevel);
         return result.Success ? result.Value : throw new QrCodeException(QrCodeDataTooLargeMessage);
     }
-
 
     public static QrCodeCreationResult TryCreate(ReadOnlySpan<char> data)
     {
@@ -84,24 +84,24 @@ public sealed class QrCode : IEquatable<QrCode>
         };
     }
 
-    public static QrCodeCreationResult TryCreate(ReadOnlySpan<char> data, QrVersion version)
+    public static QrCodeCreationResult TryCreate(ReadOnlySpan<char> data, QrVersion version, ErrorCorrectionLevel errorCorrectionLevel)
     {
         var mode = QrDataEncoder.DeriveMode(data);
-        if (!QrVersionLookup.VersionCanFitData(version, data, mode))
+        if (!QrVersionLookup.VersionCanFitData(version, data, errorCorrectionLevel, mode))
         {
             return new(QrCreationResult.DataTooLargeSimple);
         }
 
-        var encoding = QrDataEncoder.CreateSimpleDataEncoding(data, version, mode);
+        var encoding = QrDataEncoder.CreateSimpleDataEncoding(data, version, errorCorrectionLevel, mode);
         return CreateQrCode(data, encoding);
     }
 
     private static QrCodeCreationResult CreateQrCode(ReadOnlySpan<char> data, QrEncodingInfo encodingInfo)
     {
         var dataCodewords = QrDataEncoder.EncodeDataBits(encodingInfo, data);
-        var withErrorCodewords = QrDataEncoder.EncodeAndInterleaveErrorCorrectionBlocks(encodingInfo.Version, dataCodewords);
-        var (matrix, maskPattern) = QrSymbolBuilder.BuildSymbol(encodingInfo.Version, withErrorCodewords);
-        var qrCode = new QrCode(encodingInfo.Version, maskPattern, matrix);
+        var withErrorCodewords = QrDataEncoder.EncodeAndInterleaveErrorCorrectionBlocks(dataCodewords, encodingInfo.Version, encodingInfo.ErrorCorrectionLevel);
+        var (matrix, maskPattern) = QrSymbolBuilder.BuildSymbol(withErrorCodewords, encodingInfo.Version, encodingInfo.ErrorCorrectionLevel);
+        var qrCode = new QrCode(encodingInfo.Version, matrix, encodingInfo.ErrorCorrectionLevel, maskPattern);
         return new(qrCode);
     }
 
