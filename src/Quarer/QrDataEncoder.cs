@@ -226,14 +226,13 @@ public sealed class DataAnalysisResult
 
     private DataAnalysisResult(QrEncodingInfo? encoding, AnalysisResult result)
     {
-        Result = encoding;
-        AnalysisResult = result;
+        Value = encoding;
+        Reason = result;
     }
-    //TODO: Rename to Value
-    public QrEncodingInfo? Result { get; }
-    public AnalysisResult AnalysisResult { get; }
-    [MemberNotNullWhen(true, nameof(Result))]
-    public bool Success => AnalysisResult is AnalysisResult.Success;
+    public QrEncodingInfo? Value { get; }
+    public AnalysisResult Reason { get; }
+    [MemberNotNullWhen(true, nameof(Value))]
+    public bool Success => Reason is AnalysisResult.Success;
 
     public static DataAnalysisResult Invalid(AnalysisResult result)
         => result == AnalysisResult.Success

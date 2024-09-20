@@ -76,10 +76,10 @@ public sealed class QrCode : IEquatable<QrCode>
     public static QrCodeCreationResult TryCreate(ReadOnlySpan<char> data, ErrorCorrectionLevel errorCorrectionLevel)
     {
         var analysisResult = QrDataEncoder.AnalyzeSimple(data, errorCorrectionLevel);
-        return analysisResult.AnalysisResult switch
+        return analysisResult.Reason switch
         {
             AnalysisResult.DataTooLarge => new(QrCreationResult.DataTooLargeSimple),
-            AnalysisResult.Success => CreateQrCode(data, analysisResult.Result!),
+            AnalysisResult.Success => CreateQrCode(data, analysisResult.Value!),
             _ => throw new InvalidOperationException("Unexpected analysis result.")
         };
     }

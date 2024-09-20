@@ -26,10 +26,10 @@ public sealed class QrDataEncoderTests
 
         Assert.True(result.Success);
         Assert.NotNull(result);
-        Assert.Single(result.Result.DataSegments);
-        Assert.Equal(ModeIndicator.Numeric, result.Result.DataSegments[0].Mode);
-        Assert.Equal(AnalysisResult.Success, result.AnalysisResult);
-        Assert.Equal(1, result.Result.Version.Version);
+        Assert.Single(result.Value.DataSegments);
+        Assert.Equal(ModeIndicator.Numeric, result.Value.DataSegments[0].Mode);
+        Assert.Equal(AnalysisResult.Success, result.Reason);
+        Assert.Equal(1, result.Value.Version.Version);
     }
 
     [Fact]
@@ -42,10 +42,10 @@ public sealed class QrDataEncoderTests
 
         Assert.True(result.Success);
         Assert.NotNull(result);
-        Assert.Single(result.Result.DataSegments);
-        Assert.Equal(ModeIndicator.Alphanumeric, result.Result.DataSegments[0].Mode);
-        Assert.Equal(AnalysisResult.Success, result.AnalysisResult);
-        Assert.Equal(1, result.Result.Version.Version);
+        Assert.Single(result.Value.DataSegments);
+        Assert.Equal(ModeIndicator.Alphanumeric, result.Value.DataSegments[0].Mode);
+        Assert.Equal(AnalysisResult.Success, result.Reason);
+        Assert.Equal(1, result.Value.Version.Version);
     }
 
     [Fact]
@@ -58,10 +58,10 @@ public sealed class QrDataEncoderTests
 
         Assert.True(result.Success);
         Assert.NotNull(result);
-        Assert.Single(result.Result.DataSegments);
-        Assert.Equal(ModeIndicator.Alphanumeric, result.Result.DataSegments[0].Mode);
-        Assert.Equal(AnalysisResult.Success, result.AnalysisResult);
-        Assert.Equal(3, result.Result.Version.Version);
+        Assert.Single(result.Value.DataSegments);
+        Assert.Equal(ModeIndicator.Alphanumeric, result.Value.DataSegments[0].Mode);
+        Assert.Equal(AnalysisResult.Success, result.Reason);
+        Assert.Equal(3, result.Value.Version.Version);
     }
 
     [Fact]
@@ -73,8 +73,8 @@ public sealed class QrDataEncoderTests
         var result = QrDataEncoder.AnalyzeSimple(data, errorCorrectionLevel);
 
         Assert.NotNull(result);
-        Assert.Null(result.Result);
-        Assert.Equal(AnalysisResult.DataTooLarge, result.AnalysisResult);
+        Assert.Null(result.Value);
+        Assert.Equal(AnalysisResult.DataTooLarge, result.Reason);
     }
 
     [Fact]

@@ -7,7 +7,7 @@ public sealed class QrAnalysisResultTests
     {
         var encoding = DataAnalysisResult.Invalid(result);
         Assert.False(encoding.Success);
-        Assert.Equal(result, encoding.AnalysisResult);
+        Assert.Equal(result, encoding.Reason);
     }
 
     [Fact]
