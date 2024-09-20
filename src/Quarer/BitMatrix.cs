@@ -1,18 +1,12 @@
 ﻿using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace Quarer;
 
-internal sealed class BitMatrixDebugView
+internal sealed class BitMatrixDebugView(BitMatrix bitMatrix)
 {
-    private readonly BitMatrix _bitMatrix;
-
-    public BitMatrixDebugView(BitMatrix bitMatrix)
-    {
-        _bitMatrix = bitMatrix;
-    }
+    private readonly BitMatrix _bitMatrix = bitMatrix;
 
     public string Matrix
     {

@@ -550,7 +550,9 @@ public sealed class BitBuffer : IEquatable<BitBuffer>
 
     private static int GetElementLengthFromBitsCeil(int bits) => (int)((uint)(bits - 1 + (1u << BitShiftPerElement)) >> BitShiftPerElement);
     private static int GetElementLengthFromBitsFloor(int bits) => bits >> BitShiftPerElement;
+#pragma warning disable IDE0051 // Remove unused private members
     private static int GetElementLengthFromBytesCeil(int bytes) => (int)((uint)(bytes - 1 + (1u << BytesShiftPerElement)) >> BytesShiftPerElement);
+#pragma warning restore IDE0051 // Remove unused private members
     private static int GetElementLengthFromBytesFloor(int bytes) => bytes >> BytesShiftPerElement;
 
 }

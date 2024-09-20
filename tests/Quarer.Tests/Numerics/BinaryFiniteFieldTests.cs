@@ -93,8 +93,6 @@ public class BinaryFiniteFieldTests
     [InlineData(new byte[] { 10, 20, 40, 60 }, 1, 10)]
     [InlineData(new byte[] { 10, 20, 40, 60 }, 2, 127)]
     public void Evaluate_ReturnsExpectedResult(byte[] polynomial, byte x, byte expected)
-    {
-        Assert.Equal(expected, BinaryFiniteField.Evaluate(polynomial, x));
-    }
+        => Assert.Equal(expected, BinaryFiniteField.Evaluate(polynomial, x));
 
 }

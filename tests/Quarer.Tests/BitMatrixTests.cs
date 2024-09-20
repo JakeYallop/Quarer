@@ -1,7 +1,6 @@
-﻿namespace Quarer.Tests;
+﻿using System.Diagnostics;
 
-using System.Diagnostics;
-
+namespace Quarer.Tests;
 public class BitMatrixTests
 {
     [Fact]

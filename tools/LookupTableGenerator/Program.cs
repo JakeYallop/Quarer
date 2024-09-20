@@ -174,4 +174,7 @@ static int CalculateBchCode(byte bits, int polynomial)
     return value;
 }
 
-static int MostSignificantBitSetIndex(int value) => 32 - int.LeadingZeroCount(value);
+static int MostSignificantBitSetIndex(int value)
+{
+    return 32 - int.LeadingZeroCount(value);
+}
