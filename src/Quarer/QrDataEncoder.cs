@@ -17,7 +17,7 @@ public static class QrDataEncoder
         //For now, just use a single mode for the full set of data.
         var mode = DeriveMode(data);
         var dataLength = mode.GetDataCharacterLength(data);
-        if (!QrVersionLookup.TryGetVersionForDataCapacity(dataLength, mode, requestedErrorCorrectionLevel, out var version))
+        if (!QrVersion.TryGetVersionForDataCapacity(dataLength, mode, requestedErrorCorrectionLevel, out var version))
         {
             return DataAnalysisResult.Invalid(AnalysisResult.DataTooLarge);
         }
@@ -29,7 +29,7 @@ public static class QrDataEncoder
 
     internal static QrEncodingInfo CreateSimpleDataEncoding(ReadOnlySpan<char> data, QrVersion version, ErrorCorrectionLevel errorCorrectionLevel, ModeIndicator mode)
     {
-        Debug.Assert(QrVersionLookup.VersionCanFitData(version, data, errorCorrectionLevel, mode), "Expected version to be large enough to contain data.");
+        Debug.Assert(QrVersion.VersionCanFitData(version, data, errorCorrectionLevel, mode), "Expected version to be large enough to contain data.");
         var dataLength = mode.GetBitStreamLength(data);
         return CreateDataSegment(data, dataLength, version, errorCorrectionLevel, mode);
     }

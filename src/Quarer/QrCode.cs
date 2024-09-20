@@ -87,7 +87,7 @@ public sealed class QrCode : IEquatable<QrCode>
     public static QrCodeCreationResult TryCreate(ReadOnlySpan<char> data, QrVersion version, ErrorCorrectionLevel errorCorrectionLevel)
     {
         var mode = QrDataEncoder.DeriveMode(data);
-        if (!QrVersionLookup.VersionCanFitData(version, data, errorCorrectionLevel, mode))
+        if (!QrVersion.VersionCanFitData(version, data, errorCorrectionLevel, mode))
         {
             return new(QrCreationResult.DataTooLargeSimple);
         }
