@@ -3,8 +3,8 @@ using BenchmarkDotNet.Running;
 
 BenchmarkRunner.Run<Benchmarks>(args: args);
 
+[IterationTime(1000)]
 [MemoryDiagnoser]
-[MemoryRandomization]
 [MarkdownExporterAttribute.GitHub]
 public partial class Benchmarks
 {
