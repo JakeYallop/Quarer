@@ -6,10 +6,9 @@ public sealed class QrCode : IEquatable<QrCode>
 {
     private const string QrCodeDataTooLargeMessage = "Failed to create QR code, provided data is too large to fit within the QR code capacity using the available encoding capabilities.";
 
-    internal QrCode(QrVersion version, BitMatrix data, ErrorCorrectionLevel errorCorrectionLevel, MaskPattern maskPattern)
+    internal QrCode(QrVersion version, BitMatrix data, ErrorCorrectionLevel errorCorrectionLevel)
     {
         Version = version;
-        MaskPattern = maskPattern;
         Data = data;
         ErrorCorrectionLevel = errorCorrectionLevel;
     }
@@ -17,16 +16,15 @@ public sealed class QrCode : IEquatable<QrCode>
     public BitMatrix Data { get; }
     public QrVersion Version { get; }
     public ErrorCorrectionLevel ErrorCorrectionLevel { get; }
-    public MaskPattern MaskPattern { get; }
     public int Width => Version.ModulesPerSide;
     public int Height => Version.ModulesPerSide;
 
     public static bool operator ==(QrCode? left, QrCode? right) => left is null ? right is null : left.Equals(right);
     public static bool operator !=(QrCode? left, QrCode? right) => !(left == right);
 
-    public bool Equals([NotNullWhen(true)] QrCode? other) => other is not null && Version == other.Version && MaskPattern == other.MaskPattern && Data == other.Data;
+    public bool Equals([NotNullWhen(true)] QrCode? other) => other is not null && Version == other.Version && Data == other.Data;
     public override bool Equals([NotNullWhen(true)] object? obj) => obj is QrCode other && Equals(other);
-    public override int GetHashCode() => HashCode.Combine(Version, MaskPattern, Data);
+    public override int GetHashCode() => HashCode.Combine(Version, ErrorCorrectionLevel, Data);
 
     public static QrCode Create(ReadOnlySpan<char> data)
     {
@@ -100,8 +98,8 @@ public sealed class QrCode : IEquatable<QrCode>
     {
         var dataCodewords = QrDataEncoder.EncodeDataBits(encodingInfo, data);
         var withErrorCodewords = QrDataEncoder.EncodeAndInterleaveErrorCorrectionBlocks(dataCodewords, encodingInfo.Version, encodingInfo.ErrorCorrectionLevel);
-        var (matrix, maskPattern) = QrSymbolBuilder.BuildSymbol(withErrorCodewords, encodingInfo.Version, encodingInfo.ErrorCorrectionLevel);
-        var qrCode = new QrCode(encodingInfo.Version, matrix, encodingInfo.ErrorCorrectionLevel, maskPattern);
+        var (matrix, _) = QrSymbolBuilder.BuildSymbol(withErrorCodewords, encodingInfo.Version, encodingInfo.ErrorCorrectionLevel);
+        var qrCode = new QrCode(encodingInfo.Version, matrix, encodingInfo.ErrorCorrectionLevel);
         return new(qrCode);
     }
 

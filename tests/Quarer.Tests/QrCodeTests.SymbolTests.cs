@@ -11,7 +11,6 @@ public partial class QrCodeTests
         var code = QrCode.Create(data);
         Assert.Equal(ErrorCorrectionLevel.M, code.ErrorCorrectionLevel);
         Assert.Equal(1, code.Version.Version);
-        Assert.Equal(MaskPattern.PatternZero_Checkerboard, code.MaskPattern);
         Assert.Equal("""
             X X X X X X X - - - X X X - X X X X X X X
             X - - - - - X - X X X - - - X - - - - - X
@@ -46,7 +45,6 @@ public partial class QrCodeTests
         var code = result.Value;
         Assert.Equal(ErrorCorrectionLevel.M, code.ErrorCorrectionLevel);
         Assert.Equal(1, code.Version.Version);
-        Assert.Equal(MaskPattern.PatternZero_Checkerboard, code.MaskPattern);
         Assert.Equal("""
             X X X X X X X - - - X X X - X X X X X X X
             X - - - - - X - X X X - - - X - - - - - X
@@ -79,7 +77,6 @@ public partial class QrCodeTests
         var code = QrCode.Create(data, ErrorCorrectionLevel.H);
         Assert.Equal(ErrorCorrectionLevel.H, code.ErrorCorrectionLevel);
         Assert.Equal(2, code.Version.Version);
-        Assert.Equal(MaskPattern.PatternFive_Fields, code.MaskPattern);
         Assert.Equal("""
             X X X X X X X - X X X - X X - X X - X X X X X X X
             X - - - - - X - - - X - X X - X X - X - - - - - X
@@ -116,7 +113,6 @@ public partial class QrCodeTests
         var code = QrCode.Create(data, ErrorCorrectionLevel.H);
         Assert.Equal(ErrorCorrectionLevel.H, code.ErrorCorrectionLevel);
         Assert.Equal(5, code.Version.Version);
-        Assert.Equal(MaskPattern.PatternSix_Diamonds, code.MaskPattern);
         Assert.Equal("""
             X X X X X X X - - - - X X X - - X X - - X X - - X - X - X - X X X X X X X
             X - - - - - X - - - X X X - X - - - X - - - X - - X X X X - X - - - - - X

@@ -59,27 +59,48 @@ public partial class QrCodeTests
     public void Equals_Equal()
     {
         var version = QrVersion.GetVersion(1);
-        var maskPattern = MaskPattern.PatternZero_Checkerboard;
         var data = new BitMatrix(21, 21);
-        var qrCode1 = new QrCode(version, data, ErrorCorrectionLevel.M, maskPattern);
-        var qrCode2 = new QrCode(version, data, ErrorCorrectionLevel.M, maskPattern);
+        var qrCode1 = new QrCode(version, data, ErrorCorrectionLevel.M);
+        var qrCode2 = new QrCode(version, data, ErrorCorrectionLevel.M);
 
         var result = qrCode1.Equals(qrCode2);
         Assert.True(result);
     }
 
     [Fact]
-    public void Equals_NotEqual()
+    public void Equals_Version_NotEqual()
     {
         var version1 = QrVersion.GetVersion(1);
-        var maskPattern1 = MaskPattern.PatternZero_Checkerboard;
         var data1 = new BitMatrix(21, 21);
-        var qrCode1 = new QrCode(version1, data1, ErrorCorrectionLevel.L, maskPattern1);
+        var qrCode1 = new QrCode(version1, data1, ErrorCorrectionLevel.L);
 
         var version2 = QrVersion.GetVersion(2);
-        var maskPattern2 = MaskPattern.PatternOne_HorizontalLines;
-        var data2 = new BitMatrix(25, 25);
-        var qrCode2 = new QrCode(version2, data2, ErrorCorrectionLevel.M, maskPattern2);
+        var qrCode2 = new QrCode(version2, data1, ErrorCorrectionLevel.L);
+
+        var result = qrCode1.Equals(qrCode2);
+        Assert.False(result);
+    }
+
+    [Fact]
+    public void Equals_Data_NotEqual()
+    {
+        var version1 = QrVersion.GetVersion(1);
+        var data1 = new BitMatrix(21, 21);
+        var data2 = new BitMatrix(10, 10);
+        var qrCode1 = new QrCode(version1, data1, ErrorCorrectionLevel.L);
+        var qrCode2 = new QrCode(version1, data2, ErrorCorrectionLevel.L);
+
+        var result = qrCode1.Equals(qrCode2);
+        Assert.False(result);
+    }
+
+    [Fact]
+    public void Equals_ErrorCorrectionLevel_NotEqual()
+    {
+        var version1 = QrVersion.GetVersion(1);
+        var data1 = new BitMatrix(21, 21);
+        var qrCode1 = new QrCode(version1, data1, ErrorCorrectionLevel.L);
+        var qrCode2 = new QrCode(version1, data1, ErrorCorrectionLevel.M);
 
         var result = qrCode1.Equals(qrCode2);
         Assert.False(result);
@@ -89,10 +110,9 @@ public partial class QrCodeTests
     public void Op_Equality_ReturnsExpectedResult()
     {
         var version = QrVersion.GetVersion(1);
-        var maskPattern = MaskPattern.PatternZero_Checkerboard;
         var data = new BitMatrix(21, 21);
-        var qrCode1 = new QrCode(version, data, ErrorCorrectionLevel.L, maskPattern);
-        var qrCode2 = new QrCode(version, data, ErrorCorrectionLevel.L, maskPattern);
+        var qrCode1 = new QrCode(version, data, ErrorCorrectionLevel.L);
+        var qrCode2 = new QrCode(version, data, ErrorCorrectionLevel.L);
 
         var result = qrCode1 == qrCode2;
         Assert.True(result);
@@ -102,14 +122,12 @@ public partial class QrCodeTests
     public void Op_Inequality_ReturnsExpectedResult()
     {
         var version1 = QrVersion.GetVersion(1);
-        var maskPattern1 = MaskPattern.PatternZero_Checkerboard;
         var data1 = new BitMatrix(21, 21);
-        var qrCode1 = new QrCode(version1, data1, ErrorCorrectionLevel.L, maskPattern1);
+        var qrCode1 = new QrCode(version1, data1, ErrorCorrectionLevel.L);
 
         var version2 = QrVersion.GetVersion(2);
-        var maskPattern2 = MaskPattern.PatternOne_HorizontalLines;
         var data2 = new BitMatrix(25, 25);
-        var qrCode2 = new QrCode(version2, data2, ErrorCorrectionLevel.M, maskPattern2);
+        var qrCode2 = new QrCode(version2, data2, ErrorCorrectionLevel.M);
 
         var result = qrCode1 == qrCode2;
         Assert.False(result);
@@ -119,10 +137,9 @@ public partial class QrCodeTests
     public void GetHashCode_Equal()
     {
         var version = QrVersion.GetVersion(1);
-        var maskPattern = MaskPattern.PatternZero_Checkerboard;
         var data = new BitMatrix(21, 21);
-        var qrCode1 = new QrCode(version, data, ErrorCorrectionLevel.L, maskPattern);
-        var qrCode2 = new QrCode(version, data, ErrorCorrectionLevel.L, maskPattern);
+        var qrCode1 = new QrCode(version, data, ErrorCorrectionLevel.L);
+        var qrCode2 = new QrCode(version, data, ErrorCorrectionLevel.L);
 
         var hashCode1 = qrCode1.GetHashCode();
         var hashCode2 = qrCode2.GetHashCode();
@@ -135,14 +152,12 @@ public partial class QrCodeTests
     {
         // Arrange
         var version1 = QrVersion.GetVersion(1);
-        var maskPattern1 = MaskPattern.PatternZero_Checkerboard;
         var data1 = new BitMatrix(21, 21);
-        var qrCode1 = new QrCode(version1, data1, ErrorCorrectionLevel.L, maskPattern1);
+        var qrCode1 = new QrCode(version1, data1, ErrorCorrectionLevel.L);
 
         var version2 = QrVersion.GetVersion(2);
-        var maskPattern2 = MaskPattern.PatternOne_HorizontalLines;
         var data2 = new BitMatrix(25, 25);
-        var qrCode2 = new QrCode(version2, data2, ErrorCorrectionLevel.M, maskPattern2);
+        var qrCode2 = new QrCode(version2, data2, ErrorCorrectionLevel.M);
 
         var hashCode1 = qrCode1.GetHashCode();
         var hashCode2 = qrCode2.GetHashCode();

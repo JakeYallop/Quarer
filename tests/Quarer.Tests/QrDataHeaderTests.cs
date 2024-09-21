@@ -42,9 +42,7 @@ public sealed class QrDataHeaderTests
     }
 
     [Theory]
-#pragma warning disable xUnit1044 // Avoid using TheoryData type arguments that are not serializable
     [MemberData(nameof(Data))]
-#pragma warning restore xUnit1044 // Avoid using TheoryData type arguments that are not serializable
     public void WriteHeader_WritesCorrectData(QrVersion version, ModeIndicator mode, int inputDataCount, string expectedBitString)
     {
         var writer = new BitWriter();

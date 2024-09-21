@@ -937,6 +937,98 @@ public class QrSymbolBuilderTests
         Assert.Equal(expectedPenalty, penalty);
     }
 
+    [Fact]
+    public void BuildSymbol_2H_ProducesExpectedSymbolWithExpectedMaskPattern()
+    {
+        var data = "HELLO WORLD";
+        var version = QrVersion.GetVersion(2);
+        var codewordsBuffer = QrDataEncoder.EncodeDataBits(QrDataEncoder.CreateSimpleDataEncoding(data, version, ErrorCorrectionLevel.H, ModeIndicator.Alphanumeric), data);
+        var withErrorCorrection = QrDataEncoder.EncodeAndInterleaveErrorCorrectionBlocks(codewordsBuffer, version, ErrorCorrectionLevel.H);
+
+        var (symbol, maskPattern) = QrSymbolBuilder.BuildSymbol(withErrorCorrection, version, ErrorCorrectionLevel.H);
+
+        Assert.Equal(MaskPattern.PatternFive_Fields, maskPattern);
+        Assert.Equal("""
+            X X X X X X X - X X X - X X - X X - X X X X X X X
+            X - - - - - X - - - X - X X - X X - X - - - - - X
+            X - X X X - X - X - X - - - - - X - X - X X X - X
+            X - X X X - X - - X X - - X X X X - X - X X X - X
+            X - X X X - X - X X - - X - X X - - X - X X X - X
+            X - - - - - X - - X - - - - - X - - X - - - - - X
+            X X X X X X X - X - X - X - X - X - X X X X X X X
+            - - - - - - - - X - X - X X - - X - - - - - - - -
+            - - - - - X X - - - X X X X - X - - X - X - X - X
+            X X - X X - - X X X X - - - X - X - X X - X - - X
+            - - - - X - X - - - - X - - - X - - X - X - - - -
+            X - X X X - - X - X - X - - - X - X X X X - - X -
+            X - X - X X X - - X X X - - - - - X X X X - X - X
+            - X X - X X - - X - - - - X - - - X X - - X - X -
+            - - - - X - X X - - - - X - X X X X - - - - X - -
+            - - - X X - - - - X - X X - X - X - - X X - X - X
+            - - X - X - X - - X - - - X - X X X X X X X X - X
+            - - - - - - - - X X - - X - X - X - - - X X X X -
+            X X X X X X X - - - X X - X X X X - X - X - X X -
+            X - - - - - X - X - - X - X X X X - - - X X X X X
+            X - X X X - X - - - - - - X X - X X X X X X - X X
+            X - X X X - X - - - X X X - - - - X - X - X X - X
+            X - X X X - X - - X - X - - X - X - X - - X - - X
+            X - - - - - X - - - - - X X X X - - X - - X X - -
+            X X X X X X X - - - X X X - - X X - X - X - X X X
+            """, MatrixToString(symbol));
+    }
+
+    [Fact]
+    public void BuildSymbol_5H_ProducesExpectedSymbolWithExpectedMaskPattern()
+    {
+        var data = "HELLO WORLD WITH A LONGER TEST STRING TEST STRING TEST ST";
+        var version = QrVersion.GetVersion(5);
+        var codewordsBuffer = QrDataEncoder.EncodeDataBits(QrDataEncoder.CreateSimpleDataEncoding(data, version, ErrorCorrectionLevel.H, ModeIndicator.Alphanumeric), data);
+        var withErrorCorrection = QrDataEncoder.EncodeAndInterleaveErrorCorrectionBlocks(codewordsBuffer, version, ErrorCorrectionLevel.H);
+
+        var (symbol, maskPattern) = QrSymbolBuilder.BuildSymbol(withErrorCorrection, version, ErrorCorrectionLevel.H);
+
+        Assert.Equal(MaskPattern.PatternSix_Diamonds, maskPattern);
+        Assert.Equal("""
+            X X X X X X X - - - - X X X - - X X - - X X - - X - X - X - X X X X X X X
+            X - - - - - X - - - X X X - X - - - X - - - X - - X X X X - X - - - - - X
+            X - X X X - X - X X X - - - - X X X X X - - X - - - X - X - X - X X X - X
+            X - X X X - X - X - - - X - X X X - X X - X - - - - - - X - X - X X X - X
+            X - X X X - X - - X - X X X X X - X X - - - - X - X X X X - X - X X X - X
+            X - - - - - X - - - - X - - X X X X - X X - - X - X X - X - X - - - - - X
+            X X X X X X X - X - X - X - X - X - X - X - X - X - X - X - X X X X X X X
+            - - - - - - - - - - - - - - - - - X - X X X X X - - X - X - - - - - - - -
+            - - - X X - X X - X X X - X - X X X - - X X - X X X X X X - - - - X X - -
+            X - X - - X - X - X - X X - - - X - X - - - - - - X X - X X - X X X - X X
+            X - - X - X X - - - - X X - X X X X - - X - X X - - - X - - X - - - X - X
+            X - X - - - - - X X X - X - X X X X X X X X - - - X X - X - - - - X X X X
+            - X X - - X X X X X X - X X X X X - X X X X - - - - X X X X X - - X X X -
+            - X X - X X - - X X X - - X - - - X - - - - X X X X - - - - - X - - - - -
+            X X - - X - X X X X - - - - - - X - X - X X - - - X X X - - X X X X X X X
+            - X X - - X - X - X - X X X - - X X X X X X X X X X X - - X - - X - - X X
+            X - - X - X X - - - - X - - X - X X - - - - - X X X - - - - - X X - X - X
+            X - - - - X - X - X - X - X - X - X X - - - X - - X X X - - X - - X X - -
+            - X - X - X X - - - - X - - - X - X - - X X - - X - - - X - - - - - X X -
+            X - X X - - - X X - - - - X X X X X X X X - X - X X X - X X X X X X X - X
+            - - X - X X X X - - - X X - X X X X X - X X X - - X - X - - X - - X - X -
+            - X X - - X - - - X - X X X - - X - X - - - - X - - - - - - - - X - X - -
+            - - - X X - X X X - - X - - - - X X - X - X X - - - X - - X X X X - X X -
+            - - X X X - - - - - - X - X X - X - X - - X - X - - X - - - - X X X X X X
+            X X X - - X X - X - X X - X X - X X X X - - - - - X X X X X - X X X X X X
+            - - - - X X - X - X X - X - - X X - X - X - - - X X - X - - X - X - X X -
+            - - X - - - X X - - - X X - X - - X - - X - - - - - X - - X - - X X - - X
+            - - - X - X - - X - - - X X - X - - X X X X X - X X X X X X X X - X X X -
+            - - X - X X X X - X X - - X - X X X - X X X - X X - - X X X X X X X - - X
+            - - - - - - - - X - - - X - X X - - X X - - - - X - - X X - - - X X X - X
+            X X X X X X X - X X - X - - X X X - - - - X X - - X - - X - X - X - - X -
+            X - - - - - X - - X X X - - X X X - X - - - - - X X X - X - - - X - X - -
+            X - X X X - X - X X - X - - - X - X - - X X - - X - - X X X X X X X X - -
+            X - X X X - X - X - X - - - X X X X - X X - X - - - X X X X - - X X - X X
+            X - X X X - X - - X - - - X - - X X - - - - - - X - - X X X X - - X - X X
+            X - - - - - X - - - X X - X - X X X X X X - - - - X - X - - X - X X - X -
+            X X X X X X X - - - X X X X X - - X - X X - X - - X - - - X - - X - X X X
+            """, MatrixToString(symbol));
+    }
+
     private static BitMatrix InputToMatrix(string input)
     {
         BitMatrix? matrix = null;
