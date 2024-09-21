@@ -1,6 +1,5 @@
 ﻿namespace Quarer;
 
-//TODO: Move to method or extension method on QrVersion?
 internal static class CharacterCount
 {
     internal static ReadOnlySpan<ushort> CharacterCountNumeric => [10, 12, 14];
@@ -8,7 +7,7 @@ internal static class CharacterCount
     internal static ReadOnlySpan<ushort> CharacterCountByte => [8, 16, 16];
     internal static ReadOnlySpan<ushort> CharacterCountKanji => [8, 10, 12];
 
-    public static ushort GetCharacterCountBitCount(QrVersion version, ModeIndicator mode)
+    public static ushort GetCharacterCountBitCount(this QrVersion version, ModeIndicator mode)
     {
         var offset = version.Version switch
         {

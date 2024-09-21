@@ -36,7 +36,7 @@ public static class QrSymbolBuilder
         var highestPenalty = int.MaxValue;
         var resultMatrix = matrix;
         var selectedMaskPattern = patterns[0];
-        //TODO: Add tests this logic (e.g using a known symbol where we know what the best masking pattern is)
+
         foreach (var pattern in patterns)
         {
             var copiedMatrix = matrix.Clone();
@@ -44,7 +44,7 @@ public static class QrSymbolBuilder
             EncodeFormatInformation(copiedMatrix, errorCorrectionLevel, pattern);
             EncodeDataBits(copiedMatrix, version, dataCodewords, pattern);
 
-            var penalty = CalculatePenalty(matrix);
+            var penalty = CalculatePenalty(copiedMatrix);
             if (penalty < highestPenalty)
             {
                 highestPenalty = penalty;
