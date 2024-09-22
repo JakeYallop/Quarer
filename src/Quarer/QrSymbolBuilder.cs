@@ -6,9 +6,9 @@ namespace Quarer;
 public static class QrSymbolBuilder
 {
     public static (BitMatrix Matrix, MaskPattern SelectedMaskPattern) BuildSymbol(BitBuffer dataCodewords, QrVersion version, ErrorCorrectionLevel errorCorrectionLevel, MaskPattern? maskPattern = null)
-        => BuildSymbol(new TrackedBitMatrix(version.ModulesPerSide, version.ModulesPerSide), dataCodewords, version, errorCorrectionLevel, maskPattern);
+        => BuildSymbol(new BitMatrix(version.ModulesPerSide, version.ModulesPerSide), dataCodewords, version, errorCorrectionLevel, maskPattern);
 
-    private static (TrackedBitMatrix Matrix, MaskPattern SelectedMaskPattern) BuildSymbol(TrackedBitMatrix matrix, BitBuffer dataCodewords, QrVersion version, ErrorCorrectionLevel errorCorrectionLevel, MaskPattern? maskPattern = null)
+    private static (BitMatrix Matrix, MaskPattern SelectedMaskPattern) BuildSymbol(BitMatrix matrix, BitBuffer dataCodewords, QrVersion version, ErrorCorrectionLevel errorCorrectionLevel, MaskPattern? maskPattern = null)
     {
         EncodePositionDetectionPattern(matrix, PositionDetectionPatternLocation.TopLeft);
         EncodePositionDetectionPattern(matrix, PositionDetectionPatternLocation.TopRight);
@@ -67,7 +67,7 @@ public static class QrSymbolBuilder
 
     private static int MaxAbsoluteValue(Point p) => Math.Max(Math.Abs(p.X), Math.Abs(p.Y));
 
-    public static void EncodePositionDetectionPattern(TrackedBitMatrix matrix, PositionDetectionPatternLocation location)
+    public static void EncodePositionDetectionPattern(BitMatrix matrix, PositionDetectionPatternLocation location)
     {
         //version 1 code is 21x21
         if (matrix.Width < 21 || matrix.Height < 21)
@@ -100,9 +100,9 @@ public static class QrSymbolBuilder
         EncodeSeparatorPattern(matrix, xStart, yStart);
     }
 
-    private static void EncodeSeparatorPattern(TrackedBitMatrix matrix, int xStart, int yStart)
+    private static void EncodeSeparatorPattern(BitMatrix matrix, int xStart, int yStart)
     {
-        static void SetIfInside(TrackedBitMatrix matrix, int x, int y)
+        static void SetIfInside(BitMatrix matrix, int x, int y)
         {
             if (x >= 0 && x < matrix.Width && y >= 0 && y < matrix.Height)
             {
@@ -119,14 +119,14 @@ public static class QrSymbolBuilder
         }
     }
 
-    public static void EncodeStaticDarkModule(TrackedBitMatrix matrix) => matrix[8, matrix.Height - 8] = true;
+    public static void EncodeStaticDarkModule(BitMatrix matrix) => matrix[8, matrix.Height - 8] = true;
 
     /// <summary>
     /// Encode position adjustment patterns into the symbol. This step must be done bfore encoding the timing patterns.
     /// </summary>
     /// <param name="matrix"></param>
     /// <param name="version"></param>
-    public static void EncodePositionAdjustmentPatterns(TrackedBitMatrix matrix, QrVersion version)
+    public static void EncodePositionAdjustmentPatterns(BitMatrix matrix, QrVersion version)
     {
         // version 1 QrCode does not have any alignment patterns
         if (version.Version <= 1)
@@ -153,12 +153,10 @@ public static class QrSymbolBuilder
         }
     }
 
-    private static bool DoesNotOverlapFinderPatterns(TrackedBitMatrix matrix, int x, int y)
-        // we expect nothing else other than the finder patterns to be written to the matrix at this point
-        // and the finder patterns overlap the center coordinates of the alignment patterns
-        => matrix.IsEmpty(x, y);
+    private static bool DoesNotOverlapFinderPatterns(BitMatrix matrix, int x, int y)
+        => (y > 7 && y < matrix.Height - 8) || (x > 7 && x < matrix.Width - 8) || (x > matrix.Width - 8 && y > matrix.Height - 8);
 
-    private static void EncodePositionAdjustmentPattern(TrackedBitMatrix matrix, int centreX, int centreY)
+    private static void EncodePositionAdjustmentPattern(BitMatrix matrix, int centreX, int centreY)
     {
         Debug.Assert(matrix.Width >= 21 && matrix.Height >= 21);
         Debug.Assert(centreX >= 2 && centreY >= 2);
@@ -188,7 +186,7 @@ public static class QrSymbolBuilder
     /// Encode timing patterns into the symbol.
     /// </summary>
     /// <param name="matrix"></param>
-    public static void EncodeTimingPatterns(TrackedBitMatrix matrix)
+    public static void EncodeTimingPatterns(BitMatrix matrix)
     {
         // skip position detection and separator patterns
         // no special handling of alignment patterns is necessary as the alignments patterns line up
@@ -221,7 +219,7 @@ public static class QrSymbolBuilder
     /// </summary>
     public const int VersionInformationGeneratorPolynomial = 0b1111100100101;
 
-    public static void EncodeFormatInformation(TrackedBitMatrix matrix, ErrorCorrectionLevel errorCorrectionLevel, MaskPattern maskPattern)
+    public static void EncodeFormatInformation(BitMatrix matrix, ErrorCorrectionLevel errorCorrectionLevel, MaskPattern maskPattern)
     {
         var formatInformation = GetFormatInformation(errorCorrectionLevel, (byte)maskPattern);
         var size = matrix.Width;
@@ -277,7 +275,7 @@ public static class QrSymbolBuilder
         return formatInfo;
     }
 
-    public static void EncodeVersionInformation(TrackedBitMatrix matrix, QrVersion version)
+    public static void EncodeVersionInformation(BitMatrix matrix, QrVersion version)
     {
         if (version.Version is < 7)
         {
@@ -304,13 +302,14 @@ public static class QrSymbolBuilder
         }
     }
 
-    //TOOO: Document expectations (all other non-data modules non-empty (or empty and reserved))
-    public static void EncodeDataBits(TrackedBitMatrix matrix, QrVersion version, BitBuffer data, MaskPattern? maskPattern)
+    public static void EncodeDataBits(BitMatrix matrix, QrVersion version, BitBuffer data, MaskPattern? maskPattern)
     {
         if (version.TotalCodewords != data.ByteCount)
         {
             throw new InvalidOperationException("Data byte count does not match total codewords for QR code version.");
         }
+
+        var functionModules = FunctionModules.GetForVersion(version);
 
 #pragma warning disable IDE0057 // Use range operator //https://github.com/dotnet/roslyn/issues/74960
         Span<byte> yRangeValues = stackalloc byte[QrVersion.MaxModulesPerSide].Slice(0, version.ModulesPerSide);
@@ -322,9 +321,7 @@ public static class QrSymbolBuilder
         var yRangeTopDown = YRangeTopDown(yRangeValues);
         var yRangeBottomUp = YRangeBottomUp(yRangeValuesReverse);
 
-        var maskPatternValue = maskPattern.GetValueOrDefault();
-        //TODO: Optimize this further - derive actual mask operation here, and store in a function, rather than going through a switch statement inside GetMaskedBit each time
-        var maskFunction = maskPattern.HasValue ? GetMaskedBit : (Func<bool, MaskPattern, int, int, bool>)(static (bit, _, _, _) => bit);
+        var maskFunction = GetMaskFunction(maskPattern);
         var reverse = false;
         var bitIndex = 0;
         foreach (var x in xRange)
@@ -343,10 +340,10 @@ public static class QrSymbolBuilder
                     break;
                 }
 
-                if (matrix.IsEmpty(x, y))
+                if (!functionModules.IsFunctionModule(x, y))
                 {
                     var bit = data[bitIndex];
-                    matrix[x, y] = maskFunction(bit, maskPatternValue, x, y);
+                    matrix[x, y] = maskFunction(bit, x, y);
                     bitIndex++;
                 }
 
@@ -355,10 +352,10 @@ public static class QrSymbolBuilder
                     break;
                 }
 
-                if (matrix.IsEmpty(x - 1, y))
+                if (!functionModules.IsFunctionModule(x - 1, y))
                 {
                     var bit = data[bitIndex];
-                    matrix[x - 1, y] = maskFunction(bit, maskPatternValue, x - 1, y);
+                    matrix[x - 1, y] = maskFunction(bit, x - 1, y);
                     bitIndex++;
                 }
             }
@@ -383,6 +380,23 @@ public static class QrSymbolBuilder
             _ => throw new ArgumentOutOfRangeException(nameof(mask))
         };
         return maskBit != bit;
+    }
+
+    public static Func<bool, int, int, bool> GetMaskFunction(MaskPattern? mask)
+    {
+        return mask switch
+        {
+            MaskPattern.PatternZero_Checkerboard => static (bit, x, y) => bit != ((x + y) % 2 == 0),
+            MaskPattern.PatternOne_HorizontalLines => static (bit, x, y) => bit != (y % 2 == 0),
+            MaskPattern.PatternTwo_VerticalLines => static (bit, x, y) => bit != (x % 3 == 0),
+            MaskPattern.PatternThree_DiagonalLines => static (bit, x, y) => bit != ((x + y) % 3 == 0),
+            MaskPattern.PatternFour_LargeCheckerboard => static (bit, x, y) => bit != (((y / 2) + (x / 3)) % 2 == 0),
+            MaskPattern.PatternFive_Fields => static (bit, x, y) => bit != ((y * x % 2) + (y * x % 3) == 0),
+            MaskPattern.PatternSix_Diamonds => static (bit, x, y) => bit != (((x * y % 2) + (x * y % 3)) % 2 == 0),
+            MaskPattern.PatternSeven_Meadow => static (bit, x, y) => bit != ((((x + y) % 2) + (x * y % 3)) % 2 == 0),
+            null => static (bit, _, _) => bit,
+            _ => throw new UnreachableException()
+        };
     }
 
     private static ReadOnlySpan<byte> XRange(QrVersion version, Span<byte> destination)

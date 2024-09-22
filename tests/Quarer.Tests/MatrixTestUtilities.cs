@@ -25,28 +25,6 @@ internal static class MatrixTestUtilities
         return sb.ToString();
     }
 
-    public static string ChangesMatrixToString(TrackedBitMatrix m)
-    {
-        var sb = new StringBuilder(m.Width * m.Height);
-        for (var y = 0; y < m.Height; y++)
-        {
-            for (var x = 0; x < m.Width; x++)
-            {
-                sb.Append(m.IsEmpty(x, y) ? '-' : 'X');
-                if (x + 1 < m.Width)
-                {
-                    sb.Append(' ');
-                }
-            }
-
-            if (y + 1 < m.Height)
-            {
-                sb.AppendLine();
-            }
-        }
-        return sb.ToString();
-    }
-
     public static BitBuffer AlternatingCodewordsBuffer(int n)
     {
         var buffer = new BitBuffer(n * 8);

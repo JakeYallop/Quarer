@@ -4,38 +4,6 @@ using System.Text;
 
 namespace Quarer;
 
-internal sealed class BitMatrixDebugView(BitMatrix bitMatrix)
-{
-    private readonly BitMatrix _bitMatrix = bitMatrix;
-
-    public string Matrix
-    {
-        get
-        {
-            var sb = new StringBuilder(_bitMatrix.Width * _bitMatrix.Height);
-            for (var y = 0; y < _bitMatrix.Height; y++)
-            {
-                for (var x = 0; x < _bitMatrix.Width; x++)
-                {
-                    sb.Append(_bitMatrix[x, y] ? 'X' : '-');
-                    if (x + 1 < _bitMatrix.Width)
-                    {
-                        sb.Append(' ');
-                    }
-                }
-
-                if (y + 1 < _bitMatrix.Height)
-                {
-                    sb.AppendLine();
-                }
-            }
-            var s = sb.ToString();
-            sb.Clear();
-            return s;
-        }
-    }
-}
-
 [DebuggerTypeProxy(typeof(BitMatrixDebugView))]
 public class BitMatrix : IEquatable<BitMatrix>
 {
@@ -136,4 +104,39 @@ public class BitMatrix : IEquatable<BitMatrix>
         }
         return hashCode.ToHashCode();
     }
+}
+
+internal sealed class BitMatrixDebugView(BitMatrix bitMatrix)
+{
+    [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+    private readonly BitMatrix _matrix = bitMatrix;
+
+    public string Matrix
+    {
+        get
+        {
+            var sb = new StringBuilder(_matrix.Width * _matrix.Height);
+            for (var y = 0; y < _matrix.Height; y++)
+            {
+                for (var x = 0; x < _matrix.Width; x++)
+                {
+                    sb.Append(_matrix[x, y] ? 'X' : '-');
+                    if (x + 1 < _matrix.Width)
+                    {
+                        sb.Append(' ');
+                    }
+                }
+
+                if (y + 1 < _matrix.Height)
+                {
+                    sb.AppendLine();
+                }
+            }
+            var s = sb.ToString();
+            sb.Clear();
+            return s;
+        }
+    }
+
+    public override string ToString() => base.ToString()!;
 }

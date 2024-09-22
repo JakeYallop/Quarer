@@ -11,6 +11,7 @@ namespace Quarer;
 [DebuggerDisplay("Count = {ByteCount}")]
 internal sealed class BitBufferDebugView
 {
+    [DebuggerBrowsable(DebuggerBrowsableState.Never)]
     private readonly BitBuffer _bitBuffer;
     public BitBufferDebugView(BitBuffer bitWriter)
     {
@@ -34,24 +35,18 @@ internal sealed class BitBufferDebugView
         }
     }
 
-    public LazyBitView BitView => new(_bitBuffer);
-
-    public class LazyBitView(BitBuffer bitBuffer)
+    public string BitView
     {
-        public string Value
+        get
         {
-            get
+            var sb = new StringBuilder(_bitBuffer.Count);
+            foreach (var i in _buffer(_bitBuffer))
             {
-                var sb = new StringBuilder(bitBuffer.Count);
-                foreach (var i in _buffer(bitBuffer))
-                {
-                    sb.AppendFormat("{0:B32}", i);
-                }
-                return sb.ToString(0, bitBuffer.Count);
+                sb.AppendFormat("{0:B32}", i);
             }
+            return sb.ToString(0, _bitBuffer.Count);
         }
     }
-
 }
 
 [DebuggerTypeProxy(typeof(BitBufferDebugView))]

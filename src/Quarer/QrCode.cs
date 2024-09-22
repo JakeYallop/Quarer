@@ -22,7 +22,7 @@ public sealed class QrCode : IEquatable<QrCode>
     public static bool operator ==(QrCode? left, QrCode? right) => left is null ? right is null : left.Equals(right);
     public static bool operator !=(QrCode? left, QrCode? right) => !(left == right);
 
-    public bool Equals([NotNullWhen(true)] QrCode? other) => other is not null && Version == other.Version && Data == other.Data;
+    public bool Equals([NotNullWhen(true)] QrCode? other) => other is not null && Version == other.Version && ErrorCorrectionLevel == other.ErrorCorrectionLevel && Data == other.Data;
     public override bool Equals([NotNullWhen(true)] object? obj) => obj is QrCode other && Equals(other);
     public override int GetHashCode() => HashCode.Combine(Version, ErrorCorrectionLevel, Data);
 
