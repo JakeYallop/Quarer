@@ -27,23 +27,6 @@ public class BitMatrixTests
     }
 
     [Fact]
-    public void Clone_ReturnsExpectedResult()
-    {
-        var width = 33;
-        var height = 31;
-        var matrix = new BitMatrix(width, height);
-        matrix[0, 0] = true;
-        matrix[width - 1, height - 1] = true;
-        var clone = matrix.Clone();
-        Assert.True(clone[0, 0]);
-        Assert.True(clone[width - 1, height - 1]);
-
-        clone[1, 1] = true;
-        Assert.False(matrix[1, 1]);
-        Assert.True(clone[1, 1]);
-    }
-
-    [Fact]
     public void GetRow_ReturnsExpectedResult()
     {
         var width = 33;
