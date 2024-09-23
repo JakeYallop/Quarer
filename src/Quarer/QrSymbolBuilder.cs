@@ -25,7 +25,8 @@ public static class QrSymbolBuilder
         if (maskPattern is not null)
         {
             EncodeFormatInformation(matrix, errorCorrectionLevel, maskPattern.Value);
-            EncodeDataBits(matrix, version, dataCodewords, maskPattern.Value);
+            EncodeDataBits(matrix, version, dataCodewords);
+            ApplyMask(matrix, version, maskPattern.Value);
             return (matrix, maskPattern.Value);
         }
 
@@ -34,26 +35,26 @@ public static class QrSymbolBuilder
         var patterns = (ReadOnlySpan<MaskPattern>)[MaskPattern.PatternZero_Checkerboard, MaskPattern.PatternOne_HorizontalLines, MaskPattern.PatternTwo_VerticalLines, MaskPattern.PatternThree_DiagonalLines, MaskPattern.PatternFour_LargeCheckerboard, MaskPattern.PatternFive_Fields, MaskPattern.PatternSix_Diamonds, MaskPattern.PatternSeven_Meadow];
 
         var highestPenalty = int.MaxValue;
-        var resultMatrix = matrix;
         var selectedMaskPattern = patterns[0];
+
+        EncodeDataBits(matrix, version, dataCodewords);
 
         foreach (var pattern in patterns)
         {
-            var copiedMatrix = matrix.Clone();
-            // important to encode format information before data bits so that non-empty modules are correctly set
-            EncodeFormatInformation(copiedMatrix, errorCorrectionLevel, pattern);
-            EncodeDataBits(copiedMatrix, version, dataCodewords, pattern);
-
-            var penalty = CalculatePenalty(copiedMatrix);
+            ApplyMask(matrix, version, pattern);
+            var penalty = CalculatePenalty(matrix);
             if (penalty < highestPenalty)
             {
                 highestPenalty = penalty;
-                resultMatrix = copiedMatrix;
                 selectedMaskPattern = pattern;
             }
+            // undo the mask
+            ApplyMask(matrix, version, pattern);
         }
 
-        return (resultMatrix, selectedMaskPattern);
+        EncodeFormatInformation(matrix, errorCorrectionLevel, selectedMaskPattern);
+        ApplyMask(matrix, version, selectedMaskPattern);
+        return (matrix, selectedMaskPattern);
     }
 
     private readonly ref struct Point(int x, int y)
@@ -302,7 +303,7 @@ public static class QrSymbolBuilder
         }
     }
 
-    public static void EncodeDataBits(BitMatrix matrix, QrVersion version, BitBuffer data, MaskPattern? maskPattern)
+    public static void EncodeDataBits(BitMatrix matrix, QrVersion version, BitBuffer data)
     {
         if (version.TotalCodewords != data.ByteCount)
         {
@@ -321,7 +322,6 @@ public static class QrSymbolBuilder
         var yRangeTopDown = YRangeTopDown(yRangeValues);
         var yRangeBottomUp = YRangeBottomUp(yRangeValuesReverse);
 
-        var maskFunction = GetMaskFunction(maskPattern);
         var reverse = false;
         var bitIndex = 0;
         foreach (var x in xRange)
@@ -343,7 +343,7 @@ public static class QrSymbolBuilder
                 if (!functionModules.IsFunctionModule(x, y))
                 {
                     var bit = data[bitIndex];
-                    matrix[x, y] = maskFunction(bit, x, y);
+                    matrix[x, y] = bit;
                     bitIndex++;
                 }
 
@@ -355,7 +355,7 @@ public static class QrSymbolBuilder
                 if (!functionModules.IsFunctionModule(x - 1, y))
                 {
                     var bit = data[bitIndex];
-                    matrix[x - 1, y] = maskFunction(bit, x - 1, y);
+                    matrix[x - 1, y] = bit;
                     bitIndex++;
                 }
             }
@@ -365,24 +365,24 @@ public static class QrSymbolBuilder
         Debug.Assert(bitIndex == (version.TotalCodewords * 8));
     }
 
-    public static bool GetMaskedBit(bool bit, MaskPattern mask, int x, int y)
+    //TODO: Tests for this
+    public static void ApplyMask(BitMatrix matrix, QrVersion version, MaskPattern mask)
     {
-        var maskBit = mask switch
+        var maskFunction = GetMaskFunction(mask);
+        var functionModules = FunctionModules.GetForVersion(version);
+        for (var y = 0; y < matrix.Height; y++)
         {
-            MaskPattern.PatternZero_Checkerboard => (x + y) % 2 == 0,
-            MaskPattern.PatternOne_HorizontalLines => y % 2 == 0,
-            MaskPattern.PatternTwo_VerticalLines => x % 3 == 0,
-            MaskPattern.PatternThree_DiagonalLines => (x + y) % 3 == 0,
-            MaskPattern.PatternFour_LargeCheckerboard => ((y / 2) + (x / 3)) % 2 == 0,
-            MaskPattern.PatternFive_Fields => (y * x % 2) + (y * x % 3) == 0,
-            MaskPattern.PatternSix_Diamonds => ((x * y % 2) + (x * y % 3)) % 2 == 0,
-            MaskPattern.PatternSeven_Meadow => (((x + y) % 2) + (x * y % 3)) % 2 == 0,
-            _ => throw new ArgumentOutOfRangeException(nameof(mask))
-        };
-        return maskBit != bit;
+            for (var x = 0; x < matrix.Width; x++)
+            {
+                if (!functionModules.IsFunctionModule(x, y))
+                {
+                    matrix[x, y] = maskFunction(matrix[x, y], x, y);
+                }
+            }
+        }
     }
 
-    public static Func<bool, int, int, bool> GetMaskFunction(MaskPattern? mask)
+    private static Func<bool, int, int, bool> GetMaskFunction(MaskPattern? mask)
     {
         return mask switch
         {

@@ -290,7 +290,7 @@ public class QrSymbolBuilderTests
             """, MatrixToString(m), ignoreLineEndingDifferences: true, ignoreAllWhiteSpace: true);
 
         var codewordsBuffer = AlternatingCodewordsBuffer(version.TotalCodewords);
-        QrSymbolBuilder.EncodeDataBits(m, version, codewordsBuffer, maskPattern: null);
+        QrSymbolBuilder.EncodeDataBits(m, version, codewordsBuffer);
 
         Assert.Equal("""
             X X X X X X X - - X - - - X - - - - X X X X X X X
@@ -336,7 +336,7 @@ public class QrSymbolBuilderTests
         QrSymbolBuilder.EncodeFormatInformation(m, ErrorCorrectionLevel.M, MaskPattern.PatternZero_Checkerboard);
         QrSymbolBuilder.EncodeVersionInformation(m, version);
         var codewordsBuffer = Buffer(version.TotalCodewords);
-        QrSymbolBuilder.EncodeDataBits(m, version, codewordsBuffer, maskPattern: null);
+        QrSymbolBuilder.EncodeDataBits(m, version, codewordsBuffer);
 
         Assert.Equal("""
             X X X X X X X - - - - - - - X X X X X X X
@@ -391,7 +391,7 @@ public class QrSymbolBuilderTests
         QrSymbolBuilder.EncodeVersionInformation(m, version);
 
         var codewordsBuffer = AlternatingCodewordsBuffer(version.TotalCodewords);
-        QrSymbolBuilder.EncodeDataBits(m, version, codewordsBuffer, maskPattern: null);
+        QrSymbolBuilder.EncodeDataBits(m, version, codewordsBuffer);
 
         Assert.Equal("""
             X X X X X X X - X X X X X X X X X X X X X X X - - - - - - - - - - X - - X - X X X X X X X
@@ -464,7 +464,8 @@ public class QrSymbolBuilderTests
     {
         var (m, version) = Get1MSymbolWithoutData(MaskPattern.PatternZero_Checkerboard);
         var codewordsBuffer = AllZeroBuffer(version.TotalCodewords);
-        QrSymbolBuilder.EncodeDataBits(m, version, codewordsBuffer, MaskPattern.PatternZero_Checkerboard);
+        QrSymbolBuilder.EncodeDataBits(m, version, codewordsBuffer);
+        QrSymbolBuilder.ApplyMask(m, version, MaskPattern.PatternZero_Checkerboard);
         Assert.Equal("""
             X X X X X X X - - - X - X - X X X X X X X
             X - - - - - X - X X - X - - X - - - - - X
@@ -495,7 +496,8 @@ public class QrSymbolBuilderTests
     {
         var (m, version) = Get1MSymbolWithoutData(MaskPattern.PatternOne_HorizontalLines);
         var codewordsBuffer = AllZeroBuffer(version.TotalCodewords);
-        QrSymbolBuilder.EncodeDataBits(m, version, codewordsBuffer, MaskPattern.PatternOne_HorizontalLines);
+        QrSymbolBuilder.EncodeDataBits(m, version, codewordsBuffer);
+        QrSymbolBuilder.ApplyMask(m, version, MaskPattern.PatternOne_HorizontalLines);
         Assert.Equal("""
             X X X X X X X - X X X X X - X X X X X X X
             X - - - - - X - - - - - - - X - - - - - X
@@ -526,7 +528,8 @@ public class QrSymbolBuilderTests
     {
         var (m, version) = Get1MSymbolWithoutData(MaskPattern.PatternTwo_VerticalLines);
         var codewordsBuffer = AllZeroBuffer(version.TotalCodewords);
-        QrSymbolBuilder.EncodeDataBits(m, version, codewordsBuffer, MaskPattern.PatternTwo_VerticalLines);
+        QrSymbolBuilder.EncodeDataBits(m, version, codewordsBuffer);
+        QrSymbolBuilder.ApplyMask(m, version, MaskPattern.PatternTwo_VerticalLines);
         Assert.Equal("""
             X X X X X X X - - X - - X - X X X X X X X
             X - - - - - X - - X - - X - X - - - - - X
@@ -557,7 +560,8 @@ public class QrSymbolBuilderTests
     {
         var (m, version) = Get1MSymbolWithoutData(MaskPattern.PatternTwo_VerticalLines);
         var codewordsBuffer = AllZeroBuffer(version.TotalCodewords);
-        QrSymbolBuilder.EncodeDataBits(m, version, codewordsBuffer, MaskPattern.PatternThree_DiagonalLines);
+        QrSymbolBuilder.EncodeDataBits(m, version, codewordsBuffer);
+        QrSymbolBuilder.ApplyMask(m, version, MaskPattern.PatternThree_DiagonalLines);
         Assert.Equal("""
             X X X X X X X - - X - - X - X X X X X X X
             X - - - - - X - - - - X - - X - - - - - X
@@ -588,7 +592,8 @@ public class QrSymbolBuilderTests
     {
         var (m, version) = Get1MSymbolWithoutData(MaskPattern.PatternTwo_VerticalLines);
         var codewordsBuffer = AllZeroBuffer(version.TotalCodewords);
-        QrSymbolBuilder.EncodeDataBits(m, version, codewordsBuffer, MaskPattern.PatternFour_LargeCheckerboard);
+        QrSymbolBuilder.EncodeDataBits(m, version, codewordsBuffer);
+        QrSymbolBuilder.ApplyMask(m, version, MaskPattern.PatternFour_LargeCheckerboard);
         Assert.Equal("""
             X X X X X X X - - - - - X - X X X X X X X
             X - - - - - X - - - - - X - X - - - - - X
@@ -619,7 +624,8 @@ public class QrSymbolBuilderTests
     {
         var (m, version) = Get1MSymbolWithoutData(MaskPattern.PatternTwo_VerticalLines);
         var codewordsBuffer = AllZeroBuffer(version.TotalCodewords);
-        QrSymbolBuilder.EncodeDataBits(m, version, codewordsBuffer, MaskPattern.PatternFive_Fields);
+        QrSymbolBuilder.EncodeDataBits(m, version, codewordsBuffer);
+        QrSymbolBuilder.ApplyMask(m, version, MaskPattern.PatternFive_Fields);
         Assert.Equal("""
             X X X X X X X - - X X X X - X X X X X X X
             X - - - - - X - - - - - X - X - - - - - X
@@ -650,7 +656,8 @@ public class QrSymbolBuilderTests
     {
         var (m, version) = Get1MSymbolWithoutData(MaskPattern.PatternTwo_VerticalLines);
         var codewordsBuffer = AllZeroBuffer(version.TotalCodewords);
-        QrSymbolBuilder.EncodeDataBits(m, version, codewordsBuffer, MaskPattern.PatternSix_Diamonds);
+        QrSymbolBuilder.EncodeDataBits(m, version, codewordsBuffer);
+        QrSymbolBuilder.ApplyMask(m, version, MaskPattern.PatternSix_Diamonds);
         Assert.Equal("""
             X X X X X X X - - X X X X - X X X X X X X
             X - - - - - X - - - - - X - X - - - - - X
@@ -681,7 +688,8 @@ public class QrSymbolBuilderTests
     {
         var (m, version) = Get1MSymbolWithoutData(MaskPattern.PatternTwo_VerticalLines);
         var codewordsBuffer = AllZeroBuffer(version.TotalCodewords);
-        QrSymbolBuilder.EncodeDataBits(m, version, codewordsBuffer, MaskPattern.PatternSeven_Meadow);
+        QrSymbolBuilder.EncodeDataBits(m, version, codewordsBuffer);
+        QrSymbolBuilder.ApplyMask(m, version, MaskPattern.PatternSeven_Meadow);
         Assert.Equal("""
             X X X X X X X - - - X - X - X X X X X X X
             X - - - - - X - - X X X - - X - - - - - X
@@ -928,10 +936,10 @@ public class QrSymbolBuilderTests
             - - - - X - X - - - - X - - - X - - X - X - - - -
             X - X X X - - X - X - X - - - X - X X X X - - X -
             X - X - X X X - - X X X - - - - - X X X X - X - X
-            - X X - X X - - X - - - - X - - - X X - - X - X -
-            - - - - X - X X - - - - X - X X X X - - - - X - -
-            - - - X X - - - - X - X X - X - X - - X X - X - X
-            - - X - X - X - - X - - - X - X X X X X X X X - X
+            X X X - X X - - X - - - - X - - - X X - - X - X -
+            X - - - X - X X - - - - X - X X X X - - - - X - -
+            X - - X X - - - - X - X X - X - X - - X X - X - X
+            X - X - X - X - - X - - - X - X X X X X X X X - X
             - - - - - - - - X X - - X - X - X - - - X X X X -
             X X X X X X X - - - X X - X X X X - X - X - X X -
             X - - - - - X - X - - X - X X X X - - - X X X X X
@@ -953,45 +961,45 @@ public class QrSymbolBuilderTests
 
         var (symbol, maskPattern) = QrSymbolBuilder.BuildSymbol(withErrorCorrection, version, ErrorCorrectionLevel.H);
 
-        Assert.Equal(MaskPattern.PatternSix_Diamonds, maskPattern);
+        Assert.Equal(MaskPattern.PatternFour_LargeCheckerboard, maskPattern);
         Assert.Equal("""
-            X X X X X X X - - - - X X X - - X X - - X X - - X - X - X - X X X X X X X
-            X - - - - - X - - - X X X - X - - - X - - - X - - X X X X - X - - - - - X
-            X - X X X - X - X X X - - - - X X X X X - - X - - - X - X - X - X X X - X
-            X - X X X - X - X - - - X - X X X - X X - X - - - - - - X - X - X X X - X
-            X - X X X - X - - X - X X X X X - X X - - - - X - X X X X - X - X X X - X
-            X - - - - - X - - - - X - - X X X X - X X - - X - X X - X - X - - - - - X
+            X X X X X X X - - X X X X X - X - - X - - - - X - - X X - - X X X X X X X
+            X - - - - - X - X - X X X - X X - - X X X - X - X X X X X - X - - - - - X
+            X - X X X - X - - X X X X - - X X - - X X X X - - X X - X - X - X X X - X
+            X - X X X - X - - X - X X - - - X X - - - - X - X - X X X - X - X X X - X
+            X - X X X - X - - X - X - X - - - - X - X - - - - - X - X - X - X X X - X
+            X - - - - - X - X - - X - X X X - - - X X X X - - - - - - - X - - - - - X
             X X X X X X X - X - X - X - X - X - X - X - X - X - X - X - X X X X X X X
-            - - - - - - - - - - - - - - - - - X - X X X X X - - X - X - - - - - - - -
-            - - - X X - X X - X X X - X - X X X - - X X - X X X X X X - - - - X X - -
-            X - X - - X - X - X - X X - - - X - X - - - - - - X X - X X - X X X - X X
-            X - - X - X X - - - - X X - X X X X - - X - X X - - - X - - X - - - X - X
-            X - X - - - - - X X X - X - X X X X X X X X - - - X X - X - - - - X X X X
-            - X X - - X X X X X X - X X X X X - X X X X - - - - X X X X X - - X X X -
-            - X X - X X - - X X X - - X - - - X - - - - X X X X - - - - - X - - - - -
-            X X - - X - X X X X - - - - - - X - X - X X - - - X X X - - X X X X X X X
-            - X X - - X - X - X - X X X - - X X X X X X X X X X X - - X - - X - - X X
-            X - - X - X X - - - - X - - X - X X - - - - - X X X - - - - - X X - X - X
-            X - - - - X - X - X - X - X - X - X X - - - X - - X X X - - X - - X X - -
-            - X - X - X X - - - - X - - - X - X - - X X - - X - - - X - - - - - X X -
-            X - X X - - - X X - - - - X X X X X X X X - X - X X X - X X X X X X X - X
-            - - X - X X X X - - - X X - X X X X X - X X X - - X - X - - X - - X - X -
-            - X X - - X - - - X - X X X - - X - X - - - - X - - - - - - - - X - X - -
-            - - - X X - X X X - - X - - - - X X - X - X X - - - X - - X X X X - X X -
-            - - X X X - - - - - - X - X X - X - X - - X - X - - X - - - - X X X X X X
-            X X X - - X X - X - X X - X X - X X X X - - - - - X X X X X - X X X X X X
-            - - - - X X - X - X X - X - - X X - X - X - - - X X - X - - X - X - X X -
-            - - X - - - X X - - - X X - X - - X - - X - - - - - X - - X - - X X - - X
-            - - - X - X - - X - - - X X - X - - X X X X X - X X X X X X X X - X X X -
-            - - X - X X X X - X X - - X - X X X - X X X - X X - - X X X X X X X - - X
-            - - - - - - - - X - - - X - X X - - X X - - - - X - - X X - - - X X X - X
-            X X X X X X X - X X - X - - X X X - - - - X X - - X - - X - X - X - - X -
-            X - - - - - X - - X X X - - X X X - X - - - - - X X X - X - - - X - X - -
-            X - X X X - X - X X - X - - - X - X - - X X - - X - - X X X X X X X X - -
-            X - X X X - X - X - X - - - X X X X - X X - X - - - X X X X - - X X - X X
-            X - X X X - X - - X - - - X - - X X - - - - - - X - - X X X X - - X - X X
-            X - - - - - X - - - X X - X - X X X X X X - - - - X - X - - X - X X - X -
-            X X X X X X X - - - X X X X X - - X - X X - X - - X - - - X - - X - X X X
+            - - - - - - - - X X X - - - X X X X X - - X - - X X - X - - - - - - - - -
+            - - - - X X X X - - X - - X X - X X - X - X - X X X - - - - X X - - - X -
+            X - X X X X - X - - X X - X - - X - X - X - X X X - X - - X - - X X X X X
+            - - X X X - X - - X X X X - - X X X X X X - - - - - X X X - - - X - - - -
+            - - X - X X - X - X X X - - X - X - - - X - - - - X X X X - X - - - X X -
+            - X X - X X X X X X - X X X X - X X X X X - X X - - X - - - X - - - - - -
+            - X X X - - - - X X X - - X - X - - - - - - X - X X - - - - - X - - - - -
+            - - X X X X X - X X - X X X - - - X X X X - X - X - X X - X - - X X X - -
+            X X - - - X - X X - - - - X - - - X X X - X - - - X - X - - X - - X - - -
+            - X X X X - X X X X - - - X X X X X X X X X X X - - - X - X - - X X X X X
+            X X X - X X - X X X X X - X - X X - X - - - X - X - - X X X X X X X - X -
+            X X - X - X X - X - - X X - X - X X X X - - - X X X X - X - X X X - X X X
+            X X X X X X - - - X X X - - - - - - - - - - X X X - - X - - - - - - - X -
+            - X - X - X X - X X X - - X X X - X X X - X X X - X X - X - X - X - X X -
+            - X X - - X - - X - X - X - X - - - X X - - X X - X - - X - - X X - - - -
+            X X X X X - X - - X - - X - - - - X - X - X - - X - - - X X - X - - - X X
+            X X X - X - - X - X - - X - X X X X - X X X - X X - X X - - X X X - X X -
+            X X X X X X X X - - X X X - - X - X X - - - - X - X X - - - - X X - - - X
+            X - - X - - - - - X - X X - - - X X X X X - - - X X - X - - X - X - X X -
+            - - - X X X X - - - X - X X X X X X X - - - - X X X X - - - X X X X - X -
+            - - X X X X - - - - - - X X X - X - - - X - X X - X - - X - - X X - X - X
+            X X - X X - X - - - - - - - - X X X X X X - - - X X - - X X X X X - - X X
+            - - - - - - - - X X X X X - - X X X - - X - X X X X X X X - - - X X - X X
+            X X X X X X X - X - X X X - X - X X - X X - - - X - X - X - X - X - - X X
+            X - - - - - X - X - X - X - X X X X X X X - X X - - - X X - - - X X - X X
+            X - X X X - X - X X - X - X - - - X X - - - X - X - X - X X X X X - - - -
+            X - X X X - X - - - X - X - - X X X - X X - X - - X X X - X - X X X X X X
+            X - X X X - X - - X X - X X - - - X X - X X - - - - X X - X - - X X X X -
+            X - - - - - X - - X X - - - X - - X - - - - X - X X - - - - - - X - - X X
+            X X X X X X X - - X - X - - - - X - - - X X X X - X - X X - - - X X - - X
             """, MatrixToString(symbol));
     }
 

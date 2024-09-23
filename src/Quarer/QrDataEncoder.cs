@@ -160,7 +160,6 @@ public static class QrDataEncoder
                 {
                     var written = dataCodewordsBitBuffer.GetBytes(codewordsSeen + i, 1, dataCodewordsDestination);
                     Debug.Assert(written == 1);
-                    //var dataCodewords = dataCodewordsDestination[..written];
                     resultBitBuffer.WriteBitsBigEndian(dataCodewordsDestination[0], 8);
                 }
                 codewordsSeen += b.DataCodewordsPerBlock;
@@ -187,7 +186,8 @@ public static class QrDataEncoder
             Span<byte> writer = errorBlocks[blockIndex - 1];
             errorCodewords.CopyTo(writer);
             blockIndex++;
-            codewordsSeen = b.DataCodewordsPerBlock;
+            codewordsSeen += b.DataCodewordsPerBlock;
+            divisionResult.Clear();
         }
 
         for (var i = 0; i < errorCorrectionCodewordsPerBlock; i++)
