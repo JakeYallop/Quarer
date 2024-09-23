@@ -4,7 +4,7 @@ using Quarer;
 #pragma warning disable CA1050
 public partial class Benchmarks
 {
-    [Params("1234567", "A short alphanumeric string with some extra bits on the end ::::::*******")]
+    [Params("1234567", "A short alphanumeric string with some extra bits on the end ::::::*******", "12345671234567123456712345671234567123456712345671234567123456712345671234567123456712345671234567123456712345671234567123456712345671234567123456712345671234567123456712345671234567123456712345671234567123456712345671234567123456712345671234567123456712345671234567123456712345671234567123456712345671234567123456712345671234567123456712345671234567123456712345671234567")]
     public string Data { get; set; } = null!;
 
     public SkiaSharp.QrCode.QRCodeGenerator SkiaGenerator = null!;
@@ -32,6 +32,6 @@ public partial class Benchmarks
     [Benchmark(Description = "SkiaSharp.QrCode")]
     public SkiaSharp.QrCode.QRCodeData SkiaSharpQrCode() => SkiaGenerator.CreateQrCode(Data, SkiaSharp.QrCode.ECCLevel.M);
 
-    [Benchmark(Description = "ZXing.Net")]
+    [Benchmark(Description = "ZXing.Net", Baseline = true)]
     public ZXing.QrCode.Internal.QRCode ZXingQrCode() => ZXing.QrCode.Internal.Encoder.encode(Data, ZXing.QrCode.Internal.ErrorCorrectionLevel.M);
 }

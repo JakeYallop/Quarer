@@ -5,7 +5,7 @@ BenchmarkRunner.Run<Benchmarks>(args: args);
 
 [IterationTime(1000)]
 [MemoryDiagnoser]
-[MarkdownExporterAttribute.GitHub]
+[ShortRunJob]
 public partial class Benchmarks
 {
 }

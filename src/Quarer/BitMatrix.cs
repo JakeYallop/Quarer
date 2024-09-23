@@ -52,7 +52,7 @@ public class BitMatrix : IEquatable<BitMatrix>
     }
 
     [DoesNotReturn]
-    private void ThrowArgumentOutOfRangeException(string paramName) => throw new ArgumentOutOfRangeException(paramName);
+    private static void ThrowArgumentOutOfRangeException(string paramName) => throw new ArgumentOutOfRangeException(paramName);
 
     //TODO: Provide an indexable read only view into the matrix so we avoid copying here. We shouldn't return a BitBuffer as its writeable.
     public virtual BitBuffer GetRow(int row)
