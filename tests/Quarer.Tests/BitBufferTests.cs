@@ -457,15 +457,15 @@ public class BitBufferTests
     }
 
     [UnsafeAccessor(UnsafeAccessorKind.Field)]
-    private static extern ref List<uint> _buffer(BitBuffer @this);
+    private static extern ref List<ulong> _buffer(BitBuffer @this);
 
     [Fact]
     public void SetCapacity_SetToSmallerValue_TrimsUnderlyingBuffer()
     {
-        var bitBuffer = new BitBuffer(100 << 5);
+        var bitBuffer = new BitBuffer(100 << 6);
         var buffer = _buffer(bitBuffer);
         Assert.True(buffer.Capacity >= 100);
-        bitBuffer.SetCapacity(32);
+        bitBuffer.SetCapacity(64);
         Assert.Equal(1, buffer.Capacity);
     }
 

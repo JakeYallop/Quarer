@@ -20,7 +20,7 @@ internal sealed class BitBufferDebugView
     }
 
     [UnsafeAccessor(UnsafeAccessorKind.Field)]
-    public static extern ref List<uint> _buffer(BitBuffer @this);
+    public static extern ref List<ulong> _buffer(BitBuffer @this);
 
     public int Count => _bitBuffer.Count;
     public int ByteCount => _bitBuffer.ByteCount;
@@ -52,12 +52,12 @@ internal sealed class BitBufferDebugView
 [DebuggerTypeProxy(typeof(BitBufferDebugView))]
 public sealed class BitBuffer : IEquatable<BitBuffer>
 {
-    private const int BitsPerElement = 32;
-    private const int BitShiftPerElement = 5;
+    private const int BitsPerElement = 64;
+    private const int BitShiftPerElement = 6;
     private const int BytesPerElement = BitsPerElement / 8;
-    private const int BytesShiftPerElement = 2;
+    private const int BytesShiftPerElement = 3;
 
-    private readonly List<uint> _buffer;
+    private readonly List<ulong> _buffer;
 
     public BitBuffer()
     {
@@ -97,7 +97,7 @@ public sealed class BitBuffer : IEquatable<BitBuffer>
             }
             var elementIndex = GetElementLengthFromBitsFloor(index);
             var bitIndex = index & (BitsPerElement - 1);
-            return (_buffer[elementIndex] & (1u << (BitsPerElement - bitIndex - 1))) != 0;
+            return (_buffer[elementIndex] & (1uL << (BitsPerElement - bitIndex - 1))) != 0;
         }
 
         set
@@ -108,7 +108,7 @@ public sealed class BitBuffer : IEquatable<BitBuffer>
             }
             var elementIndex = GetElementLengthFromBitsFloor(index);
             var bitIndex = index & (BitsPerElement - 1);
-            var mask = 1u << (BitsPerElement - bitIndex - 1);
+            var mask = 1UL << (BitsPerElement - bitIndex - 1);
             if (value)
             {
                 _buffer[elementIndex] |= mask;
@@ -139,7 +139,7 @@ public sealed class BitBuffer : IEquatable<BitBuffer>
 
             ref var segment = ref buffer[elementPosition];
             var bitsInValue = GetBitsFromValue(value, bitsToWrite, remainingBitsInValue);
-            segment &= GetClearBitsMask<uint>(bitIndex, bitsToWrite);
+            segment &= GetClearBitsMask<ulong>(bitIndex, bitsToWrite);
             segment |= bitsInValue << (BitsPerElement - bitsToWrite - bitIndex);
             elementPosition += 1;
             bitIndex = 0;
@@ -162,7 +162,7 @@ public sealed class BitBuffer : IEquatable<BitBuffer>
                     yield break;
                 }
 
-                var mask = 1 << (BitsPerElement - currentBit);
+                var mask = 1UL << (BitsPerElement - currentBit);
                 yield return (i & mask) != 0;
                 current++;
             }
@@ -243,10 +243,10 @@ public sealed class BitBuffer : IEquatable<BitBuffer>
         }
 
         var slicedDestination = destination[written..];
-        for (; length - written >= 4; currentElement++)
+        for (; length - written >= BytesPerElement; currentElement++)
         {
             Debug.Assert((start + written) % BytesPerElement == 0, $"Expected expression to be aligned at {BitsPerElement}-bit boundary.");
-            BinaryPrimitives.WriteUInt32BigEndian(slicedDestination, _buffer[currentElement]);
+            BinaryPrimitives.WriteUInt64BigEndian(slicedDestination, _buffer[currentElement]);
             slicedDestination = slicedDestination[BytesPerElement..];
             written += BytesPerElement;
         }
@@ -310,7 +310,7 @@ public sealed class BitBuffer : IEquatable<BitBuffer>
         source.CopyTo(destinationBuffer);
     }
 
-    private static int ReadBytes(uint element, int start, int end, Span<byte> destination)
+    private static int ReadBytes(ulong element, int start, int end, Span<byte> destination)
     {
         Debug.Assert(start % 8 == 0, "Expected start offset to be byte aligned.");
         Debug.Assert(end % 8 == 0, "Expected end offset to be byte aligned.");
@@ -327,14 +327,14 @@ public sealed class BitBuffer : IEquatable<BitBuffer>
         return written;
     }
 
-    private static byte ReadByte(uint element, int offset)
+    private static byte ReadByte(ulong element, int offset)
     {
         var byteValue = GetBitsFromValue(element, 8, BitsPerElement - offset - 8);
         return (byte)byteValue;
     }
 
-    private static uint GetBitsFromValue<T>(T value, int bitCount, int remainingBitsInValue) where T : IBinaryInteger<T>
-        => uint.CreateTruncating((value >> remainingBitsInValue) & GetAllSetBitMask<T>(bitCount));
+    private static ulong GetBitsFromValue<T>(T value, int bitCount, int remainingBitsInValue) where T : IBinaryInteger<T>
+        => ulong.CreateTruncating((value >> remainingBitsInValue) & GetAllSetBitMask<T>(bitCount));
 
     private static T GetAllSetBitMask<T>(int bitCount) where T : IBinaryInteger<T>
     {
@@ -432,7 +432,7 @@ public sealed class BitBuffer : IEquatable<BitBuffer>
         var buffer = CollectionsMarshal.AsSpan(_buffer);
         var otherBuffer = CollectionsMarshal.AsSpan(other._buffer);
 
-        if (((uint)Count & (BitsPerElement - 1)) == 0u)
+        if (((ulong)Count & (BitsPerElement - 1)) == 0u)
         {
             return buffer.SequenceEqual(otherBuffer);
         }
@@ -450,6 +450,19 @@ public sealed class BitBuffer : IEquatable<BitBuffer>
         var remainingLength = bitsInFinalElement;
 
         Debug.Assert(remainingLength < BitsPerElement, "Expected remaining length to be less than BitsPerElement, as any length above it should have already been handled.");
+        if (remainingLength >= 32)
+        {
+            const int ShiftForUInt = BitsPerElement - 32;
+            if (uint.CreateTruncating(finalElement >> ShiftForUInt) != uint.CreateTruncating(otherFinalElement >> ShiftForUInt))
+            {
+                return false;
+            }
+            finalElement <<= 32;
+            otherFinalElement <<= 32;
+            remainingLength -= 32;
+        }
+        Debug.Assert(remainingLength < 32, "Expected remaining length to be < 32, as any length above it should have already been handled.");
+
         if (remainingLength >= 16)
         {
             const int ShiftForUshort = BitsPerElement - 16;
@@ -478,8 +491,8 @@ public sealed class BitBuffer : IEquatable<BitBuffer>
 
         for (var i = 0; i < remainingLength; i++)
         {
-            var bit = finalElement & (1 << (BitsPerElement - i - 1));
-            var otherBit = otherFinalElement & (1 << (BitsPerElement - i - 1));
+            var bit = ReadBit(finalElement, i);
+            var otherBit = ReadBit(otherFinalElement, i);
             if (bit != otherBit)
             {
                 return false;
@@ -516,6 +529,15 @@ public sealed class BitBuffer : IEquatable<BitBuffer>
         var remainingLength = bitsInFinalElement;
 
         Debug.Assert(remainingLength < BitsPerElement, "Expected remaining length to be less than BitsPerElement, as any length above it should have already been handled.");
+        if (remainingLength >= 32)
+        {
+            const int ShiftForUint = BitsPerElement - 32;
+            hashCode.Add(ushort.CreateTruncating(finalElement >> ShiftForUint));
+            finalElement <<= 32;
+            remainingLength -= 32;
+        }
+        Debug.Assert(remainingLength < 32, "Expected remaining length to be < 32, as any length above it should have already been handled.");
+
         if (remainingLength >= 16)
         {
             const int ShiftForUshort = BitsPerElement - 16;
@@ -536,12 +558,14 @@ public sealed class BitBuffer : IEquatable<BitBuffer>
 
         for (var i = 0; i < remainingLength; i++)
         {
-            var bit = finalElement & (1 << (BitsPerElement - i - 1));
+            var bit = ReadBit(finalElement, i);
             hashCode.Add(bit);
         }
 
         return hashCode.ToHashCode();
     }
+
+    private static bool ReadBit(ulong element, int offset) => (element & (1UL << (BitsPerElement - offset - 1))) != 0;
 
     private static int GetElementLengthFromBitsCeil(int bits) => (int)((uint)(bits - 1 + (1u << BitShiftPerElement)) >> BitShiftPerElement);
     private static int GetElementLengthFromBitsFloor(int bits) => bits >> BitShiftPerElement;
