@@ -167,6 +167,7 @@ public static class QrDataEncoder
             codewordsSeen = 0;
         }
 
+        //TODO: Evaluate SkipLocalsInit here or for entire project for performance
         // max number of blocks for a symbol is 81, max number of codewords per block is 30
         // ~4kb of stack space
         Span<ByteBuffer30> errorBlocks = stackalloc ByteBuffer30[81];

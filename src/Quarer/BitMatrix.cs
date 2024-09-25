@@ -13,7 +13,7 @@ public class BitMatrix : IEquatable<BitMatrix>
         Width = width;
         Height = height;
         _matrix = new BitBuffer(width * height);
-        _matrix.SetCountUnsafe(width * height);
+        BitBufferMarshal.SetCount(_matrix, width * height);
     }
 
     public int Width { get; }
@@ -61,7 +61,7 @@ public class BitMatrix : IEquatable<BitMatrix>
         ArgumentOutOfRangeException.ThrowIfGreaterThan(row, Height - 1);
 
         var buffer = new BitBuffer(Width);
-        buffer.SetCountUnsafe(Width);
+        BitBufferMarshal.SetCount(buffer, Width);
 
         for (var i = 0; i < Width; i++)
         {
@@ -78,7 +78,7 @@ public class BitMatrix : IEquatable<BitMatrix>
         ArgumentOutOfRangeException.ThrowIfGreaterThan(column, Width - 1);
 
         var buffer = new BitBuffer(Height);
-        buffer.SetCountUnsafe(Height);
+        BitBufferMarshal.SetCount(buffer, Height);
         for (var i = 0; i < Height; i++)
         {
             buffer[i] = this[column, i];

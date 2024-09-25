@@ -52,10 +52,10 @@ internal sealed class BitBufferDebugView
 [DebuggerTypeProxy(typeof(BitBufferDebugView))]
 public sealed class BitBuffer : IEquatable<BitBuffer>
 {
-    private const int BitsPerElement = 64;
-    private const int BitShiftPerElement = 6;
-    private const int BytesPerElement = BitsPerElement / 8;
-    private const int BytesShiftPerElement = 3;
+    internal const int BitsPerElement = sizeof(ulong) * 8;
+    internal const int BitShiftPerElement = 6;
+    internal const int BytesPerElement = sizeof(ulong);
+    internal const int BytesShiftPerElement = 3;
 
     private readonly List<ulong> _buffer;
 
@@ -97,7 +97,7 @@ public sealed class BitBuffer : IEquatable<BitBuffer>
             }
             var elementIndex = GetElementLengthFromBitsFloor(index);
             var bitIndex = index & (BitsPerElement - 1);
-            return (_buffer[elementIndex] & (1uL << (BitsPerElement - bitIndex - 1))) != 0;
+            return ReadBit(_buffer[elementIndex], bitIndex);
         }
 
         set
@@ -108,7 +108,7 @@ public sealed class BitBuffer : IEquatable<BitBuffer>
             }
             var elementIndex = GetElementLengthFromBitsFloor(index);
             var bitIndex = index & (BitsPerElement - 1);
-            var mask = 1UL << (BitsPerElement - bitIndex - 1);
+            var mask = GetBitMask(bitIndex);
             if (value)
             {
                 _buffer[elementIndex] |= mask;
@@ -261,22 +261,6 @@ public sealed class BitBuffer : IEquatable<BitBuffer>
     }
 
     /// <summary>
-    /// Set the <see cref="Count"/> of this bitBuffer to the specified number of bits. If the underlying buffer is expanded, any new bits are
-    /// set to zero.
-    /// <para>
-    /// Under certain conditions, additional non-zeroed data could be exposed. Writing to the buffer, then calling <c>SetCount</c>
-    /// to shrink it will not zero-out the underlying storage used by the buffer.
-    /// </para>
-    /// </summary>
-    /// <param name="bitCount"></param>
-    public void SetCountUnsafe(int bitCount)
-    {
-        ArgumentOutOfRangeException.ThrowIfNegative(bitCount);
-        EnsureCapacity(bitCount);
-        Count = bitCount;
-    }
-
-    /// <summary>
     /// Ensure this buffer has space to store <paramref name="capacity"/> bits.
     /// </summary>
     /// <param name="capacity"></param>
@@ -408,6 +392,9 @@ public sealed class BitBuffer : IEquatable<BitBuffer>
             CollectionsMarshal.SetCount(_buffer, bufferCapacity);
         }
     }
+
+    private static bool ReadBit(ulong element, int offset) => (element & GetBitMask(offset)) != 0;
+    private static ulong GetBitMask(int bitIndex) => 1UL << (BitsPerElement - bitIndex - 1);
 
     public static bool operator ==(BitBuffer? left, BitBuffer? right) => left is null ? right is null : left.Equals(right);
     public static bool operator !=(BitBuffer? left, BitBuffer? right) => !(left == right);
@@ -565,13 +552,8 @@ public sealed class BitBuffer : IEquatable<BitBuffer>
         return hashCode.ToHashCode();
     }
 
-    private static bool ReadBit(ulong element, int offset) => (element & (1UL << (BitsPerElement - offset - 1))) != 0;
-
-    private static int GetElementLengthFromBitsCeil(int bits) => (int)((uint)(bits - 1 + (1u << BitShiftPerElement)) >> BitShiftPerElement);
-    private static int GetElementLengthFromBitsFloor(int bits) => bits >> BitShiftPerElement;
-#pragma warning disable IDE0051 // Remove unused private members
-    private static int GetElementLengthFromBytesCeil(int bytes) => (int)((uint)(bytes - 1 + (1u << BytesShiftPerElement)) >> BytesShiftPerElement);
-#pragma warning restore IDE0051 // Remove unused private members
-    private static int GetElementLengthFromBytesFloor(int bytes) => bytes >> BytesShiftPerElement;
-
+    internal static int GetElementLengthFromBitsCeil(int bits) => (int)((uint)(bits - 1 + (1u << BitShiftPerElement)) >> BitShiftPerElement);
+    internal static int GetElementLengthFromBitsFloor(int bits) => bits >> BitShiftPerElement;
+    internal static int GetElementLengthFromBytesCeil(int bytes) => (int)((uint)(bytes - 1 + (1u << BytesShiftPerElement)) >> BytesShiftPerElement);
+    internal static int GetElementLengthFromBytesFloor(int bytes) => bytes >> BytesShiftPerElement;
 }
