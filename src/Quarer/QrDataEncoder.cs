@@ -158,8 +158,7 @@ public static class QrDataEncoder
             {
                 if (i < b.DataCodewordsPerBlock)
                 {
-                    var written = dataCodewordsBitBuffer.GetBytes(codewordsSeen + i, 1, dataCodewordsDestination);
-                    Debug.Assert(written == 1);
+                    var _ = BitBufferMarshal.GetBytes(dataCodewordsBitBuffer, codewordsSeen + i, 1, dataCodewordsDestination);
                     resultBitBuffer.WriteBitsBigEndian(dataCodewordsDestination[0], 8);
                 }
                 codewordsSeen += b.DataCodewordsPerBlock;
@@ -178,9 +177,7 @@ public static class QrDataEncoder
         Span<byte> divisionDestination = stackalloc byte[256];
         foreach (var b in errorCorrectionBlocks.EnumerateIndividualBlocks())
         {
-            var dataCodewordsWritten = dataCodewordsBitBuffer.GetBytes(codewordsSeen, b.DataCodewordsPerBlock, dataCodewordsDestination);
-            var dataCodewords = dataCodewordsDestination[..dataCodewordsWritten];
-
+            var dataCodewords = BitBufferMarshal.GetBytes(dataCodewordsBitBuffer, codewordsSeen, b.DataCodewordsPerBlock, dataCodewordsDestination);
             var (written, separator) = BinaryFiniteField.Divide(dataCodewords, generator, divisionDestination);
             var divisionResult = divisionDestination[..written];
             var errorCodewords = divisionResult[separator..];

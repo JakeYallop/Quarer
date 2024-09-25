@@ -1,5 +1,4 @@
-﻿using System.Buffers.Binary;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using System.Runtime.CompilerServices;
@@ -30,7 +29,7 @@ internal sealed class BitBufferDebugView
         get
         {
             var bytes = new byte[_bitBuffer.ByteCount];
-            _bitBuffer.GetBytes(0, _bitBuffer.ByteCount, bytes);
+            BitBufferMarshal.GetBytes(_bitBuffer, 0, _bitBuffer.ByteCount, bytes);
             return bytes;
         }
     }
@@ -205,61 +204,6 @@ public sealed class BitBuffer : IEquatable<BitBuffer>
         }
     }
 
-    public int GetBytes(Range range, Span<byte> destination)
-    {
-        var (byteOffset, length) = range.GetOffsetAndLength(ByteCount);
-        return GetBytes(byteOffset, length, destination);
-    }
-
-    /// <summary>
-    /// Get the bytes from this <see cref="BitBuffer"/> starting at the specified byte <paramref name="start"/> and reading <paramref name="length"/> bits.
-    /// </summary>
-    /// <param name="start">The starting byte.</param>
-    /// <param name="length">The number of bytes to read.</param>
-    /// <param name="destination">Destination buffer to copy bytes into.</param>
-    /// <returns></returns>
-    /// <exception cref="ArgumentException"></exception>
-    public int GetBytes(int start, int length, Span<byte> destination)
-    {
-        ArgumentOutOfRangeException.ThrowIfLessThan(start, 0);
-        ArgumentOutOfRangeException.ThrowIfLessThan(length, 0);
-        ArgumentOutOfRangeException.ThrowIfGreaterThan(start + length, ByteCount);
-
-        if (destination.Length < length)
-        {
-            throw new ArgumentException("The destination span is too small.", nameof(destination));
-        }
-
-        var written = 0;
-        var lengthInBits = length << 3;
-        var offsetInStartElement = (start << 3) & (BitsPerElement - 1);
-        var currentElement = GetElementLengthFromBytesFloor(start);
-
-        if (offsetInStartElement > 0)
-        {
-            var bitsToReadInFirstElement = Math.Min(BitsPerElement - offsetInStartElement, lengthInBits);
-            written += ReadBytes(_buffer[currentElement], offsetInStartElement, offsetInStartElement + bitsToReadInFirstElement, destination);
-            currentElement++;
-        }
-
-        var slicedDestination = destination[written..];
-        for (; length - written >= BytesPerElement; currentElement++)
-        {
-            Debug.Assert((start + written) % BytesPerElement == 0, $"Expected expression to be aligned at {BitsPerElement}-bit boundary.");
-            BinaryPrimitives.WriteUInt64BigEndian(slicedDestination, _buffer[currentElement]);
-            slicedDestination = slicedDestination[BytesPerElement..];
-            written += BytesPerElement;
-        }
-
-        var bitsRemainingInFinalElement = (length - written) * 8;
-        if (bitsRemainingInFinalElement > 0)
-        {
-            written += ReadBytes(_buffer[currentElement], 0, bitsRemainingInFinalElement, slicedDestination);
-        }
-
-        return written;
-    }
-
     /// <summary>
     /// Ensure this buffer has space to store <paramref name="capacity"/> bits.
     /// </summary>
@@ -292,29 +236,6 @@ public sealed class BitBuffer : IEquatable<BitBuffer>
         var source = CollectionsMarshal.AsSpan(_buffer);
         var destinationBuffer = CollectionsMarshal.AsSpan(destination._buffer);
         source.CopyTo(destinationBuffer);
-    }
-
-    private static int ReadBytes(ulong element, int start, int end, Span<byte> destination)
-    {
-        Debug.Assert(start % 8 == 0, "Expected start offset to be byte aligned.");
-        Debug.Assert(end % 8 == 0, "Expected end offset to be byte aligned.");
-        Debug.Assert(destination.Length >= (end - start) / 8, "Expected destination span to be larger.");
-        var written = 0;
-        var destinationOffset = 0;
-        for (var offset = start; offset < end; offset += 8)
-        {
-            var byteValue = ReadByte(element, offset);
-            destination[destinationOffset] = byteValue;
-            destinationOffset++;
-            written++;
-        }
-        return written;
-    }
-
-    private static byte ReadByte(ulong element, int offset)
-    {
-        var byteValue = GetBitsFromValue(element, 8, BitsPerElement - offset - 8);
-        return (byte)byteValue;
     }
 
     private static ulong GetBitsFromValue<T>(T value, int bitCount, int remainingBitsInValue) where T : IBinaryInteger<T>

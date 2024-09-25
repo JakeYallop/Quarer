@@ -28,6 +28,24 @@ public static class BitBufferMarshal
     /// <para>
     /// On little-endian systems, (where <see cref="BitConverter.IsLittleEndian"/> returns <see langword="true"/>) the bytes need
     /// to be reversed to big-endian order, this requires some storage to be allocated. Prefer calling the
+    /// <see cref="GetBytes(BitBuffer, Range, Span{byte})"/> overload to avoid this allocation.
+    /// </para>
+    /// </summary>
+    /// <param name="bitBuffer">The <see cref="BitBuffer"/> to read from.</param>
+    /// <param name="start">The byte index to start from.</param>
+    /// <param name="length">The number of bytes to read.</param>
+    /// <returns></returns>
+    public static ReadOnlySpan<byte> GetBytes(BitBuffer bitBuffer, Range range)
+    {
+        var (offset, length) = range.GetOffsetAndLength(bitBuffer.ByteCount);
+        return GetBytes(bitBuffer, offset, length);
+    }
+
+    /// <summary>
+    /// Reads a set of bytes from the buffer, starting from the byte offset given by <paramref name="start"/>.
+    /// <para>
+    /// On little-endian systems, (where <see cref="BitConverter.IsLittleEndian"/> returns <see langword="true"/>) the bytes need
+    /// to be reversed to big-endian order, this requires some storage to be allocated. Prefer calling the
     /// <see cref="GetBytes(BitBuffer, int, int, Span{byte})"/> overload to avoid this allocation.
     /// </para>
     /// </summary>
@@ -48,6 +66,24 @@ public static class BitBufferMarshal
             return GetBytes(bitBuffer, start, length, new byte[length]);
         }
         return ReadBytesBigEndian(bitBuffer, start, length);
+    }
+
+    /// <summary>
+    /// Reads a set of bytes from the buffer, starting from the byte offset given by <paramref name="start"/>.
+    /// <para>
+    /// On little-endian systems, (where <see cref="BitConverter.IsLittleEndian"/> returns <see langword="true"/>) the bytes need
+    /// to be reversed to big-endian order, this requires some storage to be allocated. Prefer calling the
+    /// <see cref="GetBytes(BitBuffer, Range, Span{byte})"/> overload to avoid this allocation.
+    /// </para>
+    /// </summary>
+    /// <param name="bitBuffer">The <see cref="BitBuffer"/> to read from.</param>
+    /// <param name="start">The byte index to start from.</param>
+    /// <param name="length">The number of bytes to read.</param>
+    /// <returns></returns>
+    public static ReadOnlySpan<byte> GetBytes(BitBuffer bitBuffer, Range range, Span<byte> destination)
+    {
+        var (offset, length) = range.GetOffsetAndLength(bitBuffer.ByteCount);
+        return GetBytes(bitBuffer, offset, length, destination);
     }
 
     /// <summary>
