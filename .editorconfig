@@ -227,8 +227,8 @@ csharp_style_expression_bodied_operators = when_on_single_line:warning
 csharp_style_expression_bodied_properties = when_on_single_line:warning
 csharp_style_expression_bodied_indexers = when_on_single_line:warning
 csharp_style_expression_bodied_accessors = when_on_single_line:warning
-csharp_style_expression_bodied_lambdas = false:silent
-csharp_style_expression_bodied_local_functions = false:silent
+csharp_style_expression_bodied_lambdas = when_on_single_line:warning
+csharp_style_expression_bodied_local_functions = when_on_single_line:warning
 
 # Pattern matching preferences
 csharp_style_pattern_matching_over_is_with_cast_check = true:warning

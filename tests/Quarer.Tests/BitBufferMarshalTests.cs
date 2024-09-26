@@ -33,18 +33,7 @@ public class BitBufferMarshalTests
         ReadOnlySpan<byte> data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20];
         var buffer = Buffer(data);
         var expected = data.Slice(5, 12);
-        ReadOnlySpan<byte> actual;
-
-        if (BitConverter.IsLittleEndian)
-        {
-            actual = BitBufferMarshal.GetBytes(buffer, 5, 12, new byte[12]);
-        }
-        else
-        {
-            expected = ReverseEndiannessEvery8Bytes(data, 5, 12);
-            actual = BitBufferMarshal.GetBytes(buffer, 5, 12);
-        }
-
+        var actual = BitBufferMarshal.GetBytes(buffer, 5, 12);
         Assert.Equal(expected, actual);
     }
 
@@ -61,43 +50,6 @@ public class BitBufferMarshalTests
         var bitBuffer = Buffer([1, 2, 3]);
         Assert.Throws<ArgumentOutOfRangeException>(() => BitBufferMarshal.GetBytes(bitBuffer, 0, 5));
     }
-
-    [Theory]
-    [InlineData(1, 3)]
-    [InlineData(0, 4)]
-    [InlineData(2, 2)]
-    [InlineData(3, 1)]
-    public void ReadBytes_WhenStartPlusLengthGreaterThanBufferLength_ThrowsArgumentOutOfRangeException(int start, int length)
-    {
-        var bitBuffer = Buffer([1, 2, 3]);
-        Assert.Throws<ArgumentOutOfRangeException>(() => BitBufferMarshal.GetBytes(bitBuffer, start, length));
-    }
-
-    [Fact]
-    public void ReadBytes_DestinationOverload_WhenStartGreaterThanBufferLength_ThrowsArgumentOutOfRangeException()
-    {
-        var bitBuffer = Buffer([1, 2, 3]);
-        Assert.Throws<ArgumentOutOfRangeException>(() => BitBufferMarshal.GetBytes(bitBuffer, 4, 1, new byte[5]));
-    }
-
-    [Fact]
-    public void ReadBytes_DestinationOverload_WhenLengthGreaterThanBufferLength_ThrowsArgumentOutOfRangeException()
-    {
-        var bitBuffer = Buffer([1, 2, 3]);
-        Assert.Throws<ArgumentOutOfRangeException>(() => BitBufferMarshal.GetBytes(bitBuffer, 0, 5, new byte[5]));
-    }
-
-    [Theory]
-    [InlineData(1, 3)]
-    [InlineData(0, 4)]
-    [InlineData(2, 2)]
-    [InlineData(3, 1)]
-    public void ReadBytes_DestinationOverload_WhenStartPlusLengthGreaterThanBufferLength_ThrowsArgumentOutOfRangeException(int start, int length)
-    {
-        var bitBuffer = Buffer([1, 2, 3]);
-        Assert.Throws<ArgumentOutOfRangeException>(() => BitBufferMarshal.GetBytes(bitBuffer, start, length, new byte[5]));
-    }
-
     private static byte[] Bytes => [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19];
     public static TheoryData<byte[], int, bool, int, bool, byte[]> BytesData()
     {
@@ -154,79 +106,10 @@ public class BitBufferMarshalTests
     public void GetBytes(byte[] bytes, int start, bool fromEnd, int end, bool fromEnd2, byte[] expectedBytes)
     {
         var bitBuffer = Buffer(bytes);
-        var destination = new byte[expectedBytes.Length];
-        var written = BitBufferMarshal.GetBytes(bitBuffer, new(new(start, fromEnd), new(end, fromEnd2)), destination);
+        var actualBytes = BitBufferMarshal.GetBytes(bitBuffer, new(new(start, fromEnd), new(end, fromEnd2)));
 
-        Assert.Equal(expectedBytes.Length, written.Length);
-        Assert.Equal(expectedBytes, destination);
-    }
-
-    public static readonly TheoryData<int, int> ValidStartAndLengthData = new()
-    {
-        { 0, 0 },
-        { 0, 2 },
-        { 0, 5 },
-        { 1, 9 },
-        { 1, 6 },
-        { 1, 1 },
-        { 1, 2 },
-        { 1, 0 },
-        { 1, 5 },
-        { 5, 12 },
-        { 5, 0 },
-        { 5, 2 },
-        { 5, 3 },
-        { 7, 8 },
-        { 7, 13 },
-        { 15, 20 },
-        { 16, 8 },
-        { 16, 16 },
-        { 17, 20 },
-    };
-
-    [Theory]
-    [MemberData(nameof(ValidStartAndLengthData))]
-    public void ReadBytesBigEndian_ReturnsExpectedBytes(int start, int length)
-    {
-        var data = Enumerable.Range(0, start + length).Select(x => (byte)x).ToArray().AsSpan();
-        var buffer = Buffer(data);
-        ReadOnlySpan<byte> expected = data.Slice(start, length);
-
-        if (BitConverter.IsLittleEndian)
-        {
-            expected = ReverseEndiannessEvery8Bytes(data, start, length);
-        }
-        var actual = BitBufferMarshal.ReadBytesBigEndian(buffer, start, length);
-
-        Assert.Equal(expected, actual);
-    }
-
-    [Theory]
-    [MemberData(nameof(ValidStartAndLengthData))]
-    public void ReadBytesLittleEndian_ReturnsExpectedBytes(int start, int length)
-    {
-        var data = Enumerable.Range(0, start + length).Select(x => (byte)x).ToArray().AsSpan();
-        var buffer = Buffer(data);
-        ReadOnlySpan<byte> expected = data.Slice(start, length);
-        if (!BitConverter.IsLittleEndian)
-        {
-            expected = ReverseEndiannessEvery8Bytes(data, start, length);
-        }
-
-        var actual = BitBufferMarshal.ReadBytesLittleEndian(buffer, start, length, new byte[length]);
-
-        Assert.Equal(expected, actual);
-    }
-
-    private static ReadOnlySpan<byte> ReverseEndiannessEvery8Bytes(ReadOnlySpan<byte> data, int start, int length)
-    {
-        var (totalUlongs, remainder) = int.DivRem(data.Length, 8);
-        var totalLength = totalUlongs + (remainder == 0 ? 0 : 1);
-        var alignedSize = new byte[totalLength * 8];
-        data.CopyTo(alignedSize);
-        var ulongs = MemoryMarshal.Cast<byte, ulong>(alignedSize);
-        BinaryPrimitives.ReverseEndianness(ulongs, ulongs);
-        return MemoryMarshal.Cast<ulong, byte>(ulongs).Slice(start, length);
+        Assert.Equal(expectedBytes.Length, actualBytes.Length);
+        Assert.Equal(expectedBytes, actualBytes);
     }
 
     private static BitBuffer Buffer(ReadOnlySpan<byte> bytes)

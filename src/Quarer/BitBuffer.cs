@@ -1,62 +1,15 @@
 ﻿using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Text;
 
 namespace Quarer;
 
-[DebuggerDisplay("Count = {ByteCount}")]
-internal sealed class BitBufferDebugView
-{
-    [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-    private readonly BitBuffer _bitBuffer;
-    public BitBufferDebugView(BitBuffer bitWriter)
-    {
-        ArgumentNullException.ThrowIfNull(bitWriter);
-        _bitBuffer = bitWriter;
-    }
-
-    [UnsafeAccessor(UnsafeAccessorKind.Field)]
-    public static extern ref List<ulong> _buffer(BitBuffer @this);
-
-    public int Count => _bitBuffer.Count;
-    public int ByteCount => _bitBuffer.ByteCount;
-
-    public byte[] ByteView
-    {
-        get
-        {
-            var bytes = new byte[_bitBuffer.ByteCount];
-            BitBufferMarshal.GetBytes(_bitBuffer, 0, _bitBuffer.ByteCount, bytes);
-            return bytes;
-        }
-    }
-
-    public string BitView
-    {
-        get
-        {
-            var sb = new StringBuilder(_bitBuffer.Count);
-            foreach (var i in _buffer(_bitBuffer))
-            {
-                sb.AppendFormat("{0:B32}", i);
-            }
-            return sb.ToString(0, _bitBuffer.Count);
-        }
-    }
-}
-
-[DebuggerTypeProxy(typeof(BitBufferDebugView))]
 public sealed class BitBuffer : IEquatable<BitBuffer>
 {
-    internal const int BitsPerElement = sizeof(ulong) * 8;
-    internal const int BitShiftPerElement = 6;
-    internal const int BytesPerElement = sizeof(ulong);
-    internal const int BytesShiftPerElement = 3;
+    internal const int BitsPerElement = 8;
 
-    private readonly List<ulong> _buffer;
+    private readonly List<byte> _buffer;
 
     public BitBuffer()
     {
@@ -94,8 +47,8 @@ public sealed class BitBuffer : IEquatable<BitBuffer>
             {
                 throw new ArgumentOutOfRangeException(nameof(index));
             }
-            var elementIndex = GetElementLengthFromBitsFloor(index);
-            var bitIndex = index & (BitsPerElement - 1);
+            var elementIndex = GetElementIndexFromBitsFloor(index);
+            var bitIndex = GetBitIndex(index);
             return ReadBit(_buffer[elementIndex], bitIndex);
         }
 
@@ -105,8 +58,8 @@ public sealed class BitBuffer : IEquatable<BitBuffer>
             {
                 throw new ArgumentOutOfRangeException(nameof(index));
             }
-            var elementIndex = GetElementLengthFromBitsFloor(index);
-            var bitIndex = index & (BitsPerElement - 1);
+            var elementIndex = GetElementIndexFromBitsFloor(index);
+            var bitIndex = GetBitIndex(index);
             var mask = GetBitMask(bitIndex);
             if (value)
             {
@@ -114,10 +67,15 @@ public sealed class BitBuffer : IEquatable<BitBuffer>
             }
             else
             {
-                _buffer[elementIndex] &= ~mask;
+                // we can't just use ~mask as this causes an overflow (as ~ uses the int~ operator, not the byte one)
+                _buffer[elementIndex] &= op_OnesComplement(mask);
             }
+
+            static T op_OnesComplement<T>(T value) where T : IBinaryInteger<T> => ~value;
         }
     }
+
+    private static int GetBitIndex(int index) => index & (BitsPerElement - 1);
 
     public void WriteBitsBigEndian<T>(int position, T value, int bitCount) where T : IBinaryInteger<T>
     {
@@ -125,24 +83,21 @@ public sealed class BitBuffer : IEquatable<BitBuffer>
         ThrowForInvalidValue(value, bitCount);
         var remainingBitsInValue = bitCount;
         EnsureCapacity(checked(position + remainingBitsInValue));
-        var elementPosition = GetElementLengthFromBitsFloor(position);
-
-        var bitIndex = position & (BitsPerElement - 1);
+        var (elementPosition, bitIndex) = (GetElementIndexFromBitsFloor(position), GetBitIndex(position));
         var buffer = CollectionsMarshal.AsSpan(_buffer);
 
         while (remainingBitsInValue > 0)
         {
             var remainingBitsForCurrentPosition = BitsPerElement - bitIndex;
-            var bitsToWrite = Math.Min(remainingBitsInValue, remainingBitsForCurrentPosition);
-            remainingBitsInValue -= bitsToWrite;
+            var bitsToRead = int.Min(remainingBitsForCurrentPosition, remainingBitsInValue);
+            remainingBitsInValue -= bitsToRead;
 
             ref var segment = ref buffer[elementPosition];
-            var bitsInValue = GetBitsFromValue(value, bitsToWrite, remainingBitsInValue);
-            segment &= GetClearBitsMask<ulong>(bitIndex, bitsToWrite);
-            segment |= bitsInValue << (BitsPerElement - bitsToWrite - bitIndex);
-            elementPosition += 1;
+            var bitsFromValue = GetBitsFromValue(value, bitsToRead, remainingBitsInValue);
+            segment &= GetClearBitsMask<byte>(bitIndex, bitsToRead);
+            segment |= (byte)(bitsFromValue << (8 - bitsToRead - bitIndex));
+            elementPosition++;
             bitIndex = 0;
-            Debug.Assert(remainingBitsInValue == 0 || (position + bitsToWrite) % BitsPerElement == 0, $"Expected to be aligned to a {BitsPerElement}-bit boundary.");
         }
 
         Count = Math.Max(Count, position + bitCount);
@@ -150,19 +105,16 @@ public sealed class BitBuffer : IEquatable<BitBuffer>
 
     public IEnumerable<bool> AsBitEnumerable()
     {
-        //TODO: Return an enumerable that implements ICollection so that TryGetNonEnumeratedCount etc works
         var current = 0;
-        foreach (var i in _buffer)
+        foreach (var element in _buffer)
         {
-            for (var currentBit = 1; currentBit <= BitsPerElement; currentBit++)
+            for (var currentBit = 0; currentBit < BitsPerElement; currentBit++)
             {
                 if (current == Count)
                 {
                     yield break;
                 }
-
-                var mask = 1UL << (BitsPerElement - currentBit);
-                yield return (i & mask) != 0;
+                yield return ReadBit(element, currentBit);
                 current++;
             }
         }
@@ -175,32 +127,10 @@ public sealed class BitBuffer : IEquatable<BitBuffer>
     /// <returns></returns>
     public IEnumerable<byte> AsByteEnumerable()
     {
-        //TODO: Return an enumerable that implements ICollection so that TryGetNonEnumeratedCount etc works
-        var current = 0;
-        var fullElements = Math.DivRem(Count, BitsPerElement, out var remainder);
-        while (current < fullElements)
+        // do not use foreach here in case Count changes.
+        for (var i = 0; i < GetElementLengthFromBitsCeil(Count); i++)
         {
-            var i = _buffer[current];
-
-            for (var currentBit = 0; currentBit < BitsPerElement; currentBit += 8)
-            {
-                var @byte = GetBitsFromValue(i, 8, BitsPerElement - currentBit - 8);
-                yield return (byte)@byte;
-            }
-
-            current++;
-        }
-
-        if (remainder == 0)
-        {
-            yield break;
-        }
-
-        var lastElement = _buffer[current];
-        for (var currentBit = 0; currentBit < remainder; currentBit += 8)
-        {
-            var @byte = GetBitsFromValue(lastElement, 8, BitsPerElement - currentBit - 8);
-            yield return (byte)@byte;
+            yield return _buffer[i];
         }
     }
 
@@ -238,8 +168,8 @@ public sealed class BitBuffer : IEquatable<BitBuffer>
         source.CopyTo(destinationBuffer);
     }
 
-    private static ulong GetBitsFromValue<T>(T value, int bitCount, int remainingBitsInValue) where T : IBinaryInteger<T>
-        => ulong.CreateTruncating((value >> remainingBitsInValue) & GetAllSetBitMask<T>(bitCount));
+    private static byte GetBitsFromValue<T>(T value, int bitCount, int remainingBitsInValue) where T : IBinaryInteger<T>
+        => byte.CreateTruncating((value >> remainingBitsInValue) & GetAllSetBitMask<T>(bitCount));
 
     private static T GetAllSetBitMask<T>(int bitCount) where T : IBinaryInteger<T>
     {
@@ -299,10 +229,10 @@ public sealed class BitBuffer : IEquatable<BitBuffer>
 
     private void EnsureCapacity(int requestedCapacity)
     {
-        if (requestedCapacity > _buffer.Count << BitShiftPerElement)
+        var currentBitCapacity = _buffer.Count * BitsPerElement;
+        if (requestedCapacity > currentBitCapacity)
         {
-            var currentBitCapactity = _buffer.Count << BitShiftPerElement;
-            var newBitCapacity = Math.Max(currentBitCapactity, BitsPerElement);
+            var newBitCapacity = Math.Max(currentBitCapacity, BitsPerElement);
             while (newBitCapacity < requestedCapacity)
             {
                 newBitCapacity = (int)Math.Min(((long)newBitCapacity) * 2, int.MaxValue);
@@ -314,8 +244,8 @@ public sealed class BitBuffer : IEquatable<BitBuffer>
         }
     }
 
-    private static bool ReadBit(ulong element, int offset) => (element & GetBitMask(offset)) != 0;
-    private static ulong GetBitMask(int bitIndex) => 1UL << (BitsPerElement - bitIndex - 1);
+    private static bool ReadBit(byte element, int offset) => (element & GetBitMask(offset)) != 0;
+    private static byte GetBitMask(int bitIndex) => (byte)(1 << (BitsPerElement - bitIndex - 1));
 
     public static bool operator ==(BitBuffer? left, BitBuffer? right) => left is null ? right is null : left.Equals(right);
     public static bool operator !=(BitBuffer? left, BitBuffer? right) => !(left == right);
@@ -337,66 +267,30 @@ public sealed class BitBuffer : IEquatable<BitBuffer>
             return false;
         }
 
+        if (Count == 0)
+        {
+            return true;
+        }
+
         var buffer = CollectionsMarshal.AsSpan(_buffer);
         var otherBuffer = CollectionsMarshal.AsSpan(other._buffer);
 
-        if (((ulong)Count & (BitsPerElement - 1)) == 0u)
-        {
-            return buffer.SequenceEqual(otherBuffer);
-        }
-
-        var elementCount = GetElementLengthFromBitsCeil(Count);
-        if (!buffer[..(elementCount - 1)].SequenceEqual(otherBuffer[..(elementCount - 1)]))
+        var byteLength = GetElementIndexFromBitsFloor(Count);
+        var fullElements = buffer[..byteLength];
+        var otherFullElements = otherBuffer[..byteLength];
+        if (byteLength > 0 && !fullElements.SequenceEqual(otherFullElements))
         {
             return false;
         }
 
-        var finalElement = buffer[elementCount - 1];
-        var otherFinalElement = otherBuffer[elementCount - 1];
-
-        var bitsInFinalElement = Count & (BitsPerElement - 1);
-        var remainingLength = bitsInFinalElement;
-
-        Debug.Assert(remainingLength < BitsPerElement, "Expected remaining length to be less than BitsPerElement, as any length above it should have already been handled.");
-        if (remainingLength >= 32)
+        var remainingLength = Count - (byteLength * 8);
+        if (remainingLength == 0)
         {
-            const int ShiftForUInt = BitsPerElement - 32;
-            if (uint.CreateTruncating(finalElement >> ShiftForUInt) != uint.CreateTruncating(otherFinalElement >> ShiftForUInt))
-            {
-                return false;
-            }
-            finalElement <<= 32;
-            otherFinalElement <<= 32;
-            remainingLength -= 32;
+            return true;
         }
-        Debug.Assert(remainingLength < 32, "Expected remaining length to be < 32, as any length above it should have already been handled.");
 
-        if (remainingLength >= 16)
-        {
-            const int ShiftForUshort = BitsPerElement - 16;
-            if (ushort.CreateTruncating(finalElement >> ShiftForUshort) != ushort.CreateTruncating(otherFinalElement >> ShiftForUshort))
-            {
-                return false;
-            }
-            finalElement <<= 16;
-            otherFinalElement <<= 16;
-            remainingLength -= 16;
-        }
-        Debug.Assert(remainingLength < 16, "Expected remaining length to be < 16, as any length above it should have already been handled.");
-
-        if (remainingLength >= 8)
-        {
-            const int ShiftForByte = BitsPerElement - 8;
-            if (byte.CreateTruncating(finalElement >> ShiftForByte) != byte.CreateTruncating(otherFinalElement >> ShiftForByte))
-            {
-                return false;
-            }
-            finalElement <<= 8;
-            otherFinalElement <<= 8;
-            remainingLength -= 8;
-        }
-        Debug.Assert(remainingLength < 8, "Expected remaining length to be < 8, as any length above it should have already been handled.");
-
+        var finalElement = buffer[byteLength];
+        var otherFinalElement = otherBuffer[byteLength];
         for (var i = 0; i < remainingLength; i++)
         {
             var bit = ReadBit(finalElement, i);
@@ -414,67 +308,33 @@ public sealed class BitBuffer : IEquatable<BitBuffer>
     {
         var buffer = CollectionsMarshal.AsSpan(_buffer);
         var hashCode = new HashCode();
+        hashCode.Add(Count);
 
-        if (((uint)Count & (BitsPerElement - 1)) == 0u)
+        if (Count <= 0)
         {
-            foreach (var i in buffer)
-            {
-                hashCode.Add(i);
-            }
             return hashCode.ToHashCode();
         }
 
-        var elementCount = GetElementLengthFromBitsCeil(Count);
-        var fullElements = buffer[..(elementCount - 1)];
-        foreach (var i in fullElements)
+        var fullElementCount = GetElementIndexFromBitsFloor(Count);
+        var fullElements = buffer[..fullElementCount];
+        hashCode.AddBytes(fullElements);
+
+        var bitsInFinalElement = GetBitIndex(Count);
+        if (bitsInFinalElement > 0)
         {
-            hashCode.Add(i);
-        }
+            var finalElement = buffer[fullElementCount];
+            var remainingLength = bitsInFinalElement;
 
-        var finalElement = buffer[elementCount - 1];
-
-        var bitsInFinalElement = Count & (BitsPerElement - 1);
-        var remainingLength = bitsInFinalElement;
-
-        Debug.Assert(remainingLength < BitsPerElement, "Expected remaining length to be less than BitsPerElement, as any length above it should have already been handled.");
-        if (remainingLength >= 32)
-        {
-            const int ShiftForUint = BitsPerElement - 32;
-            hashCode.Add(ushort.CreateTruncating(finalElement >> ShiftForUint));
-            finalElement <<= 32;
-            remainingLength -= 32;
-        }
-        Debug.Assert(remainingLength < 32, "Expected remaining length to be < 32, as any length above it should have already been handled.");
-
-        if (remainingLength >= 16)
-        {
-            const int ShiftForUshort = BitsPerElement - 16;
-            hashCode.Add(ushort.CreateTruncating(finalElement >> ShiftForUshort));
-            finalElement <<= 16;
-            remainingLength -= 16;
-        }
-        Debug.Assert(remainingLength < 16, "Expected remaining length to be < 16, as any length above it should have already been handled.");
-
-        if (remainingLength >= 8)
-        {
-            const int ShiftForByte = BitsPerElement - 8;
-            hashCode.Add(byte.CreateTruncating(finalElement >> ShiftForByte));
-            finalElement <<= 8;
-            remainingLength -= 8;
-        }
-        Debug.Assert(remainingLength < 8, "Expected remaining length to be < 8, as any length above it should have already been handled.");
-
-        for (var i = 0; i < remainingLength; i++)
-        {
-            var bit = ReadBit(finalElement, i);
-            hashCode.Add(bit);
+            for (var i = 0; i < remainingLength; i++)
+            {
+                var bit = ReadBit(finalElement, i);
+                hashCode.Add(bit);
+            }
         }
 
         return hashCode.ToHashCode();
     }
 
-    internal static int GetElementLengthFromBitsCeil(int bits) => (int)((uint)(bits - 1 + (1u << BitShiftPerElement)) >> BitShiftPerElement);
-    internal static int GetElementLengthFromBitsFloor(int bits) => bits >> BitShiftPerElement;
-    internal static int GetElementLengthFromBytesCeil(int bytes) => (int)((uint)(bytes - 1 + (1u << BytesShiftPerElement)) >> BytesShiftPerElement);
-    internal static int GetElementLengthFromBytesFloor(int bytes) => bytes >> BytesShiftPerElement;
+    internal static int GetElementLengthFromBitsCeil(int bits) => (bits + 7) >> 3;
+    internal static int GetElementIndexFromBitsFloor(int bits) => bits >> 3;
 }

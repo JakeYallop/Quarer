@@ -16,6 +16,7 @@ public class BitBufferTests
         var bitBuffer = new BitBuffer();
         ushort validValue = 1023;
         bitBuffer.WriteBitsBigEndian(0, validValue, 10);
+        bitBuffer.WriteBitsBigEndian(5, 0b11011, 5);
     }
 
     public static TheoryData<object, int> ValidData_FitsWithin64Bits()
@@ -332,15 +333,15 @@ public class BitBufferTests
     }
 
     [UnsafeAccessor(UnsafeAccessorKind.Field)]
-    private static extern ref List<ulong> _buffer(BitBuffer @this);
+    private static extern ref List<byte> _buffer(BitBuffer @this);
 
     [Fact]
     public void SetCapacity_SetToSmallerValue_TrimsUnderlyingBuffer()
     {
-        var bitBuffer = new BitBuffer(100 << 6);
+        var bitBuffer = new BitBuffer(100 << 3);
         var buffer = _buffer(bitBuffer);
         Assert.True(buffer.Capacity >= 100);
-        bitBuffer.SetCapacity(64);
+        bitBuffer.SetCapacity(8);
         Assert.Equal(1, buffer.Capacity);
     }
 
@@ -470,6 +471,7 @@ public class BitBufferTests
     [InlineData("0000", "0101")]
     [InlineData("1111_1111_1111_1111_1111_1111_1111_1110", "1111_1111_1111_1111_1111_1111_1111_1111")]
     [InlineData("1111_1111_1111_1111_1111_1111_1111_1111_0001_1000_0001_1001_1010_1010_11", "1111_1111_1111_1111_1111_1111_1111_1111_0001_1000_0001_1001_1010_1010_10")]
+    [InlineData("1111_1111_1111_1111_1111_1111_1111_1111_0001_1000_0001_1001_1010_1010_0100_1", "1111_1111_1111_1111_1111_1111_1111_1111_0001_1000_0001_1001_1010_1010_1000_0")]
     public void GetHashCode_NotEqual_ReturnsDifferentHashcode(string contents, string contents2)
     {
         var buffer1 = InputToBuffer(contents);

@@ -148,9 +148,6 @@ public static class QrDataEncoder
         var maxDataCodewordsInBlocks = errorCorrectionBlocks.MaxDataCodewordsInBlock;
         var resultBitBuffer = new BitWriter(new(version.TotalCodewords * 8));
 
-        // max number of codewords in a data block is 123, so ensure writer size is greater than or equal to 123
-        Span<byte> dataCodewordsDestination = stackalloc byte[128];
-
         var codewordsSeen = 0;
         for (var i = 0; i < maxDataCodewordsInBlocks; i++)
         {
@@ -158,8 +155,8 @@ public static class QrDataEncoder
             {
                 if (i < b.DataCodewordsPerBlock)
                 {
-                    var _ = BitBufferMarshal.GetBytes(dataCodewordsBitBuffer, codewordsSeen + i, 1, dataCodewordsDestination);
-                    resultBitBuffer.WriteBitsBigEndian(dataCodewordsDestination[0], 8);
+                    var dataCodewords = BitBufferMarshal.GetBytes(dataCodewordsBitBuffer, codewordsSeen + i, 1);
+                    resultBitBuffer.WriteBitsBigEndian(dataCodewords[0], 8);
                 }
                 codewordsSeen += b.DataCodewordsPerBlock;
             }
@@ -177,7 +174,7 @@ public static class QrDataEncoder
         Span<byte> divisionDestination = stackalloc byte[256];
         foreach (var b in errorCorrectionBlocks.EnumerateIndividualBlocks())
         {
-            var dataCodewords = BitBufferMarshal.GetBytes(dataCodewordsBitBuffer, codewordsSeen, b.DataCodewordsPerBlock, dataCodewordsDestination);
+            var dataCodewords = BitBufferMarshal.GetBytes(dataCodewordsBitBuffer, codewordsSeen, b.DataCodewordsPerBlock);
             var (written, separator) = BinaryFiniteField.Divide(dataCodewords, generator, divisionDestination);
             var divisionResult = divisionDestination[..written];
             var errorCodewords = divisionResult[separator..];
