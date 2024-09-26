@@ -118,9 +118,7 @@ public static class QrDataEncoder
         return bitWriter.Buffer;
 
         static void WriteHeader(BitWriter writer, QrVersion version, ModeIndicator mode, ReadOnlySpan<char> dataSlice)
-        {
-            QrHeaderBlock.WriteHeader(writer, version, mode, mode.GetDataCharacterLength(dataSlice));
-        }
+            => QrHeaderBlock.WriteHeader(writer, version, mode, mode.GetDataCharacterLength(dataSlice));
 
         static void PadBitsInFinalCodeword(BitWriter writer)
         {

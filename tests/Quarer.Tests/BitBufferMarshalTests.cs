@@ -1,8 +1,4 @@
-﻿using System.Buffers;
-using System.Buffers.Binary;
-using System.Runtime.InteropServices;
-
-namespace Quarer.Tests;
+﻿namespace Quarer.Tests;
 
 public class BitBufferMarshalTests
 {

@@ -66,9 +66,7 @@ public class BitBufferTests
             };
 
             static T GetValue<TUnboxedValue>(TUnboxedValue value) where TUnboxedValue : IBinaryInteger<TUnboxedValue>
-            {
-                return T.CreateTruncating(value);
-            }
+                => T.CreateTruncating(value);
         }
     }
 
