@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace Quarer;
@@ -33,43 +34,76 @@ public class ByteMatrix
     {
         get
         {
-            if ((uint)x >= Width)
+            if (unchecked((uint)x >= Width))
             {
                 ThrowArgumentOutOfRangeException(nameof(x));
             }
 
-            if ((uint)y >= Height)
+            if (unchecked((uint)y >= Height))
             {
                 ThrowArgumentOutOfRangeException(nameof(x));
             }
 
-            return _matrixRowMajorOrder[y][x] == 1;
+            return Unsafe.As<byte, bool>(ref _matrixRowMajorOrder[y][x]);
         }
 
         set
         {
-            if ((uint)x >= Width)
+            if (unchecked((uint)x >= Width))
             {
                 ThrowArgumentOutOfRangeException(nameof(x));
             }
 
-            if ((uint)y >= Height)
+            if (unchecked((uint)y >= Height))
             {
                 ThrowArgumentOutOfRangeException(nameof(x));
             }
 
-            var v = value ? (byte)1 : (byte)0;
-            _matrixRowMajorOrder[y][x] = v;
-            _matrixColumnMajorOrder[x][y] = v;
+            _matrixRowMajorOrder[y][x] = Unsafe.As<bool, byte>(ref value);
+            _matrixColumnMajorOrder[x][y] = Unsafe.As<bool, byte>(ref value);
         }
+    }
+
+    public byte Get(int x, int y)
+    {
+        if (unchecked((uint)x >= Width))
+        {
+            ThrowArgumentOutOfRangeException(nameof(x));
+        }
+        if (unchecked((uint)y >= Height))
+        {
+            ThrowArgumentOutOfRangeException(nameof(x));
+        }
+        return _matrixRowMajorOrder[y][x];
+    }
+
+    public void Set(int x, int y, byte value)
+    {
+        if (value > 1)
+        {
+            ThrowArgumentOutOfRangeException(nameof(value), "Value must be 0 or 1.");
+        }
+
+        if (unchecked((uint)x >= Width))
+        {
+            ThrowArgumentOutOfRangeException(nameof(x));
+        }
+
+        if (unchecked((uint)y >= Height))
+        {
+            ThrowArgumentOutOfRangeException(nameof(x));
+        }
+
+        _matrixRowMajorOrder[y][x] = value;
     }
 
     [DoesNotReturn]
     private static void ThrowArgumentOutOfRangeException(string paramName) => throw new ArgumentOutOfRangeException(paramName);
+    private static void ThrowArgumentOutOfRangeException(string paramName, string message) => throw new ArgumentOutOfRangeException(paramName, message);
 
     public ReadOnlySpan<byte> GetRow(int row)
     {
-        if ((uint)row >= Height)
+        if (unchecked((uint)row >= Height))
         {
             ThrowArgumentOutOfRangeException(nameof(row));
         }
@@ -78,7 +112,7 @@ public class ByteMatrix
 
     public ReadOnlySpan<byte> GetColumn(int column)
     {
-        if ((uint)column >= Width)
+        if (unchecked((uint)column >= Width))
         {
             ThrowArgumentOutOfRangeException(nameof(column));
         }
@@ -181,6 +215,4 @@ internal sealed class ByteMatrixDebugView(ByteMatrix byteMatrix)
             return s;
         }
     }
-
-    public override string ToString() => base.ToString()!;
 }

@@ -555,7 +555,6 @@ public static class QrSymbolBuilder
             patternPenaltyBuffer.Push(currentModule);
         }
 
-
         static int ProcessLine(ReadOnlySpan<byte> values)
         {
             var linePenalty = 0;
@@ -692,8 +691,8 @@ public static class QrSymbolBuilder
         for (var y = 0; y < matrix.Height - 1; y++)
         {
             var x = 0;
-            var row1 = matrix[x, y] ? (byte)1 : (byte)0;
-            var row2 = matrix[x, y + 1] ? (byte)1 : (byte)0;
+            var row1 = matrix.Get(x, y);
+            var row2 = matrix.Get(x, y + 1);
 
             byte pattern = 0;
             pattern |= (byte)(row1 << 3);
@@ -703,8 +702,8 @@ public static class QrSymbolBuilder
             for (; x < matrix.Width; x++)
             {
                 pattern = (byte)(pattern >> 2);
-                pattern |= (byte)((matrix[x, y] ? 1 : 0) << 3);
-                pattern |= (byte)((matrix[x, y + 1] ? 1 : 0) << 2);
+                pattern |= (byte)((matrix.Get(x, y)) << 3);
+                pattern |= (byte)((matrix.Get(x, y + 1)) << 2);
 
                 if (pattern is 0b0000 or 0b1111)
                 {

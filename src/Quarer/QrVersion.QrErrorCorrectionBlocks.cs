@@ -1,4 +1,5 @@
-﻿using System.Collections.Immutable;
+﻿using System.Collections;
+using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 
 namespace Quarer;
@@ -53,15 +54,39 @@ public sealed partial class QrVersion
             }
         }
 
-        public IEnumerable<QrErrorCorrectionBlock> EnumerateIndividualBlocks()
+        public IEnumerable<QrErrorCorrectionBlock> EnumerateIndividualBlocks() =>
+            new IndividualBlocksEnumerator(Blocks);
+
+        private struct IndividualBlocksEnumerator(ImmutableArray<QrErrorCorrectionBlock> blocks) : IEnumerable<QrErrorCorrectionBlock>, IEnumerator<QrErrorCorrectionBlock>
         {
-            foreach (var b in Blocks)
+            private readonly ImmutableArray<QrErrorCorrectionBlock> _blocks = blocks;
+            private int _blockIndex;
+            private int _currentIndex;
+            public readonly QrErrorCorrectionBlock Current => _blocks[_blockIndex];
+            readonly object? IEnumerator.Current => Current;
+            public readonly void Dispose() { }
+
+            public bool MoveNext()
             {
-                for (var i = 0; i < b.Count; i++)
+                if (_currentIndex >= _blocks[_blockIndex].Count)
                 {
-                    yield return b;
+                    _blockIndex++;
+                    _currentIndex = 0;
                 }
+                _currentIndex++;
+
+                return _blockIndex < _blocks.Length;
             }
+
+            public void Reset()
+            {
+                _blockIndex = 0;
+                _currentIndex = 0;
+            }
+
+            public readonly IEnumerator<QrErrorCorrectionBlock> GetEnumerator() => this;
+
+            readonly IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
         }
 
         public static bool operator ==(QrErrorCorrectionBlocks? left, QrErrorCorrectionBlocks? right) => left is null ? right is null : left.Equals(right);
