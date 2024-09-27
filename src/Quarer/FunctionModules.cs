@@ -2,8 +2,8 @@
 
 public sealed class FunctionModules
 {
-    private readonly BitMatrix _matrix;
-    private FunctionModules(BitMatrix matrix)
+    private readonly ByteMatrix _matrix;
+    private FunctionModules(ByteMatrix matrix)
     {
         _matrix = matrix;
     }
@@ -45,7 +45,7 @@ public sealed class FunctionModules
         }
     }
 
-    private class TrackingMatrix(int width, int height) : BitMatrix(width, height)
+    private class TrackingMatrix(int width, int height) : ByteMatrix(width, height)
     {
         public override bool this[int x, int y]
         {
@@ -53,6 +53,6 @@ public sealed class FunctionModules
             set => Matrix[x, y] = true;
         }
 
-        public BitMatrix Matrix { get; } = new(width, height);
+        public ByteMatrix Matrix { get; } = new(width, height);
     }
 }

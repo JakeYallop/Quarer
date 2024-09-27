@@ -80,7 +80,7 @@ public class FunctionModulesTests
     }
 
     [UnsafeAccessor(UnsafeAccessorKind.Field)]
-    private static extern ref BitMatrix _matrix(FunctionModules @this);
+    private static extern ref ByteMatrix _matrix(FunctionModules @this);
 
     [Fact]
     public void FunctionModulesMatrix_SetsExpectedPositions_Version1()

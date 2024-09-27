@@ -3,8 +3,16 @@ using Quarer;
 
 public partial class Benchmarks
 {
-    [Params("1234567", "A short alphanumeric string with some extra bits on the end ::::::*******", "12345671234567123456712345671234567123456712345671234567123456712345671234567123456712345671234567123456712345671234567123456712345671234567123456712345671234567123456712345671234567123456712345671234567123456712345671234567123456712345671234567123456712345671234567123456712345671234567123456712345671234567123456712345671234567123456712345671234567123456712345671234567")]
+    [ParamsSource(nameof(Params))]
     public string Data { get; set; } = null!;
+
+    public static IEnumerable<string> Params()
+    {
+        yield return "1234567";
+        yield return "A short alphanumeric string with some extra bits on the end ::::::*******";
+        yield return new string('A', 3000);
+        yield return new string('1', 7089); //max size QR code
+    }
 
     public SkiaSharp.QrCode.QRCodeGenerator SkiaGenerator = null!;
 

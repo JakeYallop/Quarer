@@ -3,7 +3,7 @@
 namespace Quarer.Tests;
 internal static class MatrixTestUtilities
 {
-    public static string MatrixToString(BitMatrix m)
+    public static string MatrixToString(ByteMatrix m)
     {
         var sb = new StringBuilder(m.Width * m.Height);
         for (var y = 0; y < m.Height; y++)

@@ -6,14 +6,14 @@ public sealed class QrCode : IEquatable<QrCode>
 {
     private const string QrCodeDataTooLargeMessage = "Failed to create QR code, provided data is too large to fit within the QR code capacity using the available encoding capabilities.";
 
-    internal QrCode(QrVersion version, BitMatrix data, ErrorCorrectionLevel errorCorrectionLevel)
+    internal QrCode(QrVersion version, ByteMatrix data, ErrorCorrectionLevel errorCorrectionLevel)
     {
         Version = version;
         Data = data;
         ErrorCorrectionLevel = errorCorrectionLevel;
     }
 
-    public BitMatrix Data { get; }
+    public ByteMatrix Data { get; }
     public QrVersion Version { get; }
     public ErrorCorrectionLevel ErrorCorrectionLevel { get; }
     public int Width => Version.ModulesPerSide;

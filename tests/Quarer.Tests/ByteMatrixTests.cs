@@ -1,7 +1,7 @@
 ﻿using System.Diagnostics;
 
 namespace Quarer.Tests;
-public class BitMatrixTests
+public class ByteMatrixTests
 {
     [Fact]
     public void Indexer_ReturnsExpectedResult()
@@ -9,7 +9,7 @@ public class BitMatrixTests
         var width = 33;
         var height = 31;
 
-        var matrix = new BitMatrix(width, height);
+        var matrix = new ByteMatrix(width, height);
 
         for (var y = 0; y < height; y++)
         {
@@ -31,48 +31,34 @@ public class BitMatrixTests
     {
         var width = 33;
         var height = 31;
-        var matrix = new BitMatrix(width, height);
+        var matrix = new ByteMatrix(width, height);
 
         matrix[0, 0] = true;
         matrix[width - 1, 0] = true;
         var row = matrix.GetRow(0);
-        Assert.True(row[0]);
-        Assert.False(row[1]);
-        Assert.True(row[width - 1]);
+        Assert.Equal(1, row[0]);
+        Assert.Equal(0, row[1]);
+        Assert.Equal(1, row[width - 1]);
 
         matrix[0, height - 1] = true;
         matrix[width - 1, height - 1] = true;
         row = matrix.GetRow(height - 1);
-        Assert.True(row[0]);
-        Assert.False(row[1]);
-        Assert.True(row[width - 1]);
-    }
-
-    [Fact]
-    public void GetRow_ReturnsCopy()
-    {
-        var width = 33;
-        var height = 31;
-        var matrix = new BitMatrix(width, height);
-        matrix[0, 0] = true;
-        var row = matrix.GetRow(0);
-        Assert.True(row[0]);
-
-        row[0] = false;
-        Assert.True(matrix[0, 0]);
+        Assert.Equal(1, row[0]);
+        Assert.Equal(0, row[1]);
+        Assert.Equal(1, row[width - 1]);
     }
 
     [Fact]
     public void GetRow_WhenRowNegative_ThrowsArgumentOutOfRangeException()
     {
-        var matrix = new BitMatrix(33, 31);
+        var matrix = new ByteMatrix(33, 31);
         Assert.Throws<ArgumentOutOfRangeException>(() => matrix.GetRow(-1));
     }
 
     [Fact]
     public void GetRow_WhenRowGreaterThanHeight_ThrowsArgumentOutOfRangeException()
     {
-        var matrix = new BitMatrix(33, 31);
+        var matrix = new ByteMatrix(33, 31);
         Assert.Throws<ArgumentOutOfRangeException>(() => matrix.GetRow(31));
     }
 
@@ -81,47 +67,34 @@ public class BitMatrixTests
     {
         var width = 33;
         var height = 31;
-        var matrix = new BitMatrix(width, height);
+        var matrix = new ByteMatrix(width, height);
 
         matrix[0, 0] = true;
         matrix[0, height - 1] = true;
         var column = matrix.GetColumn(0);
-        Assert.True(column[0]);
-        Assert.False(column[1]);
-        Assert.True(column[height - 1]);
+        Assert.Equal(1, column[0]);
+        Assert.Equal(0, column[1]);
+        Assert.Equal(1, column[height - 1]);
 
         matrix[width - 1, 0] = true;
         matrix[width - 1, height - 1] = true;
         column = matrix.GetColumn(width - 1);
-        Assert.True(column[0]);
-        Assert.False(column[1]);
-        Assert.True(column[height - 1]);
-    }
-
-    [Fact]
-    public void GetColumn_ReturnsCopy()
-    {
-        var width = 33;
-        var height = 31;
-        var matrix = new BitMatrix(width, height);
-        matrix[0, 0] = true;
-        var column = matrix.GetColumn(0);
-        Assert.True(column[0]);
-        column[0] = false;
-        Assert.True(matrix[0, 0]);
+        Assert.Equal(1, column[0]);
+        Assert.Equal(0, column[1]);
+        Assert.Equal(1, column[height - 1]);
     }
 
     [Fact]
     public void GetColumn_WhenColumnNegative_ThrowsArgumentOutOfRangeException()
     {
-        var matrix = new BitMatrix(33, 31);
+        var matrix = new ByteMatrix(33, 31);
         Assert.Throws<ArgumentOutOfRangeException>(() => matrix.GetColumn(-1));
     }
 
     [Fact]
     public void GetColumn_WhenColumnGreaterThanWidth_ThrowsArgumentOutOfRangeException()
     {
-        var matrix = new BitMatrix(33, 31);
+        var matrix = new ByteMatrix(33, 31);
         Assert.Throws<ArgumentOutOfRangeException>(() => matrix.GetColumn(33));
     }
 
@@ -215,9 +188,9 @@ public class BitMatrixTests
         Assert.True(result);
     }
 
-    private static BitMatrix InputToMatrix(int width, int height, string input)
+    private static ByteMatrix InputToMatrix(int width, int height, string input)
     {
-        var matrix = new BitMatrix(width, height);
+        var matrix = new ByteMatrix(width, height);
         var written = 0;
         for (var y = 0; y < matrix.Height; y++)
         {

@@ -8,7 +8,7 @@ public class QrSymbolBuilderTests
     public void Encode_PositionDetectionAndSeparators_EncodesExpectedSymbol()
     {
         var version = QrVersion.GetVersion(1);
-        var m = new BitMatrix(version.ModulesPerSide, version.ModulesPerSide);
+        var m = new ByteMatrix(version.ModulesPerSide, version.ModulesPerSide);
 
         QrSymbolBuilder.EncodePositionDetectionPattern(m, PositionDetectionPatternLocation.TopLeft);
         QrSymbolBuilder.EncodePositionDetectionPattern(m, PositionDetectionPatternLocation.TopRight);
@@ -43,7 +43,7 @@ public class QrSymbolBuilderTests
     public void Encode_PositionDetectionAndSeparatorsAndTimingPatterns_EncodesExpectedSymbol()
     {
         var version = QrVersion.GetVersion(1);
-        var m = new BitMatrix(version.ModulesPerSide, version.ModulesPerSide);
+        var m = new ByteMatrix(version.ModulesPerSide, version.ModulesPerSide);
 
         QrSymbolBuilder.EncodePositionDetectionPattern(m, PositionDetectionPatternLocation.TopLeft);
         QrSymbolBuilder.EncodePositionDetectionPattern(m, PositionDetectionPatternLocation.TopRight);
@@ -79,7 +79,7 @@ public class QrSymbolBuilderTests
     public void Encode_PositionDetectionAndSeparatorsAndTimingPatternsAndStaticDarkModule_EncodesExpectedSymbol()
     {
         var version = QrVersion.GetVersion(1);
-        var m = new BitMatrix(version.ModulesPerSide, version.ModulesPerSide);
+        var m = new ByteMatrix(version.ModulesPerSide, version.ModulesPerSide);
 
         QrSymbolBuilder.EncodePositionDetectionPattern(m, PositionDetectionPatternLocation.TopLeft);
         QrSymbolBuilder.EncodePositionDetectionPattern(m, PositionDetectionPatternLocation.TopRight);
@@ -116,7 +116,7 @@ public class QrSymbolBuilderTests
     public void Encode_PositionDetectionAndSeparatorsAndTimingPatternsAndFormatInformation_EncodesExpectedSymbol()
     {
         var version = QrVersion.GetVersion(1);
-        var m = new BitMatrix(version.ModulesPerSide, version.ModulesPerSide);
+        var m = new ByteMatrix(version.ModulesPerSide, version.ModulesPerSide);
 
         QrSymbolBuilder.EncodePositionDetectionPattern(m, PositionDetectionPatternLocation.TopLeft);
         QrSymbolBuilder.EncodePositionDetectionPattern(m, PositionDetectionPatternLocation.TopRight);
@@ -153,7 +153,7 @@ public class QrSymbolBuilderTests
     public void EncodeVersionInformation_VersionLessThan7_DoesNotEncodeAnyVersionInformation()
     {
         var version = QrVersion.GetVersion(3);
-        var m = new BitMatrix(version.ModulesPerSide, version.ModulesPerSide);
+        var m = new ByteMatrix(version.ModulesPerSide, version.ModulesPerSide);
         QrSymbolBuilder.EncodeVersionInformation(m, version);
         var size = version.ModulesPerSide;
         for (var i = 0; i <= 2; i++)
@@ -170,7 +170,7 @@ public class QrSymbolBuilderTests
     public void EncodeVersionInformation_VersionMoreThanOrEqualTo7_EncodesVersionInformation()
     {
         var version = QrVersion.GetVersion(7);
-        var m = new BitMatrix(version.ModulesPerSide, version.ModulesPerSide);
+        var m = new ByteMatrix(version.ModulesPerSide, version.ModulesPerSide);
         QrSymbolBuilder.EncodeVersionInformation(m, version);
         var size = version.ModulesPerSide;
         var hasVersionInformation = false;
@@ -188,7 +188,7 @@ public class QrSymbolBuilderTests
     public void Encode_PositionDetectionAndSeparatorsAndTimingPatternsStaticDarkModuleAndAdjustmentPatterns_EncodesExpectedSymbol()
     {
         var version = QrVersion.GetVersion(7);
-        var m = new BitMatrix(version.ModulesPerSide, version.ModulesPerSide);
+        var m = new ByteMatrix(version.ModulesPerSide, version.ModulesPerSide);
 
         QrSymbolBuilder.EncodePositionDetectionPattern(m, PositionDetectionPatternLocation.TopLeft);
         QrSymbolBuilder.EncodePositionDetectionPattern(m, PositionDetectionPatternLocation.TopRight);
@@ -250,7 +250,7 @@ public class QrSymbolBuilderTests
     public void Encode_EncodeDataBits_EncodesExpectedSymbol2M()
     {
         var version = QrVersion.GetVersion(2);
-        var m = new BitMatrix(version.ModulesPerSide, version.ModulesPerSide);
+        var m = new ByteMatrix(version.ModulesPerSide, version.ModulesPerSide);
 
         QrSymbolBuilder.EncodePositionDetectionPattern(m, PositionDetectionPatternLocation.TopLeft);
         QrSymbolBuilder.EncodePositionDetectionPattern(m, PositionDetectionPatternLocation.TopRight);
@@ -325,7 +325,7 @@ public class QrSymbolBuilderTests
     public void Encode_EncodeDataBits_WithSpecificPatternInCodewords_EncodesExpectedSymbol1M()
     {
         var version = QrVersion.GetVersion(1);
-        var m = new BitMatrix(version.ModulesPerSide, version.ModulesPerSide);
+        var m = new ByteMatrix(version.ModulesPerSide, version.ModulesPerSide);
 
         QrSymbolBuilder.EncodePositionDetectionPattern(m, PositionDetectionPatternLocation.TopLeft);
         QrSymbolBuilder.EncodePositionDetectionPattern(m, PositionDetectionPatternLocation.TopRight);
@@ -379,7 +379,7 @@ public class QrSymbolBuilderTests
     public void Encode_EncodeDataBits_EncodesExpectedSymbol7H()
     {
         var version = QrVersion.GetVersion(7);
-        var m = new BitMatrix(version.ModulesPerSide, version.ModulesPerSide);
+        var m = new ByteMatrix(version.ModulesPerSide, version.ModulesPerSide);
 
         QrSymbolBuilder.EncodePositionDetectionPattern(m, PositionDetectionPatternLocation.TopLeft);
         QrSymbolBuilder.EncodePositionDetectionPattern(m, PositionDetectionPatternLocation.TopRight);
@@ -442,10 +442,10 @@ public class QrSymbolBuilderTests
             """, MatrixToString(m), ignoreLineEndingDifferences: true, ignoreAllWhiteSpace: true);
     }
 
-    private static (BitMatrix, QrVersion) Get1MSymbolWithoutData(MaskPattern maskPattern)
+    private static (ByteMatrix, QrVersion) Get1MSymbolWithoutData(MaskPattern maskPattern)
     {
         var version = QrVersion.GetVersion(1);
-        var m = new BitMatrix(version.ModulesPerSide, version.ModulesPerSide);
+        var m = new ByteMatrix(version.ModulesPerSide, version.ModulesPerSide);
 
         QrSymbolBuilder.EncodePositionDetectionPattern(m, PositionDetectionPatternLocation.TopLeft);
         QrSymbolBuilder.EncodePositionDetectionPattern(m, PositionDetectionPatternLocation.TopRight);
@@ -823,7 +823,7 @@ public class QrSymbolBuilderTests
         var totalModules = 100;
         for (var i = 0; i <= totalModules; i++)
         {
-            var m = new BitMatrix(10, 10);
+            var m = new ByteMatrix(10, 10);
 
             var darkModuleCount = 0;
             for (var y = 0; y < 10; y++)
@@ -858,7 +858,7 @@ public class QrSymbolBuilderTests
     public void CalculateRatioPenalty_ReturnsExpectedPenalty2(int darkModules, int totalModules, int expectedPenalty)
     {
         var size = (int)double.Sqrt(totalModules);
-        var m = new BitMatrix(size, size);
+        var m = new ByteMatrix(size, size);
 
         for (var y = 0; y < size; y++)
         {
@@ -1003,16 +1003,16 @@ public class QrSymbolBuilderTests
             """, MatrixToString(symbol));
     }
 
-    private static BitMatrix InputToMatrix(string input)
+    private static ByteMatrix InputToMatrix(string input)
     {
-        BitMatrix? matrix = null;
+        ByteMatrix? matrix = null;
         var span = input.AsSpan();
         var height = span.Count("\n") + 1;
         var y = 0;
         var lineLength = 0;
         foreach (var line in span.EnumerateLines())
         {
-            matrix ??= new BitMatrix(line.ToString().Replace(" ", "").Length, height);
+            matrix ??= new ByteMatrix(line.ToString().Replace(" ", "").Length, height);
             lineLength = lineLength == 0 ? line.Length : lineLength;
 
             if (lineLength != line.Length)

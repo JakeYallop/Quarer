@@ -1,14 +1,14 @@
-﻿using System.Buffers;
-using System.Diagnostics;
+﻿using System.Diagnostics;
+using System.Runtime.CompilerServices;
 
 namespace Quarer;
 
 public static class QrSymbolBuilder
 {
-    public static (BitMatrix Matrix, MaskPattern SelectedMaskPattern) BuildSymbol(BitBuffer dataCodewords, QrVersion version, ErrorCorrectionLevel errorCorrectionLevel, MaskPattern? maskPattern = null)
-        => BuildSymbol(new BitMatrix(version.ModulesPerSide, version.ModulesPerSide), dataCodewords, version, errorCorrectionLevel, maskPattern);
+    public static (ByteMatrix Matrix, MaskPattern SelectedMaskPattern) BuildSymbol(BitBuffer dataCodewords, QrVersion version, ErrorCorrectionLevel errorCorrectionLevel, MaskPattern? maskPattern = null)
+        => BuildSymbol(new ByteMatrix(version.ModulesPerSide, version.ModulesPerSide), dataCodewords, version, errorCorrectionLevel, maskPattern);
 
-    private static (BitMatrix Matrix, MaskPattern SelectedMaskPattern) BuildSymbol(BitMatrix matrix, BitBuffer dataCodewords, QrVersion version, ErrorCorrectionLevel errorCorrectionLevel, MaskPattern? maskPattern = null)
+    private static (ByteMatrix Matrix, MaskPattern SelectedMaskPattern) BuildSymbol(ByteMatrix matrix, BitBuffer dataCodewords, QrVersion version, ErrorCorrectionLevel errorCorrectionLevel, MaskPattern? maskPattern = null)
     {
         EncodePositionDetectionPattern(matrix, PositionDetectionPatternLocation.TopLeft);
         EncodePositionDetectionPattern(matrix, PositionDetectionPatternLocation.TopRight);
@@ -68,7 +68,7 @@ public static class QrSymbolBuilder
 
     private static int MaxAbsoluteValue(Point p) => Math.Max(Math.Abs(p.X), Math.Abs(p.Y));
 
-    public static void EncodePositionDetectionPattern(BitMatrix matrix, PositionDetectionPatternLocation location)
+    public static void EncodePositionDetectionPattern(ByteMatrix matrix, PositionDetectionPatternLocation location)
     {
         //version 1 code is 21x21
         if (matrix.Width < 21 || matrix.Height < 21)
@@ -101,9 +101,9 @@ public static class QrSymbolBuilder
         EncodeSeparatorPattern(matrix, xStart, yStart);
     }
 
-    private static void EncodeSeparatorPattern(BitMatrix matrix, int xStart, int yStart)
+    private static void EncodeSeparatorPattern(ByteMatrix matrix, int xStart, int yStart)
     {
-        static void SetIfInside(BitMatrix matrix, int x, int y)
+        static void SetIfInside(ByteMatrix matrix, int x, int y)
         {
             if (x >= 0 && x < matrix.Width && y >= 0 && y < matrix.Height)
             {
@@ -120,14 +120,14 @@ public static class QrSymbolBuilder
         }
     }
 
-    public static void EncodeStaticDarkModule(BitMatrix matrix) => matrix[8, matrix.Height - 8] = true;
+    public static void EncodeStaticDarkModule(ByteMatrix matrix) => matrix[8, matrix.Height - 8] = true;
 
     /// <summary>
     /// Encode position adjustment patterns into the symbol. This step must be done bfore encoding the timing patterns.
     /// </summary>
     /// <param name="matrix"></param>
     /// <param name="version"></param>
-    public static void EncodePositionAdjustmentPatterns(BitMatrix matrix, QrVersion version)
+    public static void EncodePositionAdjustmentPatterns(ByteMatrix matrix, QrVersion version)
     {
         // version 1 QrCode does not have any alignment patterns
         if (version.Version <= 1)
@@ -154,10 +154,10 @@ public static class QrSymbolBuilder
         }
     }
 
-    private static bool DoesNotOverlapFinderPatterns(BitMatrix matrix, int x, int y)
+    private static bool DoesNotOverlapFinderPatterns(ByteMatrix matrix, int x, int y)
         => (y > 7 && y < matrix.Height - 8) || (x > 7 && x < matrix.Width - 8) || (x > matrix.Width - 8 && y > matrix.Height - 8);
 
-    private static void EncodePositionAdjustmentPattern(BitMatrix matrix, int centreX, int centreY)
+    private static void EncodePositionAdjustmentPattern(ByteMatrix matrix, int centreX, int centreY)
     {
         Debug.Assert(matrix.Width >= 21 && matrix.Height >= 21);
         Debug.Assert(centreX >= 2 && centreY >= 2);
@@ -187,7 +187,7 @@ public static class QrSymbolBuilder
     /// Encode timing patterns into the symbol.
     /// </summary>
     /// <param name="matrix"></param>
-    public static void EncodeTimingPatterns(BitMatrix matrix)
+    public static void EncodeTimingPatterns(ByteMatrix matrix)
     {
         // skip position detection and separator patterns
         // no special handling of alignment patterns is necessary as the alignments patterns line up
@@ -220,7 +220,7 @@ public static class QrSymbolBuilder
     /// </summary>
     public const int VersionInformationGeneratorPolynomial = 0b1111100100101;
 
-    public static void EncodeFormatInformation(BitMatrix matrix, ErrorCorrectionLevel errorCorrectionLevel, MaskPattern maskPattern)
+    public static void EncodeFormatInformation(ByteMatrix matrix, ErrorCorrectionLevel errorCorrectionLevel, MaskPattern maskPattern)
     {
         var formatInformation = GetFormatInformation(errorCorrectionLevel, (byte)maskPattern);
         var size = matrix.Width;
@@ -276,7 +276,7 @@ public static class QrSymbolBuilder
         return formatInfo;
     }
 
-    public static void EncodeVersionInformation(BitMatrix matrix, QrVersion version)
+    public static void EncodeVersionInformation(ByteMatrix matrix, QrVersion version)
     {
         if (version.Version is < 7)
         {
@@ -303,7 +303,7 @@ public static class QrSymbolBuilder
         }
     }
 
-    public static void EncodeDataBits(BitMatrix matrix, QrVersion version, BitBuffer data)
+    public static void EncodeDataBits(ByteMatrix matrix, QrVersion version, BitBuffer data)
     {
         if (version.TotalCodewords != data.ByteCount)
         {
@@ -366,7 +366,7 @@ public static class QrSymbolBuilder
     }
 
     //TODO: Tests for this
-    public static void ApplyMask(BitMatrix matrix, QrVersion version, MaskPattern mask)
+    public static void ApplyMask(ByteMatrix matrix, QrVersion version, MaskPattern mask)
     {
         var maskFunction = GetMaskFunction(mask);
         var functionModules = FunctionModules.GetForVersion(version);
@@ -441,7 +441,7 @@ public static class QrSymbolBuilder
         return yRange[..index];
     }
 
-    public static int CalculatePenalty(BitMatrix matrix)
+    public static int CalculatePenalty(ByteMatrix matrix)
     {
         var (rowPenalty, rowPatternPenalty) = CalculateRowPenalty(matrix);
         var (columnPenalty, columnPatternPenalty) = CalculateColumnPenalty(matrix);
@@ -456,13 +456,13 @@ public static class QrSymbolBuilder
     /// </summary>
     /// <param name="matrix"></param>
     /// <returns></returns>
-    public static (int LinePenalty, int PatternPenalty) CalculateRowPenalty(BitMatrix matrix)
+    public static (int LinePenalty, int PatternPenalty) CalculateRowPenalty(ByteMatrix matrix)
     {
         var linePenaltyTotal = 0;
         var patternPenaltyTotal = 0;
-        for (var i = 0; i < matrix.Height; i++)
+        for (var row = 0; row < matrix.Height; row++)
         {
-            var (linePenalty, patternPenalty) = CalculateLineAndPatternPenalty(matrix.GetRow(i));
+            var (linePenalty, patternPenalty) = CalculateLineAndPatternPenaltyNonVectorized(matrix.GetRow(row));
             linePenaltyTotal += linePenalty;
             patternPenaltyTotal += patternPenalty;
         }
@@ -475,13 +475,13 @@ public static class QrSymbolBuilder
     /// </summary>
     /// <param name="matrix"></param>
     /// <returns></returns>
-    public static (int ColumnPenalty, int PatternPenalty) CalculateColumnPenalty(BitMatrix matrix)
+    public static (int ColumnPenalty, int PatternPenalty) CalculateColumnPenalty(ByteMatrix matrix)
     {
         var linePenaltyTotal = 0;
         var patternPenaltyTotal = 0;
-        for (var i = 0; i < matrix.Width; i++)
+        for (var column = 0; column < matrix.Width; column++)
         {
-            var (linePenalty, patternPenalty) = CalculateLineAndPatternPenalty(matrix.GetColumn(i));
+            var (linePenalty, patternPenalty) = CalculateLineAndPatternPenaltyNonVectorized(matrix.GetColumn(column));
             linePenaltyTotal += linePenalty;
             patternPenaltyTotal += patternPenalty;
         }
@@ -489,48 +489,38 @@ public static class QrSymbolBuilder
         return (linePenaltyTotal, patternPenaltyTotal);
     }
 
-    private static ReadOnlySpan<char> FinderPatternTrailing => [(char)0, (char)0, (char)0, (char)0, (char)1, (char)0, (char)1, (char)1, (char)1, (char)0, (char)1];
-    private static ReadOnlySpan<char> FinderPatternLeading => [(char)1, (char)0, (char)1, (char)1, (char)1, (char)0, (char)1, (char)0, (char)0, (char)0, (char)0];
-    private static ReadOnlySpan<char> FinderPatternAll => [(char)0, (char)0, (char)0, (char)0, (char)1, (char)0, (char)1, (char)1, (char)1, (char)0, (char)1, (char)0, (char)0, (char)0, (char)0];
-    private static readonly SearchValues<string> DarkLinePattern = SearchValues.Create([new string([(char)1, (char)1, (char)1, (char)1, (char)1])], StringComparison.Ordinal);
-    private static readonly SearchValues<string> LightLinePattern = SearchValues.Create([new string([(char)0, (char)0, (char)0, (char)0, (char)0])], StringComparison.Ordinal);
+    private static ReadOnlySpan<byte> FinderPatternLeadingByte => [1, 0, 1, 1, 1, 0, 1, 0, 0, 0, 0];
+    private static ReadOnlySpan<byte> FinderPatternTrailingByte => [0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 1];
+    private static ReadOnlySpan<byte> FinderPatternAllByte => [0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 1, 0, 0, 0, 0];
+    private static ReadOnlySpan<byte> DarkLinePatternByte => [1, 1, 1, 1, 1];
+    private static ReadOnlySpan<byte> LightLinePatternByte => [0, 0, 0, 0, 0];
 
     //TODO: Evaluate the constant overhead of this vectorization - it could outweigh the benefits of the vectorization itself
     // a more linear approach could be faster, especially for smaller values, the range of values is from 21 - 187.
     // we could also implement some custom vectorization that works at the bit level
-    private static (int LinePenalty, int PatternPenalty) CalculateLineAndPatternPenalty(BitBuffer line)
+    private static (int LinePenalty, int PatternPenalty) CalculateLineAndPatternPenaltyVectorized(ReadOnlySpan<byte> values)
     {
-        if (line.Count > QrVersion.MaxModulesPerSide)
-        {
-            throw new InvalidOperationException("Line length exceeds maximum expected modules per side.");
-        }
-
-        var values = GetValues(line, stackalloc char[QrVersion.MaxModulesPerSide]);
-        AssertConvertedBytes(values);
-
         var linePenalty = 0;
 
-        var patternCount = values.Count(FinderPatternLeading);
-        patternCount += values.Count(FinderPatternTrailing);
-        patternCount -= values.Count(FinderPatternAll);
+        var patternCount = values.Count(FinderPatternLeadingByte);
+        patternCount += values.Count(FinderPatternTrailingByte);
+        patternCount -= values.Count(FinderPatternAllByte);
 
-        linePenalty += ProcessLine(values, DarkLinePattern, (char)1);
-        linePenalty += ProcessLine(values, LightLinePattern, (char)0);
+        linePenalty += ProcessLine(values, DarkLinePatternByte, isDark: 1);
+        linePenalty += ProcessLine(values, LightLinePatternByte, isDark: 0);
 
         return (linePenalty, patternCount * 40);
 
-        static int ProcessLine(ReadOnlySpan<char> values, SearchValues<string> searchPattern, char moduleType)
+        static int ProcessLine(ReadOnlySpan<byte> values, ReadOnlySpan<byte> searchPattern, byte isDark)
         {
-            var currentIndex = 0;
-            var currentLineModuleCount = 0;
             var linePenalty = 0;
 
-            currentIndex = values.IndexOfAny(searchPattern);
+            var currentIndex = values.IndexOf(searchPattern);
             while (currentIndex != -1 && currentIndex < values.Length)
             {
-                currentLineModuleCount = 5;
+                var currentLineModuleCount = 5;
                 currentIndex += currentLineModuleCount;
-                while (currentIndex < values.Length && values[currentIndex] == moduleType)
+                while (currentIndex < values.Length && values[currentIndex] == isDark)
                 {
                     currentLineModuleCount++;
                     currentIndex++;
@@ -540,38 +530,154 @@ public static class QrSymbolBuilder
                 if (currentIndex < values.Length)
                 {
                     values = values[(currentIndex + 1)..];
-                    currentIndex = values.IndexOfAny(searchPattern);
+                    currentIndex = values.IndexOf(searchPattern);
                 }
             }
 
             return linePenalty;
         }
+    }
 
-        static ReadOnlySpan<char> GetValues(BitBuffer line, Span<char> destination)
+    private static (int LinePenalty, int PatternPenalty) CalculateLineAndPatternPenaltyPartiallyVectorized(ReadOnlySpan<byte> values)
+    {
+        var patternPenaltyBuffer = new PatternPenaltyBuffer();
+        var patternPenalty = 0;
+
+        for (var i = 0; i < values.Length; i++)
         {
-            var index = 0;
-            foreach (var b in line.AsBitEnumerable())
+            var currentModule = values[i];
+
+            if (patternPenaltyBuffer.ContainsPenaltyPattern())
             {
-                // we cannot just bit cast here as the internal representation of a bool is undefined
-                destination[index] = b ? (char)1 : (char)0;
-
-                //var bit = Unsafe.BitCast<bool, byte>(b);
-                //// map bit to 0 if zero, 1 if non-zero
-                //bit = unchecked((byte)((bit | (uint)-bit) >> 31));
-                //destination[index] = (char)bit;
-
-                index++;
+                patternPenalty += 40;
             }
-            return destination[..index];
+
+            patternPenaltyBuffer.Push(currentModule);
         }
 
-        [Conditional("DEBUG")]
-        static void AssertConvertedBytes(ReadOnlySpan<char> bytes)
+
+        static int ProcessLine(ReadOnlySpan<byte> values)
         {
-            for (var i = 0; i < bytes.Length; i++)
+            var linePenalty = 0;
+            var (lastDarkSearchWasEmpty, lastLightSearchWasEmpty, currentIndex) = PerformSearch(values, dark: false, light: false);
+            while (currentIndex != -1 && currentIndex < values.Length)
             {
-                Debug.Assert(bytes[i] < 2, $"Found value greater than 1 at index {i}. Expected all values to be either 1 or 0. [{string.Join(", ", bytes.Slice(Math.Min(0, i), Math.Max(bytes.Length, i + 5)).ToArray())}");
+                var currentLineModuleCount = 5;
+                var currentModule = values[currentIndex];
+                currentIndex += currentLineModuleCount;
+                while (currentIndex < values.Length && values[currentIndex] == currentModule)
+                {
+                    currentLineModuleCount++;
+                    currentIndex++;
+                }
+
+                linePenalty += currentLineModuleCount - 2;
+                if (currentIndex < values.Length)
+                {
+                    values = values[(currentIndex + 1)..];
+                    (lastDarkSearchWasEmpty, lastLightSearchWasEmpty, currentIndex) = PerformSearch(values, lastDarkSearchWasEmpty, lastLightSearchWasEmpty);
+                }
             }
+
+            return linePenalty;
+
+            static (bool, bool, int) PerformSearch(ReadOnlySpan<byte> values, bool dark, bool light)
+            {
+                var lastDarkSearchWasEmpty = false;
+                var lastLightSearchWasEmpty = false;
+
+                var darkSearch = dark ? -1 : values.IndexOf(DarkLinePatternByte);
+                var lightSearch = light ? -1 : values.IndexOf(LightLinePatternByte);
+
+                if (darkSearch == -1)
+                {
+                    lastDarkSearchWasEmpty = true;
+                }
+
+                if (lightSearch == -1)
+                {
+                    lastLightSearchWasEmpty = true;
+                }
+
+                return (lastDarkSearchWasEmpty, lastLightSearchWasEmpty, Math.Min(darkSearch, lightSearch));
+            }
+        }
+
+        if (patternPenaltyBuffer.ContainsPenaltyPattern())
+        {
+            patternPenalty += 40;
+        }
+
+        return (ProcessLine(values), patternPenalty);
+    }
+
+    private static (int LinePenalty, int PatternPenalty) CalculateLineAndPatternPenaltyNonVectorized(ReadOnlySpan<byte> values)
+    {
+        var patternPenaltyBuffer = new PatternPenaltyBuffer();
+
+        var linePenalty = 0;
+        var patternPenalty = 0;
+
+        var currentLineModuleCount = 0;
+        var currentModuleState = 0;
+        for (var i = 0; i < values.Length; i++)
+        {
+            var currentModule = values[i];
+
+            if (patternPenaltyBuffer.ContainsPenaltyPattern())
+            {
+                patternPenalty += 40;
+            }
+
+            if (currentModule == currentModuleState)
+            {
+                patternPenaltyBuffer.Push(currentModule);
+                currentLineModuleCount++;
+            }
+            else
+            {
+                if (currentLineModuleCount >= 5)
+                {
+                    linePenalty += currentLineModuleCount - 2;
+                }
+
+                currentLineModuleCount = 1;
+                currentModuleState = currentModule;
+                patternPenaltyBuffer.Push(currentModule);
+            }
+        }
+
+        if (currentLineModuleCount >= 5)
+        {
+            linePenalty += currentLineModuleCount - 2;
+        }
+
+        if (patternPenaltyBuffer.ContainsPenaltyPattern())
+        {
+            patternPenalty += 40;
+        }
+
+        return (linePenalty, patternPenalty);
+    }
+
+    private ref struct PatternPenaltyBuffer()
+    {
+        private ushort _pattern = ushort.MaxValue;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Push(byte value) => _pattern = (ushort)(((_pattern << 1) | value) & 0b0111_1111_1111_1111);
+
+        private const ushort LeadingPattern = 0b00000_00001011101;
+        private const ushort TrailingPattern = 0b00000_10111010000;
+        private const ushort DupePattern = 0b0_000010111010000;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public readonly bool ContainsPenaltyPattern()
+        {
+            var dupePattern = _pattern;
+            var leadingOrTrailing = _pattern & 0b111_1111_1111;
+            //avoid double counting pattern if it has 0000 on both sides
+            return leadingOrTrailing is LeadingPattern or TrailingPattern && dupePattern is not DupePattern;
         }
     }
 
@@ -580,7 +686,7 @@ public static class QrSymbolBuilder
     /// </summary>
     /// <param name="matrix"></param>
     /// <returns></returns>
-    public static int CalculateBlocksPenalty(BitMatrix matrix)
+    public static int CalculateBlocksPenalty(ByteMatrix matrix)
     {
         var blocksPenalty = 0;
         for (var y = 0; y < matrix.Height - 1; y++)
@@ -616,18 +722,13 @@ public static class QrSymbolBuilder
         60, 60, 60, 60, 60, 70, 70, 70, 70, 70, 80, 80, 80, 80, 80, // 31 - 45
         90, 90, 90, 90, 90, // 46 - 50 (inclusive)
     ];
-    public static int CalculateRatioPenalty(BitMatrix matrix)
+    public static int CalculateRatioPenalty(ByteMatrix matrix)
     {
         var darkModules = 0;
         for (var i = 0; i < matrix.Height; i++)
         {
-            for (var j = 0; j < matrix.Width; j++)
-            {
-                if (matrix[j, i])
-                {
-                    darkModules++;
-                }
-            }
+            var row = matrix.GetRow(i);
+            darkModules += row.Count((byte)1);
         }
 
         var totalModules = matrix.Width * matrix.Height;
