@@ -11,7 +11,7 @@ public partial class Benchmarks
         yield return "1234567";
         yield return "A short alphanumeric string with some extra bits on the end ::::::*******";
         yield return new string('A', 3000);
-        yield return new string('1', 7089); //max size QR code
+        yield return new string('1', 5596); //max size 40M numeric QR code
     }
 
     public SkiaSharp.QrCode.QRCodeGenerator SkiaGenerator = null!;
