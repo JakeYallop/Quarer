@@ -15,15 +15,15 @@ public class ByteMatrixTests
         {
             for (var x = 0; x < width; x++)
             {
-                Assert.False(matrix[x, y]);
+                Assert.Equal(0, matrix[x, y]);
             }
         }
 
-        matrix[0, 0] = true;
-        Assert.True(matrix[0, 0]);
+        matrix[0, 0] = 1;
+        Assert.Equal(1, matrix[0, 0]);
 
-        matrix[width - 1, height - 1] = true;
-        Assert.True(matrix[width - 1, height - 1]);
+        matrix[width - 1, height - 1] = 1;
+        Assert.Equal(1, matrix[width - 1, height - 1]);
     }
 
     [Fact]
@@ -33,15 +33,15 @@ public class ByteMatrixTests
         var height = 31;
         var matrix = new ByteMatrix(width, height);
 
-        matrix[0, 0] = true;
-        matrix[width - 1, 0] = true;
+        matrix[0, 0] = 1;
+        matrix[width - 1, 0] = 1;
         var row = matrix.GetRow(0);
         Assert.Equal(1, row[0]);
         Assert.Equal(0, row[1]);
         Assert.Equal(1, row[width - 1]);
 
-        matrix[0, height - 1] = true;
-        matrix[width - 1, height - 1] = true;
+        matrix[0, height - 1] = 1;
+        matrix[width - 1, height - 1] = 1;
         row = matrix.GetRow(height - 1);
         Assert.Equal(1, row[0]);
         Assert.Equal(0, row[1]);
@@ -69,15 +69,15 @@ public class ByteMatrixTests
         var height = 31;
         var matrix = new ByteMatrix(width, height);
 
-        matrix[0, 0] = true;
-        matrix[0, height - 1] = true;
+        matrix[0, 0] = 1;
+        matrix[0, height - 1] = 1;
         var column = matrix.GetColumn(0);
         Assert.Equal(1, column[0]);
         Assert.Equal(0, column[1]);
         Assert.Equal(1, column[height - 1]);
 
-        matrix[width - 1, 0] = true;
-        matrix[width - 1, height - 1] = true;
+        matrix[width - 1, 0] = 1;
+        matrix[width - 1, height - 1] = 1;
         column = matrix.GetColumn(width - 1);
         Assert.Equal(1, column[0]);
         Assert.Equal(0, column[1]);
@@ -202,7 +202,7 @@ public class ByteMatrixTests
                 }
 
                 Debug.Assert(input[written] is 'X' or '-', "Expected input to consist of only 'X' and '-'.");
-                matrix[x, y] = input[written] == 'X';
+                matrix[x, y] = input[written] == 'X' ? (byte)1 : (byte)0;
                 written++;
             }
         }

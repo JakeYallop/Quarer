@@ -1,6 +1,5 @@
 ﻿using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace Quarer;
@@ -30,7 +29,7 @@ public class ByteMatrix
 
     public int Width { get; }
     public int Height { get; }
-    public virtual bool this[int x, int y]
+    public virtual byte this[int x, int y]
     {
         get
         {
@@ -44,7 +43,7 @@ public class ByteMatrix
                 ThrowArgumentOutOfRangeException(nameof(x));
             }
 
-            return Unsafe.As<byte, bool>(ref _matrixRowMajorOrder[y][x]);
+            return _matrixRowMajorOrder[y][x];
         }
 
         set
@@ -59,47 +58,13 @@ public class ByteMatrix
                 ThrowArgumentOutOfRangeException(nameof(x));
             }
 
-            _matrixRowMajorOrder[y][x] = Unsafe.As<bool, byte>(ref value);
-            _matrixColumnMajorOrder[x][y] = Unsafe.As<bool, byte>(ref value);
+            _matrixRowMajorOrder[y][x] = value;
+            _matrixColumnMajorOrder[x][y] = value;
         }
-    }
-
-    public byte Get(int x, int y)
-    {
-        if (unchecked((uint)x >= Width))
-        {
-            ThrowArgumentOutOfRangeException(nameof(x));
-        }
-        if (unchecked((uint)y >= Height))
-        {
-            ThrowArgumentOutOfRangeException(nameof(x));
-        }
-        return _matrixRowMajorOrder[y][x];
-    }
-
-    public void Set(int x, int y, byte value)
-    {
-        if (value > 1)
-        {
-            ThrowArgumentOutOfRangeException(nameof(value), "Value must be 0 or 1.");
-        }
-
-        if (unchecked((uint)x >= Width))
-        {
-            ThrowArgumentOutOfRangeException(nameof(x));
-        }
-
-        if (unchecked((uint)y >= Height))
-        {
-            ThrowArgumentOutOfRangeException(nameof(x));
-        }
-
-        _matrixRowMajorOrder[y][x] = value;
     }
 
     [DoesNotReturn]
     private static void ThrowArgumentOutOfRangeException(string paramName) => throw new ArgumentOutOfRangeException(paramName);
-    private static void ThrowArgumentOutOfRangeException(string paramName, string message) => throw new ArgumentOutOfRangeException(paramName, message);
 
     public ReadOnlySpan<byte> GetRow(int row)
     {
@@ -198,7 +163,7 @@ internal sealed class ByteMatrixDebugView(ByteMatrix byteMatrix)
             {
                 for (var x = 0; x < _matrix.Width; x++)
                 {
-                    sb.Append(_matrix[x, y] ? 'X' : '-');
+                    sb.Append($"{_matrix[x, y]:X2}");
                     if (x + 1 < _matrix.Width)
                     {
                         sb.Append(' ');

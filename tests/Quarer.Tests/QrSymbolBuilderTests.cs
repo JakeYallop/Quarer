@@ -160,8 +160,8 @@ public class QrSymbolBuilderTests
         {
             for (var j = 0; j < 6; j++)
             {
-                Assert.False(m[j, size - 11 + i]);
-                Assert.False(m[size - 11 + i, j]);
+                Assert.Equal(0, m[j, size - 11 + i]);
+                Assert.Equal(0, m[size - 11 + i, j]);
             }
         }
     }
@@ -178,10 +178,11 @@ public class QrSymbolBuilderTests
         {
             for (var j = 0; j < 6; j++)
             {
-                hasVersionInformation = hasVersionInformation || m[j, size - 11 + i];
-                hasVersionInformation = hasVersionInformation || m[size - 11 + i, j];
+                hasVersionInformation = hasVersionInformation || m[j, size - 11 + i] != 0;
+                hasVersionInformation = hasVersionInformation || m[size - 11 + i, j] != 0;
             }
         }
+        Assert.True(hasVersionInformation);
     }
 
     [Fact]
@@ -830,10 +831,10 @@ public class QrSymbolBuilderTests
             {
                 for (var x = 0; x < 10; x++)
                 {
-                    var value = false;
+                    byte value = 0;
                     if (darkModuleCount < i)
                     {
-                        value = true;
+                        value = 1;
                         darkModuleCount++;
                     }
                     m[x, y] = value;
@@ -864,7 +865,7 @@ public class QrSymbolBuilderTests
         {
             for (var x = 0; x < size; x++)
             {
-                m[x, y] = darkModules-- > 0;
+                m[x, y] = darkModules-- > 0 ? (byte)1 : (byte)0;
             }
         }
 
@@ -1029,7 +1030,7 @@ public class QrSymbolBuilderTests
                     continue;
                 }
 
-                matrix[x - spaceCount, y] = line[x] == 'X';
+                matrix[x - spaceCount, y] = line[x] == 'X' ? (byte)1 : (byte)0;
             }
             y++;
         }

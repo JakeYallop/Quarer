@@ -94,7 +94,7 @@ public static class QrSymbolBuilder
             for (var x = 0; x < 7; ++x)
             {
                 // see explanation in EmbedPositionAdjustmentPattern for how this works
-                matrix[xStart + x, yStart + y] = MaxAbsoluteValue(new Point(x, y) - new Point(3, 3)) != 2;
+                matrix[xStart + x, yStart + y] = (MaxAbsoluteValue(new Point(x, y) - new Point(3, 3)) != 2) ? (byte)1 : (byte)0;
             }
         }
 
@@ -107,7 +107,7 @@ public static class QrSymbolBuilder
         {
             if (x >= 0 && x < matrix.Width && y >= 0 && y < matrix.Height)
             {
-                matrix[x, y] = false;
+                matrix[x, y] = 0;
             }
         }
 
@@ -120,7 +120,7 @@ public static class QrSymbolBuilder
         }
     }
 
-    public static void EncodeStaticDarkModule(ByteMatrix matrix) => matrix[8, matrix.Height - 8] = true;
+    public static void EncodeStaticDarkModule(ByteMatrix matrix) => matrix[8, matrix.Height - 8] = 1;
 
     /// <summary>
     /// Encode position adjustment patterns into the symbol. This step must be done bfore encoding the timing patterns.
@@ -135,7 +135,7 @@ public static class QrSymbolBuilder
             return;
         }
 
-        if (matrix[6, 9])
+        if (matrix[6, 9] == 1)
         {
             throw new InvalidOperationException("Timing patterns or position adjustment patterns have already been encoded. Ensure adjustment patterns are added before timing patters.");
         }
@@ -178,7 +178,7 @@ public static class QrSymbolBuilder
                 // Taking the max absolute value of the coordinates effectively tells us which ring we are on,
                 // with 0 being the center ring.
                 // Below, we are saying "fill this coordinate with a dark module (true) if it's not in ring 1".
-                matrix[centreX + dx, centreY + dy] = MaxAbsoluteValue(new Point(dx, dy)) != 1;
+                matrix[centreX + dx, centreY + dy] = MaxAbsoluteValue(new Point(dx, dy)) != 1 ? (byte)1 : (byte)0;
             }
         }
     }
@@ -194,7 +194,8 @@ public static class QrSymbolBuilder
         // with respect to the light and dark module alternation of the timing patterns
         for (var i = 8; i < matrix.Width - 8; i++)
         {
-            var bit = i % 2 == 0;
+            //var bit = i % 2 == 0;
+            var bit = (byte)((i & 0x1) ^ 1);
             matrix[i, 6] = bit;
             matrix[6, i] = bit;
         }
@@ -226,41 +227,41 @@ public static class QrSymbolBuilder
         var size = matrix.Width;
         Debug.Assert(matrix.Width == matrix.Height);
 
-        matrix[8, 0] = (formatInformation & 0b000_0000_0000_0001) != 0;
-        matrix[8, 1] = (formatInformation & 0b000_0000_0000_0010) != 0;
-        matrix[8, 2] = (formatInformation & 0b000_0000_0000_0100) != 0;
-        matrix[8, 3] = (formatInformation & 0b000_0000_0000_1000) != 0;
-        matrix[8, 4] = (formatInformation & 0b000_0000_0001_0000) != 0;
-        matrix[8, 5] = (formatInformation & 0b000_0000_0010_0000) != 0;
+        matrix[8, 0] = (formatInformation & 0b000_0000_0000_0001) != 0 ? (byte)1 : (byte)0;
+        matrix[8, 1] = (formatInformation & 0b000_0000_0000_0010) != 0 ? (byte)1 : (byte)0;
+        matrix[8, 2] = (formatInformation & 0b000_0000_0000_0100) != 0 ? (byte)1 : (byte)0;
+        matrix[8, 3] = (formatInformation & 0b000_0000_0000_1000) != 0 ? (byte)1 : (byte)0;
+        matrix[8, 4] = (formatInformation & 0b000_0000_0001_0000) != 0 ? (byte)1 : (byte)0;
+        matrix[8, 5] = (formatInformation & 0b000_0000_0010_0000) != 0 ? (byte)1 : (byte)0;
         // skipped - timing pattern
-        matrix[8, 7] = (formatInformation & 0b000_0000_0100_0000) != 0;
-        matrix[8, 8] = (formatInformation & 0b000_0000_1000_0000) != 0;
+        matrix[8, 7] = (formatInformation & 0b000_0000_0100_0000) != 0 ? (byte)1 : (byte)0;
+        matrix[8, 8] = (formatInformation & 0b000_0000_1000_0000) != 0 ? (byte)1 : (byte)0;
 
-        matrix[8, size - 7] = (formatInformation & 0b000_0001_0000_0000) != 0;
-        matrix[8, size - 6] = (formatInformation & 0b000_0010_0000_0000) != 0;
-        matrix[8, size - 5] = (formatInformation & 0b000_0100_0000_0000) != 0;
-        matrix[8, size - 4] = (formatInformation & 0b000_1000_0000_0000) != 0;
-        matrix[8, size - 3] = (formatInformation & 0b001_0000_0000_0000) != 0;
-        matrix[8, size - 2] = (formatInformation & 0b010_0000_0000_0000) != 0;
-        matrix[8, size - 1] = (formatInformation & 0b100_0000_0000_0000) != 0;
+        matrix[8, size - 7] = (formatInformation & 0b000_0001_0000_0000) != 0 ? (byte)1 : (byte)0;
+        matrix[8, size - 6] = (formatInformation & 0b000_0010_0000_0000) != 0 ? (byte)1 : (byte)0;
+        matrix[8, size - 5] = (formatInformation & 0b000_0100_0000_0000) != 0 ? (byte)1 : (byte)0;
+        matrix[8, size - 4] = (formatInformation & 0b000_1000_0000_0000) != 0 ? (byte)1 : (byte)0;
+        matrix[8, size - 3] = (formatInformation & 0b001_0000_0000_0000) != 0 ? (byte)1 : (byte)0;
+        matrix[8, size - 2] = (formatInformation & 0b010_0000_0000_0000) != 0 ? (byte)1 : (byte)0;
+        matrix[8, size - 1] = (formatInformation & 0b100_0000_0000_0000) != 0 ? (byte)1 : (byte)0;
 
-        matrix[size - 1, 8] = (formatInformation & 0b000_0000_0000_0001) != 0;
-        matrix[size - 2, 8] = (formatInformation & 0b000_0000_0000_0010) != 0;
-        matrix[size - 3, 8] = (formatInformation & 0b000_0000_0000_0100) != 0;
-        matrix[size - 4, 8] = (formatInformation & 0b000_0000_0000_1000) != 0;
-        matrix[size - 5, 8] = (formatInformation & 0b000_0000_0001_0000) != 0;
-        matrix[size - 6, 8] = (formatInformation & 0b000_0000_0010_0000) != 0;
-        matrix[size - 7, 8] = (formatInformation & 0b000_0000_0100_0000) != 0;
-        matrix[size - 8, 8] = (formatInformation & 0b000_0000_1000_0000) != 0;
+        matrix[size - 1, 8] = (formatInformation & 0b000_0000_0000_0001) != 0 ? (byte)1 : (byte)0;
+        matrix[size - 2, 8] = (formatInformation & 0b000_0000_0000_0010) != 0 ? (byte)1 : (byte)0;
+        matrix[size - 3, 8] = (formatInformation & 0b000_0000_0000_0100) != 0 ? (byte)1 : (byte)0;
+        matrix[size - 4, 8] = (formatInformation & 0b000_0000_0000_1000) != 0 ? (byte)1 : (byte)0;
+        matrix[size - 5, 8] = (formatInformation & 0b000_0000_0001_0000) != 0 ? (byte)1 : (byte)0;
+        matrix[size - 6, 8] = (formatInformation & 0b000_0000_0010_0000) != 0 ? (byte)1 : (byte)0;
+        matrix[size - 7, 8] = (formatInformation & 0b000_0000_0100_0000) != 0 ? (byte)1 : (byte)0;
+        matrix[size - 8, 8] = (formatInformation & 0b000_0000_1000_0000) != 0 ? (byte)1 : (byte)0;
 
-        matrix[7, 8] = (formatInformation & 0b000_0001_0000_0000) != 0;
+        matrix[7, 8] = (formatInformation & 0b000_0001_0000_0000) != 0 ? (byte)1 : (byte)0;
         // skipped - timing pattern
-        matrix[5, 8] = (formatInformation & 0b000_0010_0000_0000) != 0;
-        matrix[4, 8] = (formatInformation & 0b000_0100_0000_0000) != 0;
-        matrix[3, 8] = (formatInformation & 0b000_1000_0000_0000) != 0;
-        matrix[2, 8] = (formatInformation & 0b001_0000_0000_0000) != 0;
-        matrix[1, 8] = (formatInformation & 0b010_0000_0000_0000) != 0;
-        matrix[0, 8] = (formatInformation & 0b100_0000_0000_0000) != 0;
+        matrix[5, 8] = (formatInformation & 0b000_0010_0000_0000) != 0 ? (byte)1 : (byte)0;
+        matrix[4, 8] = (formatInformation & 0b000_0100_0000_0000) != 0 ? (byte)1 : (byte)0;
+        matrix[3, 8] = (formatInformation & 0b000_1000_0000_0000) != 0 ? (byte)1 : (byte)0;
+        matrix[2, 8] = (formatInformation & 0b001_0000_0000_0000) != 0 ? (byte)1 : (byte)0;
+        matrix[1, 8] = (formatInformation & 0b010_0000_0000_0000) != 0 ? (byte)1 : (byte)0;
+        matrix[0, 8] = (formatInformation & 0b100_0000_0000_0000) != 0 ? (byte)1 : (byte)0;
     }
 
     private static ushort GetFormatInformation(ErrorCorrectionLevel errorCorrectionLevel, byte maskPattern)
@@ -297,8 +298,8 @@ public static class QrSymbolBuilder
             for (var j = 0; j < 6; j++)
             {
                 var v = (versionInformation >> ((j * 3) + i)) & 1;
-                matrix[j, size - 11 + i] = v != 0;
-                matrix[size - 11 + i, j] = v != 0;
+                matrix[j, size - 11 + i] = v != 0 ? (byte)1 : (byte)0;
+                matrix[size - 11 + i, j] = v != 0 ? (byte)1 : (byte)0;
             }
         }
     }
@@ -343,7 +344,7 @@ public static class QrSymbolBuilder
                 if (!functionModules.IsFunctionModule(x, y))
                 {
                     var bit = data[bitIndex];
-                    matrix[x, y] = bit;
+                    matrix[x, y] = bit ? (byte)1 : (byte)0;
                     bitIndex++;
                 }
 
@@ -355,7 +356,7 @@ public static class QrSymbolBuilder
                 if (!functionModules.IsFunctionModule(x - 1, y))
                 {
                     var bit = data[bitIndex];
-                    matrix[x - 1, y] = bit;
+                    matrix[x - 1, y] = bit ? (byte)1 : (byte)0;
                     bitIndex++;
                 }
             }
@@ -365,7 +366,6 @@ public static class QrSymbolBuilder
         Debug.Assert(bitIndex == (version.TotalCodewords * 8));
     }
 
-    //TODO: Tests for this
     public static void ApplyMask(ByteMatrix matrix, QrVersion version, MaskPattern mask)
     {
         var maskFunction = GetMaskFunction(mask);
@@ -376,7 +376,7 @@ public static class QrSymbolBuilder
             {
                 if (!functionModules.IsFunctionModule(x, y))
                 {
-                    matrix[x, y] = maskFunction(matrix[x, y], x, y);
+                    matrix[x, y] = maskFunction(matrix[x, y] != 0, x, y) ? (byte)1 : (byte)0;
                 }
             }
         }
@@ -691,8 +691,8 @@ public static class QrSymbolBuilder
         for (var y = 0; y < matrix.Height - 1; y++)
         {
             var x = 0;
-            var row1 = matrix.Get(x, y);
-            var row2 = matrix.Get(x, y + 1);
+            var row1 = matrix[x, y];
+            var row2 = matrix[x, y + 1];
 
             byte pattern = 0;
             pattern |= (byte)(row1 << 3);
@@ -702,8 +702,8 @@ public static class QrSymbolBuilder
             for (; x < matrix.Width; x++)
             {
                 pattern = (byte)(pattern >> 2);
-                pattern |= (byte)((matrix.Get(x, y)) << 3);
-                pattern |= (byte)((matrix.Get(x, y + 1)) << 2);
+                pattern |= (byte)((matrix[x, y]) << 3);
+                pattern |= (byte)((matrix[x, y + 1]) << 2);
 
                 if (pattern is 0b0000 or 0b1111)
                 {

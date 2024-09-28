@@ -8,7 +8,7 @@ public sealed class FunctionModules
         _matrix = matrix;
     }
 
-    public bool IsFunctionModule(int x, int y) => _matrix[x, y];
+    public bool IsFunctionModule(int x, int y) => _matrix[x, y] != 0;
     public static FunctionModules GetForVersion(QrVersion version) => FunctionModuleMatrixCache.GetFunctionModulesMatrix(version);
 
     internal static class FunctionModuleMatrixCache
@@ -47,10 +47,10 @@ public sealed class FunctionModules
 
     private class TrackingMatrix(int width, int height) : ByteMatrix(width, height)
     {
-        public override bool this[int x, int y]
+        public override byte this[int x, int y]
         {
             get => base[x, y];
-            set => Matrix[x, y] = true;
+            set => Matrix[x, y] = 1;
         }
 
         public ByteMatrix Matrix { get; } = new(width, height);
