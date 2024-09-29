@@ -1,7 +1,11 @@
 <Project>
-  <PropertyGroup>    
+  <PropertyGroup>
     <!-- Central package management: https://learn.microsoft.com/en-gb/nuget/consume-packages/central-package-management -->
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <CentralPackageVersionOverrideEnabled>false</CentralPackageVersionOverrideEnabled>
   </PropertyGroup>
+  <ItemGroup>
+    <PackageVersion Include="CsvHelper" Version="33.0.1" />
+    <PackageVersion Include="ScottPlot" Version="5.0.39" />
+  </ItemGroup>
 </Project>

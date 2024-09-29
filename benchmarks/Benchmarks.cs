@@ -6,6 +6,7 @@ BenchmarkRunner.Run<Benchmarks>(args: args);
 [HideColumns("RatioSD", "StdDev")]
 [MemoryDiagnoser]
 [ShortRunJob]
+[HtmlExporter]
 #pragma warning disable CA1050 // Declare types in namespaces
 public partial class Benchmarks
 {
