@@ -5,6 +5,14 @@ using CsvHelper;
 using CsvHelper.Configuration.Attributes;
 using ScottPlot;
 
+if (!File.Exists("../../../../../benchmarks/bin/Release/net9.0/BenchmarkDotNet.Artifacts/results/Benchmarks-report.csv"))
+{
+    Console.BackgroundColor = ConsoleColor.Black;
+    Console.ForegroundColor = ConsoleColor.Red;
+    Console.WriteLine("Benchmark results file not found. Please run the benchmarks project first (remmeber to run it in release configuration).");
+    return;
+}
+
 using var streamReader = new StreamReader("../../../../../benchmarks/bin/Release/net9.0/BenchmarkDotNet.Artifacts/results/Benchmarks-report.csv");
 using var csvParser = new CsvReader(streamReader, CultureInfo.InvariantCulture);
 
