@@ -1,5 +1,4 @@
-﻿// See https://aka.ms/new-console-template for more information
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Collections.Frozen;
 using System.Globalization;
 using CsvHelper;
 using CsvHelper.Configuration.Attributes;
@@ -19,24 +18,30 @@ using var csvParser = new CsvReader(streamReader, CultureInfo.InvariantCulture);
 var results = new List<Result>(160);
 var uniqueMethods = new HashSet<string>();
 
+// Exclude the following libraries from the graph as they are signficantly slower than the others and throw off the scale
+var excluded = new string[] { "Apose.BarCode", "SkiaSharp.QrCode" }.ToFrozenSet();
+
 foreach (var record in csvParser.EnumerateRecords(new BenchmarkRecord()))
 {
-    var versionSpaceIndex = record.Numeric.IndexOf(' ');
-    var version = int.Parse(record.Numeric[(versionSpaceIndex + 1)..]);
+    if (excluded.Contains(record.Method))
+    {
+        continue;
+    }
+
+    var versionSpaceIndex = record.Version.IndexOf(' ');
+    var version = int.Parse(record.Version[(versionSpaceIndex + 1)..]);
 
     var meanSpan = record.Mean.AsSpan();
     var meanSpaceIndex = meanSpan.IndexOf(' ');
     var mean = double.Parse(meanSpan[..meanSpaceIndex]);
-    var meanUnit = meanSpan[(meanSpaceIndex + 1)..];
-    var nanosecondMean = GetNanosecondsValue(meanUnit, mean);
+    var meanUnits = meanSpan[(meanSpaceIndex + 1)..];
 
     var allocatedSpan = record.Allocated.AsSpan();
     var allocatedIndexOfSpace = allocatedSpan.IndexOf(' ');
     var allocated = double.Parse(allocatedSpan[..allocatedIndexOfSpace]);
-    var allocatedUnit = allocatedSpan[(allocatedIndexOfSpace + 1)..];
-    var bytesAllocated = GetBytesValue(allocatedUnit, allocated);
+    var allocatedUnits = allocatedSpan[(allocatedIndexOfSpace + 1)..];
 
-    results.Add(new(record.Method, version, nanosecondMean, bytesAllocated));
+    results.Add(new(record.Method, version, mean, meanUnits.ToString(), allocated, allocatedUnits.ToString()));
 
     uniqueMethods.Add(record.Method);
 }
@@ -46,55 +51,42 @@ var sortedByVersion = results.OrderBy(x => x.Method != "Quarer").ThenBy(x => x.M
 var timingPlot = new Plot();
 var memoryPlot = new Plot();
 
+var legend = new List<LegendItem>();
+
 foreach (var chunkedResults in sortedByVersion.Chunk(40))
 {
     var color = timingPlot.Add.GetNextColor();
 
     var xs = chunkedResults.Select(x => x.Version).ToArray();
-    var timingYs = chunkedResults.Select(x => x.MeanNanonseconds).ToArray();
-    var memoryYs = chunkedResults.Select(x => x.AllocatedBytes).ToArray();
+    var timingYs = chunkedResults.Select(x => x.Mean).ToArray();
+    var memoryYs = chunkedResults.Select(x => x.Allocated).ToArray();
     timingPlot.Add.ScatterLine(xs, timingYs, color);
     memoryPlot.Add.ScatterLine(xs, memoryYs, color);
+    legend.Add(new()
+    {
+        LineColor = color,
+        LineWidth = 3,
+        LabelText = chunkedResults[0].Method,
+    });
 };
 
-timingPlot.Title("Encoding time (ns), numeric data, error correction level M");
-memoryPlot.Title("Memory allocated (B), numeric data, error correction level M");
-timingPlot.XLabel("QR Code version");
-memoryPlot.XLabel("QR Code version");
+SavePlot(timingPlot, "timing", "Time", "Encoding time (ns), numeric data, error correction level M", legend, sortedByVersion.Max(x => x.Mean * 1.05));
+SavePlot(memoryPlot, "memory", "Allocated", "Memory allocated (bytes), numeric data, error correction level M", legend, sortedByVersion.Max(x => x.Allocated * 1.05));
 
-timingPlot.Axes.SetLimitsX(1, 40);
-timingPlot.Axes.SetLimitsY(0, sortedByVersion.Max(x => x.MeanNanonseconds * 1.05));
-memoryPlot.Axes.SetLimitsX(1, 40);
-memoryPlot.Axes.SetLimitsY(0, sortedByVersion.Max(x => x.AllocatedBytes * 1.05));
-timingPlot.ShowLegend();
-memoryPlot.ShowLegend();
-timingPlot.SavePng("timing.png", 1200, 700);
-memoryPlot.SavePng("memory.png", 1200, 700);
-
-static double GetNanosecondsValue(ReadOnlySpan<char> unit, double value)
+static void SavePlot(Plot plot, string plotName, string yLabel, string title, List<LegendItem> legend, double yLimit)
 {
-    return unit switch
-    {
-        "ns" => value,
-        "μs" => value * 1_000,
-        "ms" => value * 1_000_000,
-        "s" => value * 1_000_000_000,
-        _ => throw new NotSupportedException($"Unit {unit} not recognised.")
-    };
+    plot.Title(title);
+    plot.XLabel("Version");
+    plot.YLabel(yLabel);
+    plot.Axes.SetLimitsX(1, 40);
+    plot.Axes.SetLimitsY(0, yLimit);
+
+    plot.ShowLegend(legend);
+    plot.Legend.Alignment = Alignment.UpperLeft;
+    plot.SavePng($"{plotName}.png", 1200, 700);
 }
 
-static double GetBytesValue(ReadOnlySpan<char> unit, double value)
-{
-    return unit switch
-    {
-        "B" => value,
-        "KB" => value * 1_024,
-        "MB" => value * 1_048_576,
-        "GB" => value * 1_073_741_824,
-        _ => throw new NotSupportedException($"Unit {unit} not recognised.")
-    };
-}
-
+#pragma warning disable CA1050 // Declare types in namespaces
 public sealed class BenchmarkRecord
 {
     public string Method { get; init; } = null!;
@@ -141,7 +133,7 @@ public sealed class BenchmarkRecord
     public string RunStrategy { get; init; } = null!;
     public string UnrollFactor { get; init; } = null!;
     public string WarmupCount { get; init; } = null!;
-    public string Numeric { get; init; } = null!;
+    public string Version { get; init; } = null!;
     public string Mean { get; init; } = null!;
     public string Error { get; init; } = null!;
     public string StdDev { get; init; } = null!;
@@ -155,7 +147,7 @@ public sealed class BenchmarkRecord
     public string AllocRatio { get; init; } = null!;
 }
 
-public sealed record Result(string Method, int Version, double MeanNanonseconds, double AllocatedBytes);
+public sealed record Result(string Method, int Version, double Mean, string MeanUnits, double Allocated, string AllocatedUnits);
 
 public sealed class SpecificStringFirstComparer(string specialString) : Comparer<string>
 {
