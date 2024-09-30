@@ -134,6 +134,7 @@ public static class QrDataEncoder
     public const byte PadPattern8_2 = 0b0001_0001;
     public const uint PadPattern32Bits = unchecked((uint)((PadPattern8_1 << 24) | (PadPattern8_2 << 16) | (PadPattern8_1 << 8) | PadPattern8_2));
 
+    [SkipLocalsInit]
     public static unsafe BitBuffer EncodeAndInterleaveErrorCorrectionBlocks(BitBuffer dataCodewordsBitBuffer, QrVersion version, ErrorCorrectionLevel errorCorrectionLevel)
     {
         if (dataCodewordsBitBuffer.ByteCount != version.GetDataCodewordsCapacity(errorCorrectionLevel))
@@ -170,6 +171,7 @@ public static class QrDataEncoder
         codewordsSeen = 0;
         var blockIndex = 1;
         Span<byte> divisionDestination = stackalloc byte[256];
+        divisionDestination.Fill(0);
         foreach (var b in errorCorrectionBlocks.EnumerateIndividualBlocks())
         {
             var dataCodewords = BitBufferMarshal.GetBytes(dataCodewordsBitBuffer, codewordsSeen, b.DataCodewordsPerBlock);

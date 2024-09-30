@@ -304,6 +304,7 @@ public static class QrSymbolBuilder
         }
     }
 
+    [SkipLocalsInit]
     public static void EncodeDataBits(ByteMatrix matrix, QrVersion version, BitBuffer data)
     {
         if (version.TotalCodewords != data.ByteCount)
