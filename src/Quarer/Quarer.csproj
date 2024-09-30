@@ -2,6 +2,7 @@
 
     <PropertyGroup>
         <TargetFramework>$(NetVersion)</TargetFramework>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <!--TODO: Enable generate documentation file -->
         <GenerateDocumentationFile>false</GenerateDocumentationFile>
     </PropertyGroup>
@@ -10,8 +11,34 @@
         <CheckForOverflowUnderflow>true</CheckForOverflowUnderflow>
     </PropertyGroup>
 
+    <PropertyGroup>
+      <PackageId>Quarer</PackageId>
+      <Version>0.1.0</Version>
+      <Authors>JakeYallop</Authors>
+      <!--TODO: Add readme -->
+      <!--<PackageReadmeFile>README.md</PackageReadmeFile>-->
+      <PackageProjectUrl>https://github.com/JakeYallop/Quarer</PackageProjectUrl>
+      <RepositoryUrl>https://github.com/JakeYallop/Quarer.git</RepositoryUrl>
+      <RepositoryType>git</RepositoryType>
+      <PackageTags>QR;QR Code;QRCode;Galois Field;Finite Field;Encoding</PackageTags>
+      <!--TODO: Improve this -->
+      <Description>A fast and efficient QR Code encoding library, with benchmarks.</Description>
+      <PackageLicenseExpression>MIT</PackageLicenseExpression>
+      <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    </PropertyGroup>
+
     <ItemGroup>
       <InternalsVisibleTo Include="Quarer.Tests" />
-      <InternalsVisibleTo Include="LookupTableGenerator"/>
+      <InternalsVisibleTo Include="LookupTableGenerator" />
     </ItemGroup>
+
+    <Target Name="RewriteVersionWhenPublishingLocally" BeforeTargets="GenerateNuspec" Condition="$(DoNotRewritePackageVersion) == 'true' and ($(CI) == '' or $(CI) == 'false')">
+      <Message Text="Rewriting version $(Version) to $(Version)-local due to not running in a CI build. Set &lt;DoNotRewritePackageVersion&gt; to true to override this behaviour." Importance="High" />
+      <PropertyGroup>
+        <!-- We define "Version" above, but PackageVersion (which defaults to $(Version) is what is actually used 
+             When the package nuspec file is generated.
+        -->
+        <PackageVersion>$(Version)-local</PackageVersion>
+      </PropertyGroup>
+    </Target>
 </Project>
