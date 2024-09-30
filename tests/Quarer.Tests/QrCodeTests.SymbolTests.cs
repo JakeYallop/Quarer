@@ -153,4 +153,60 @@ public partial class QrCodeTests
             X X X X X X X - - X - X - - - - X - - - X X X X - X - X X - - - X X - - X
             """, MatrixToString(code.Data));
     }
+
+    [Fact]
+    public void Create3()
+    {
+        var data = "HELLO WORLD WITH A LONGER TEST STRING TEST STRING TEST STRING STRING STRING STRING STRING";
+        var code = QrCode.Create(data, ErrorCorrectionLevel.H);
+        Assert.Equal(ErrorCorrectionLevel.H, code.ErrorCorrectionLevel);
+        Assert.Equal(7, code.Version.Version);
+        Assert.Equal("""
+            X X X X X X X - X X - X - X X X - - - - - - - - X - - X - X X X - X - - X - X X X X X X X
+            X - - - - - X - X - X - X X - - - - - - - X - X X X - X - - - X - - - X - - X - - - - - X
+            X - X X X - X - X - - - X X X X X X X X X - - X X X X X - X X - - X - X - - X - X X X - X
+            X - X X X - X - - X X X X X - X - - X X X X X - - - X - - - - - - - - X X - X - X X X - X
+            X - X X X - X - - X - X X X X X - X - - X X X X X - - - X - - - - X X X X - X - X X X - X
+            X - - - - - X - X - - - X X - - - - - - X - - - X X - X - - X - - X - - - - X - - - - - X
+            X X X X X X X - X - X - X - X - X - X - X - X - X - X - X - X - X - X - X - X X X X X X X
+            - - - - - - - - X - - - X - - - - - X X X - - - X X - - X - X - X - - - X - - - - - - - -
+            - - X X X - X - X - - X - X - X - X X - X X X X X - X X X - - - X X - X X X X X - - X X X
+            - X - - X - - X X - X X - - X X X - X X X - - X - - X X - X X X - - - - X X X X - X - X X
+            X - X X - X X - X X - X X X X X - X X - - X X X X X - X - X - - X X - X X - - X X - - - -
+            X - - X X X - X X - - - - X - - - - - - - - X - X - X - - - X - - - - X - X - - - - - X -
+            X - X X - X X - - - X X - - X X X - X X X - - X - - - X - X - X - X - - - X X - X X X X -
+            - - X - - - - X X X - - - X - X - X X X - - X X X - - X - X X X X X - - - - - - X - X - X
+            - - - X X - X X - X X X X X - X X - - - - X - - - - X - - - X X X X X X X - X X X - X - -
+            - - X - X - - X - - X - - X - X - X X - - - X X X - X X X X - - - X - - X X - X - - - X -
+            X - - X X - X X X - - - X X X - - - X X X - - X - - X - - - - X - X - X - - - - X X - X X
+            X X - X - - - - X - - - - X X - - - - - - - - - X X X - X X - X X X X X - X X - - - X X -
+            - - - - - - X X - X X X X X X - - - - X - - - - X X X - - - X - - X X - X - X X X X - X X
+            - - - X X X - X - X X - - - X - - X - X - - - X X - - X X - X X - X X X X X X - X - X - -
+            - X - - X X X X X - - - - - X X - - - - X X X X X X - X - X X - X X - X X X X X X X X X X
+            X - X - X - - - X - - - - - X X X X - - X - - - X - X - - - X - X X - - X - - - X - - X X
+            X - - - X - X - X X - - X X - X - - X X X - X - X - - - X X X - X - X X X - X - X X X - X
+            - X - - X - - - X X - - - X - X - - - X X - - - X - - X - - - - - - X X X - - - X - X - -
+            - X X - X X X X X - X X - - X - - X X - X X X X X - - - X X X - - - - - X X X X X X - X X
+            - X X X X X - X - X - X X X - - X - X X X X X X - X - - X X X - X X - - - - X - X X X X -
+            X - - - - X X - X - - - - - - X X - X X - - - - - X X - - - X - X - - - X - - X X - X X -
+            X - - X X - - - X - X - X X - - - X - - X - X - X X - X X - - - X - X X - X - - - X X X -
+            X - X X X X X - X - - X X X - X X - - X - X - X - - - - X - - - - - - X X - - - - - - - -
+            X - - X X - - - - - - - X X X X X X - X - - X X - X X - - - - - - X X - - - X X - X X - -
+            X - X X X X X - X X - X - - - X X X X - X X - X - X - X - - X X X - X X X - X - - - X - X
+            - X X X - X - X - X - - X - - X - - - X X - X X - X - - X X X - - - - - - - - - X - X X X
+            - - - - - X X - X - X X X - - - - X X X - - - X X X X X X - X X - - X X X - - X X - - - -
+            X - - - X X - - - X - X - - X X X - - - X X - X X X - X - - - - X X - - - X - - - X X X X
+            - - - - X - X X X - - - X - - X X - - - - X - X X X X - X X - - X - X - - - X X X X - - X
+            - X X X X - - - - X X X - - X X - X X - X - - X - - X X - X X X - - X - - X X - - - - - X
+            X - - X X - X X X - - X X - X X X - X - X X X X X X - - X X - X - - X X X X X X X - X - -
+            - - - - - - - - X - X - - - X X - X - X X - - - X X X - X X X - - - - - X - - - X - X - X
+            X X X X X X X - - X - X - X - X - X - - X - X - X - X - X X - - X X - - X - X - X X - X X
+            X - - - - - X - - - - X - X - X - X - X X - - - X X - X X X X - - - - X X - - - X X - X -
+            X - X X X - X - X - - X - X - X - - X X X X X X X X X - X X - X X - X - X X X X X X X X -
+            X - X X X - X - X X X - - - - - - X - X X - X X - X X X - X X - X X X - - X X X X X - - X
+            X - X X X - X - X - X - - X X X X - X X - - - - - - - - X - X X - - - - - X - X - X X - -
+            X - - - - - X - - X - - X - - - - X X X X - X - X X - - - X - - - X X X - X X X - - X - X
+            X X X X X X X - - X X - X - X - X X X - X X - X X X X - - - X - - X X - X - - X X - X - -
+            """, MatrixToString(code.Data));
+    }
 }
