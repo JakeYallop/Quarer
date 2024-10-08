@@ -12,14 +12,14 @@ public sealed class QrDataEncoderTests
     [InlineData("Hello, \u4E16\u754C!", ModeIndicator.Byte)]
     public void DeriveMode_ValidData_ReturnsCorrectMode(string data, ModeIndicator expectedMode)
     {
-        var mode = QrDataEncoder.DeriveMode(data);
+        var mode = QrDataEncoder.DeriveMode(Encoding.UTF8.GetBytes(data));
         Assert.Equal(expectedMode, mode);
     }
 
     [Fact]
     public void AnalyzeSimple_ValidNumericData_ReturnsCorrectEncoding()
     {
-        var data = "1234567890";
+        var data = "1234567890"u8;
         var errorCorrectionLevel = ErrorCorrectionLevel.M;
 
         var result = QrDataEncoder.AnalyzeSimple(data, errorCorrectionLevel);
@@ -35,7 +35,7 @@ public sealed class QrDataEncoderTests
     [Fact]
     public void AnalyzeSimple_ValidAlphanumericData_ReturnsCorrectEncoding()
     {
-        var data = "HELLO123";
+        var data = "HELLO123"u8;
         var errorCorrectionLevel = ErrorCorrectionLevel.L;
 
         var result = QrDataEncoder.AnalyzeSimple(data, errorCorrectionLevel);
@@ -51,7 +51,7 @@ public sealed class QrDataEncoderTests
     [Fact]
     public void AnalyzeSimple_ValidAlphanumericData_ReturnsCorrectEncoding2()
     {
-        var data = "HELLO WORLD 123456790";
+        var data = "HELLO WORLD 123456790"u8;
         var errorCorrectionLevel = ErrorCorrectionLevel.H;
 
         var result = QrDataEncoder.AnalyzeSimple(data, errorCorrectionLevel);
@@ -67,7 +67,7 @@ public sealed class QrDataEncoderTests
     [Fact]
     public void AnalyzeSimple_DataTooLarge_ReturnsEncodingWithDefaultVersion_AndDataTooLargeResult()
     {
-        var data = new string('A', 5000); // Exceed typical QR code capacity
+        var data = Enumerable.Repeat((byte)'A', 5000).ToArray(); // Exceed typical QR code capacity
         var errorCorrectionLevel = ErrorCorrectionLevel.Q;
 
         var result = QrDataEncoder.AnalyzeSimple(data, errorCorrectionLevel);
@@ -83,14 +83,14 @@ public sealed class QrDataEncoderTests
         var tripletOne = 012;
         var tripletTwo = 345;
         var doubleDigit = 67;
-        var data = $"0{tripletOne}{tripletTwo}{doubleDigit}";
+        var data = Encoding.UTF8.GetBytes($"0{tripletOne}{tripletTwo}{doubleDigit}").AsSpan();
         var errorCorrectionLevel = ErrorCorrectionLevel.M;
         var version = QrVersion.GetVersion(1);
         var characterBitCount = CharacterCount.GetCharacterCountBitCount(version, ModeIndicator.Numeric);
-        var encodingInfo = new QrEncodingInfo(version, errorCorrectionLevel, [DataSegment.Create(characterBitCount, ModeIndicator.Numeric, NumericEncoder.GetBitStreamLength(data), new(0, data.Length))]);
+        var encodingInfo = new QrEncodingInfo(version, errorCorrectionLevel, [DataSegment.Create(characterBitCount, ModeIndicator.Numeric, NumericEncoder.GetBitStreamLength(data), new(0, data.Length), EciCode.Empty)]);
 
         var bitBuffer = QrDataEncoder.EncodeDataBits(encodingInfo, data);
-        // 16 data codeword capacity
+        // 16 data codeword capacity for 1M QR Code
         Assert.Equal(16, bitBuffer.ByteCount);
         AssertExtensions.BitsEqual($"""
             {(int)ModeIndicator.Numeric:B4}
@@ -106,39 +106,33 @@ public sealed class QrDataEncoderTests
     }
 
     [Fact]
-    public void EncodeDataBits_ValidAlphanumericData_ReturnsExpectedBitStream2()
+    public void EncodeDataBits_ValidAlphanumericData_ReturnsExpectedBitStream()
     {
-        var pair1 = "AB";
-        var pair2 = "BC";
-        var pair3 = "/*";
-        var pair4 = "FG";
-        var pair5 = "$.";
-        var pair6 = "JK";
-        var pair7 = ": ";
-        var data = $"{pair1}{pair2}{pair3}{pair4}{pair5}{pair6}{pair7}";
+        var data = "ABBC/*FG$.JK: "u8;
         var errorCorrectionLevel = ErrorCorrectionLevel.M;
+        var mode = ModeIndicator.Alphanumeric;
         var version = QrVersion.GetVersion(1);
-        var characterBitCount = CharacterCount.GetCharacterCountBitCount(version, ModeIndicator.Alphanumeric);
-        var encodingInfo = new QrEncodingInfo(version, errorCorrectionLevel, [DataSegment.Create(characterBitCount, ModeIndicator.Alphanumeric, AlphanumericEncoder.GetBitStreamLength(data), new(0, data.Length))]);
+        var characterBitCount = CharacterCount.GetCharacterCountBitCount(version, mode);
+        var encodingInfo = new QrEncodingInfo(version, errorCorrectionLevel, [DataSegment.Create(characterBitCount, mode, AlphanumericEncoder.GetBitStreamLength(data), new(0, data.Length), EciCode.Empty)]);
 
         var bitBuffer = QrDataEncoder.EncodeDataBits(encodingInfo, data);
         var sb = new StringBuilder();
 
-        // 16 data codeword capacity
+        // 28 data codeword capacity for 2M QR Code
         Assert.Equal(16, bitBuffer.ByteCount);
         AssertExtensions.BitsEqual($"""
-            {(int)ModeIndicator.Alphanumeric:B4}
+            {(int)mode:B4}
             {data.Length.ToString($"B{characterBitCount}")}
-            {Bits(pair1)}{Bits(pair2)}{Bits(pair3)}{Bits(pair4)}{Bits(pair5)}{Bits(pair6)}{Bits(pair7)}
+            {Bits(data, sb)}
             {"0000"}
             {"00"}
             {QrDataEncoder.PadPattern32Bits:B32}
             """, bitBuffer.AsBitEnumerable(), divideIntoBytes: true);
 
-        string Bits(ReadOnlySpan<char> pair)
+        static string Bits(ReadOnlySpan<byte> bytes, StringBuilder sb)
         {
             var writer = new BitWriter();
-            AlphanumericEncoder.Encode(writer, pair);
+            AlphanumericEncoder.Encode(writer, bytes);
             sb.Clear();
             foreach (var b in writer.Buffer.AsBitEnumerable())
             {
@@ -146,6 +140,81 @@ public sealed class QrDataEncoderTests
             }
             return sb.ToString();
         }
+    }
+
+    [Fact]
+    public void EncodeDataBits_ValidLatin1Data_ReturnsExpectedBitStream()
+    {
+        var data = Encoding.Latin1.GetBytes("Hello World! û þ ç Ã");
+        var errorCorrectionLevel = ErrorCorrectionLevel.M;
+        var mode = ModeIndicator.Byte;
+        var version = QrVersion.GetVersion(2);
+        var characterBitCount = CharacterCount.GetCharacterCountBitCount(version, mode);
+        var encodingInfo = new QrEncodingInfo(version, errorCorrectionLevel, [DataSegment.Create(characterBitCount, mode, data.Length, new(0, data.Length), EciCode.Empty)]);
+
+        var bitBuffer = QrDataEncoder.EncodeDataBits(encodingInfo, data);
+
+        // 28 data codeword capacity for 2M QR Code
+        Assert.Equal(28, bitBuffer.ByteCount);
+        // no eci code here, as the default byte encoding for a QR code is Latin1
+        // 20 bytes + mode + character count = 21 + 4 bits
+        // 21 + terminator (4 bits) + final byte padding = 22 bytes
+        // 6 bytes of padding to reach 28 bytes
+        AssertExtensions.BitsEqual($"""
+            {(int)mode:B4}
+            {data.Length.ToString($"B{characterBitCount}")}
+            {ByteBits(data)}
+            {"0000"}
+            {QrDataEncoder.PadPattern32Bits:B32}
+            {QrDataEncoder.PadPattern8_1:B8}
+            {QrDataEncoder.PadPattern8_2:B8}
+            """, bitBuffer.AsBitEnumerable(), divideIntoBytes: true);
+    }
+
+    [Fact]
+    public void EncodeDataBits_Utf8Data_ReturnsExpectedBitStreamWithEciIndicator()
+    {
+        // \u1F604 - 😄, encoded as 0xF0 0x9F 0x98 0x84 in UTF-8
+        var data = Encoding.UTF8.GetBytes("Hello World! 😄");
+        var eciCode = new EciCode(26); // eci code for UTF-8 encoding
+        var errorCorrectionLevel = ErrorCorrectionLevel.M;
+        var mode = ModeIndicator.Byte;
+        var version = QrVersion.GetVersion(2);
+        var characterBitCount = CharacterCount.GetCharacterCountBitCount(version, mode);
+        var encodingInfo = new QrEncodingInfo(version, errorCorrectionLevel, [DataSegment.Create(characterBitCount, mode, data.Length, new(0, data.Length), eciCode)]);
+
+        var bitBuffer = QrDataEncoder.EncodeDataBits(encodingInfo, data);
+
+        // 28 data codeword capacity for 2M QR Code
+        Assert.Equal(28, bitBuffer.ByteCount);
+        // 17 bytes of data
+        // eci mode indicator (4 bits) + eci code (8 bits) + mode indicator (4 bits) + character count (8 bits) = 3 bytes
+        // data + header data + terminator (4 bits) = 20 bytes and 4 bits
+        // (19 and 4 bits) + final byte padding = 21 bytes (4 bits of padding)
+        // 7 bytes of padding
+        AssertExtensions.BitsEqual($"""
+            {(int)ModeIndicator.Eci:B4}
+            {eciCode.Value:B8}
+            {(int)mode:B4}
+            {data.Length.ToString($"B{characterBitCount}")}
+            {ByteBits(data)}
+            {"0000"}
+            {"0000"}
+            {QrDataEncoder.PadPattern32Bits:B32}
+            {QrDataEncoder.PadPattern8_1:B8}
+            {QrDataEncoder.PadPattern8_2:B8}
+            {QrDataEncoder.PadPattern8_1:B8}
+            """, bitBuffer.AsBitEnumerable(), divideIntoBytes: true);
+    }
+
+    private static string ByteBits(ReadOnlySpan<byte> bytes)
+    {
+        var sb = new StringBuilder();
+        foreach (var b in bytes)
+        {
+            sb.Append($"{b:B8}");
+        }
+        return sb.ToString();
     }
 
     public static TheoryData<QrVersion, ErrorCorrectionLevel, BitBuffer, byte[]> EncodeAndInterleaveErrorCorrectionBlocksData()

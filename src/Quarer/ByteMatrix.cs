@@ -149,6 +149,7 @@ public class ByteMatrix
     }
 }
 
+[ExcludeFromCodeCoverage]
 internal sealed class ByteMatrixDebugView(ByteMatrix byteMatrix)
 {
     [DebuggerBrowsable(DebuggerBrowsableState.Never)]

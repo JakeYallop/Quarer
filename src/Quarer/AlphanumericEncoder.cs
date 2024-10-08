@@ -4,7 +4,7 @@ namespace Quarer;
 
 internal static class AlphanumericEncoder
 {
-    public const string Characters = "0123456789AABCDEFGHIJKLMNOPQRSTUVWXYZ $%*+-./:";
+    public static ReadOnlySpan<byte> Characters => "0123456789AABCDEFGHIJKLMNOPQRSTUVWXYZ $%*+-./:"u8;
 
     public static ReadOnlySpan<short> Character2Map =>
     [
@@ -132,7 +132,7 @@ internal static class AlphanumericEncoder
         1575,   // Z - 90
     ];
 
-    public static void Encode(BitWriter writer, scoped ReadOnlySpan<char> data)
+    public static void Encode(BitWriter writer, scoped ReadOnlySpan<byte> data)
     {
         var position = 0;
         for (; position + 2 <= data.Length; position += 2)
@@ -159,6 +159,6 @@ internal static class AlphanumericEncoder
     /// Gets the length of an alphanumeric bitstream created from the provided data, excluding the mode and character count indicator bits.
     /// </summary>
     /// <returns></returns>
-    public static int GetBitStreamLength(scoped ReadOnlySpan<char> alphanumericData)
+    public static int GetBitStreamLength(scoped ReadOnlySpan<byte> alphanumericData)
         => (11 * (alphanumericData.Length / 2)) + (6 * (alphanumericData.Length % 2));
 }

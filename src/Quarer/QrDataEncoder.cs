@@ -9,41 +9,43 @@ namespace Quarer;
 
 public static class QrDataEncoder
 {
-    public static readonly SearchValues<char> AlphanumericCharacters = SearchValues.Create(AlphanumericEncoder.Characters);
-    public static readonly SearchValues<char> NumericCharacters = SearchValues.Create("0123456789");
+    public static readonly SearchValues<byte> AlphanumericCharacters = SearchValues.Create(AlphanumericEncoder.Characters);
+    public static readonly SearchValues<byte> NumericCharacters = SearchValues.Create("0123456789"u8);
 
-    public static DataAnalysisResult AnalyzeSimple(ReadOnlySpan<char> data, ErrorCorrectionLevel requestedErrorCorrectionLevel)
+    public static DataAnalysisResult AnalyzeSimple(ReadOnlySpan<byte> data, ErrorCorrectionLevel requestedErrorCorrectionLevel)
+        => AnalyzeSimple(data, requestedErrorCorrectionLevel, EciCode.Empty);
+    public static DataAnalysisResult AnalyzeSimple(ReadOnlySpan<byte> data, ErrorCorrectionLevel requestedErrorCorrectionLevel, EciCode eciCode)
     {
-        //For now, just use a single mode for the full set of data.
+        // For now, just use a single mode for the full set of data.
         var mode = DeriveMode(data);
         var dataLength = mode.GetDataCharacterLength(data);
-        if (!QrVersion.TryGetVersionForDataCapacity(dataLength, mode, requestedErrorCorrectionLevel, out var version))
+        if (!QrVersion.TryGetVersionForDataCapacity(dataLength, mode, requestedErrorCorrectionLevel, eciCode, out var version))
         {
             return DataAnalysisResult.Invalid(AnalysisResult.DataTooLarge);
         }
 
         var bitstreamLength = mode.GetBitStreamLength(data);
-        var encoding = CreateDataSegment(data, bitstreamLength, version, requestedErrorCorrectionLevel, mode);
+        var encoding = CreateDataSegment(data, bitstreamLength, version, requestedErrorCorrectionLevel, mode, eciCode);
         return DataAnalysisResult.Successful(encoding);
     }
 
-    internal static QrEncodingInfo CreateSimpleDataEncoding(ReadOnlySpan<char> data, QrVersion version, ErrorCorrectionLevel errorCorrectionLevel, ModeIndicator mode)
+    internal static QrEncodingInfo CreateSimpleDataEncoding(ReadOnlySpan<byte> data, QrVersion version, ErrorCorrectionLevel errorCorrectionLevel, ModeIndicator mode, EciCode eciCode)
     {
-        Debug.Assert(QrVersion.VersionCanFitData(version, data, errorCorrectionLevel, mode), "Expected version to be large enough to contain data.");
+        Debug.Assert(QrVersion.VersionCanFitData(version, data, errorCorrectionLevel, mode, eciCode), "Expected version to be large enough to contain data.");
         var dataLength = mode.GetBitStreamLength(data);
-        return CreateDataSegment(data, dataLength, version, errorCorrectionLevel, mode);
+        return CreateDataSegment(data, dataLength, version, errorCorrectionLevel, mode, eciCode);
     }
 
-    private static QrEncodingInfo CreateDataSegment(ReadOnlySpan<char> data, int bitstreamLength, QrVersion version, ErrorCorrectionLevel errorCorrectionLevel, ModeIndicator mode)
+    private static QrEncodingInfo CreateDataSegment(ReadOnlySpan<byte> data, int bitstreamLength, QrVersion version, ErrorCorrectionLevel errorCorrectionLevel, ModeIndicator mode, EciCode eciCode)
     {
         var characterCount = CharacterCount.GetCharacterCountBitCount(version, mode);
-        var segment = DataSegment.Create(characterCount, mode, bitstreamLength, new Range(0, data.Length));
+        var segment = DataSegment.Create(characterCount, mode, bitstreamLength, new Range(0, data.Length), eciCode);
         var segments = ImmutableArray.Create(segment);
         var encoding = new QrEncodingInfo(version, errorCorrectionLevel, segments);
         return encoding;
     }
 
-    public static ModeIndicator DeriveMode(ReadOnlySpan<char> data)
+    public static ModeIndicator DeriveMode(ReadOnlySpan<byte> data)
     {
         return data.ContainsAnyExcept(AlphanumericCharacters)
             ? KanjiEncoder.ContainsAnyExceptKanji(data) ? ModeIndicator.Byte : ModeIndicator.Kanji
@@ -56,7 +58,7 @@ public static class QrDataEncoder
     /// <param name="qrDataEncoding"></param>
     /// <param name="data"></param>
     /// <returns></returns>
-    public static BitBuffer EncodeDataBits(QrEncodingInfo qrDataEncoding, ReadOnlySpan<char> data)
+    public static BitBuffer EncodeDataBits(QrEncodingInfo qrDataEncoding, ReadOnlySpan<byte> data)
     {
         var version = qrDataEncoding.Version;
         var dataCodewordsCapacity = qrDataEncoding.Version.GetDataCodewordsCapacity(qrDataEncoding.ErrorCorrectionLevel);
@@ -64,31 +66,29 @@ public static class QrDataEncoder
 
         foreach (var segment in qrDataEncoding.DataSegments)
         {
+            var eciCode = segment.EciCode;
             var dataSlice = data[segment.Range];
+            WriteHeader(bitWriter, version, segment.Mode, dataSlice, eciCode);
 #pragma warning disable IDE0010 // Add missing cases
             switch (segment.Mode)
             {
                 case ModeIndicator.Numeric:
-                    WriteHeader(bitWriter, version, ModeIndicator.Numeric, dataSlice);
-                    NumericEncoder.Encode(bitWriter, data[segment.Range]);
+                    NumericEncoder.Encode(bitWriter, dataSlice);
                     break;
                 case ModeIndicator.Alphanumeric:
 
-                    WriteHeader(bitWriter, version, ModeIndicator.Alphanumeric, dataSlice);
-                    AlphanumericEncoder.Encode(bitWriter, data[segment.Range]);
+                    AlphanumericEncoder.Encode(bitWriter, dataSlice);
                     break;
                 case ModeIndicator.Byte:
                     //TODO: Add byte encoder to allow making this more efficient (e.g vectorization) and allow testability
                     //e.g read 4 bytes at a time and write 32 bits
-                    WriteHeader(bitWriter, version, ModeIndicator.Byte, dataSlice);
-                    foreach (var c in data[segment.Range])
+                    foreach (var c in dataSlice)
                     {
                         bitWriter.WriteBitsBigEndian(c, 8);
                     }
                     break;
                 case ModeIndicator.Kanji:
-                    WriteHeader(bitWriter, version, ModeIndicator.Byte, dataSlice);
-                    KanjiEncoder.Encode(bitWriter, data[segment.Range]);
+                    KanjiEncoder.Encode(bitWriter, dataSlice);
                     break;
                 default:
                     throw new UnreachableException($"Mode '{segment.Mode}' not expected.");
@@ -117,8 +117,8 @@ public static class QrDataEncoder
 
         return bitWriter.Buffer;
 
-        static void WriteHeader(BitWriter writer, QrVersion version, ModeIndicator mode, ReadOnlySpan<char> dataSlice)
-            => QrHeaderBlock.WriteHeader(writer, version, mode, mode.GetDataCharacterLength(dataSlice));
+        static void WriteHeader(BitWriter writer, QrVersion version, ModeIndicator mode, ReadOnlySpan<byte> dataSlice, EciCode eciCode)
+            => QrHeaderBlock.WriteHeader(writer, version, mode, mode.GetDataCharacterLength(dataSlice), eciCode);
 
         static void PadBitsInFinalCodeword(BitWriter writer)
         {
@@ -171,7 +171,7 @@ public static class QrDataEncoder
         codewordsSeen = 0;
         var blockIndex = 1;
         Span<byte> divisionDestination = stackalloc byte[256];
-        divisionDestination.Fill(0);
+        divisionDestination.Clear();
         foreach (var b in errorCorrectionBlocks.EnumerateIndividualBlocks())
         {
             var dataCodewords = BitBufferMarshal.GetBytes(dataCodewordsBitBuffer, codewordsSeen, b.DataCodewordsPerBlock);

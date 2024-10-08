@@ -4,7 +4,7 @@ namespace Quarer;
 
 internal static class NumericEncoder
 {
-    public static void Encode(BitWriter writer, scoped ReadOnlySpan<char> data)
+    public static void Encode(BitWriter writer, scoped ReadOnlySpan<byte> data)
     {
         var position = 0;
         for (; position + 3 <= data.Length; position += 3)
@@ -33,7 +33,7 @@ internal static class NumericEncoder
     /// Gets the length of a numeric bitstream created from the provided data, excluding the mode and character count indicator bits.
     /// </summary>
     /// <returns></returns>
-    public static int GetBitStreamLength(scoped ReadOnlySpan<char> numericData) => (10 * (numericData.Length / 3)) + GetRemainderBitCount(numericData.Length);
+    public static int GetBitStreamLength(scoped ReadOnlySpan<byte> numericData) => (10 * (numericData.Length / 3)) + GetRemainderBitCount(numericData.Length);
     private static int GetRemainderBitCount(int length) => (length % 3) switch
     {
         0 => 0,
@@ -42,7 +42,7 @@ internal static class NumericEncoder
         _ => throw new UnreachableException()
     };
 
-    private static ushort GetDigitsAsValue(ReadOnlySpan<char> slicedDigits)
+    private static ushort GetDigitsAsValue(ReadOnlySpan<byte> slicedDigits)
     {
         return slicedDigits.Length switch
         {
@@ -53,9 +53,9 @@ internal static class NumericEncoder
         };
     }
 
-    private static ushort GetValue(char numericChar)
+    private static byte GetValue(byte numericChar)
     {
-        Debug.Assert(char.IsAsciiDigit(numericChar));
-        return (ushort)(numericChar - '0');
+        Debug.Assert(char.IsAsciiDigit((char)numericChar));
+        return (byte)(numericChar - '0');
     }
 }

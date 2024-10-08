@@ -46,8 +46,8 @@ public sealed partial class QrVersion : IEquatable<QrVersion>, IComparable<QrVer
         return (ushort)total;
     }
 
-    //TODO: Needs to account for ECI + others
-    public static bool TryGetVersionForDataCapacity(int requestedCapacityDataCharacters, ModeIndicator mode, ErrorCorrectionLevel errorCorrectionLevel, [NotNullWhen(true)] out QrVersion? version)
+    //TODO: Swap mode and ec level parameters for consistency
+    public static bool TryGetVersionForDataCapacity(int requestedCapacityDataCharacters, ModeIndicator mode, ErrorCorrectionLevel errorCorrectionLevel, EciCode eciCode, [NotNullWhen(true)] out QrVersion? version)
     {
         version = default!;
         if ((int)errorCorrectionLevel is < 0 or > 3)
@@ -60,7 +60,7 @@ public sealed partial class QrVersion : IEquatable<QrVersion>, IComparable<QrVer
             return false;
         }
 
-        var index = BinarySearchUpperBoundForVersionWithCapacity(requestedCapacityDataCharacters, errorCorrectionLevel, mode);
+        var index = BinarySearchUpperBoundForVersionWithCapacity(requestedCapacityDataCharacters, errorCorrectionLevel, mode, eciCode);
 
         if (index is -1)
         {
@@ -71,13 +71,12 @@ public sealed partial class QrVersion : IEquatable<QrVersion>, IComparable<QrVer
         return true;
     }
 
-    //TODO: Needs to account for ECI + others
-    //TODO: Tests for this
-    internal static bool VersionCanFitData(QrVersion version, ReadOnlySpan<char> data, ErrorCorrectionLevel errorCorrectionLevel, ModeIndicator mode)
+    public static bool VersionCanFitData(QrVersion version, ReadOnlySpan<byte> data, ErrorCorrectionLevel errorCorrectionLevel, ModeIndicator mode, EciCode eciCode)
     {
         const int ModeIndicatorBits = 4;
         var characterCount = CharacterCount.GetCharacterCountBitCount(version, mode);
-        var capacity = (version.GetDataCodewordsCapacity(errorCorrectionLevel) * 8) - ModeIndicatorBits - characterCount;
+        var capacity = (version.GetDataCodewordsCapacity(errorCorrectionLevel) * 8) - ModeIndicatorBits - characterCount - eciCode.GetDataSegmentLength();
+
         return capacity >= mode.GetBitStreamLength(data);
     }
 
@@ -93,14 +92,14 @@ public sealed partial class QrVersion : IEquatable<QrVersion>, IComparable<QrVer
     public bool Equals([NotNullWhen(true)] QrVersion? other) => other is not null && Version == other.Version;
     public override int GetHashCode() => Version.GetHashCode();
 
-    private static int BinarySearchUpperBoundForVersionWithCapacity(int requestedCapacityDataCharacters, ErrorCorrectionLevel level, ModeIndicator mode)
+    private static int BinarySearchUpperBoundForVersionWithCapacity(int requestedCapacityDataCharacters, ErrorCorrectionLevel level, ModeIndicator mode, EciCode eciCode)
     {
         var low = 0;
         var high = MaxVersion - 1;
         while (low <= high)
         {
             var mid = low + ((high - low) >> 1);
-            var approxCapacity = CalculateApproximateCharacterCapacityWithinRange(GetVersion((byte)(mid + 1)), level, mode);
+            var approxCapacity = CalculateApproximateCharacterCapacityWithinRange(GetVersion((byte)(mid + 1)), level, mode, eciCode);
             if (approxCapacity.CompareTo(requestedCapacityDataCharacters) == -1)
             {
                 low = mid + 1;
@@ -115,12 +114,12 @@ public sealed partial class QrVersion : IEquatable<QrVersion>, IComparable<QrVer
         return low >= MaxVersion ? -1 : low;
     }
 
-    private static int CalculateApproximateCharacterCapacityWithinRange(QrVersion version, ErrorCorrectionLevel errorCorrectionLevel, ModeIndicator mode)
+    private static int CalculateApproximateCharacterCapacityWithinRange(QrVersion version, ErrorCorrectionLevel errorCorrectionLevel, ModeIndicator mode, EciCode eciCode)
     {
 #pragma warning disable IDE0072 // Add missing cases
         const int ModeIndicatorBits = 4;
         var characterCount = CharacterCount.GetCharacterCountBitCount(version, mode);
-        var capacity = (version.GetDataCodewordsCapacity(errorCorrectionLevel) * 8) - ModeIndicatorBits - characterCount;
+        var capacity = (version.GetDataCodewordsCapacity(errorCorrectionLevel) * 8) - ModeIndicatorBits - characterCount - eciCode.GetDataSegmentLength();
 
         Debug.Assert(capacity > 0);
         return mode switch

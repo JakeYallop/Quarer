@@ -1,4 +1,5 @@
-﻿using static Quarer.Tests.MatrixTestUtilities;
+﻿using System.Text;
+using static Quarer.Tests.MatrixTestUtilities;
 
 namespace Quarer.Tests;
 
@@ -915,9 +916,9 @@ public class QrSymbolBuilderTests
     [Fact]
     public void BuildSymbol_2H_ProducesExpectedSymbolWithExpectedMaskPattern()
     {
-        var data = "HELLO WORLD";
+        var data = "HELLO WORLD"u8;
         var version = QrVersion.GetVersion(2);
-        var codewordsBuffer = QrDataEncoder.EncodeDataBits(QrDataEncoder.CreateSimpleDataEncoding(data, version, ErrorCorrectionLevel.H, ModeIndicator.Alphanumeric), data);
+        var codewordsBuffer = QrDataEncoder.EncodeDataBits(QrDataEncoder.CreateSimpleDataEncoding(data, version, ErrorCorrectionLevel.H, ModeIndicator.Alphanumeric, EciCode.Empty), data);
         var withErrorCorrection = QrDataEncoder.EncodeAndInterleaveErrorCorrectionBlocks(codewordsBuffer, version, ErrorCorrectionLevel.H);
 
         var (symbol, maskPattern) = QrSymbolBuilder.BuildSymbol(withErrorCorrection, version, ErrorCorrectionLevel.H);
@@ -955,9 +956,9 @@ public class QrSymbolBuilderTests
     [Fact]
     public void BuildSymbol_5H_ProducesExpectedSymbolWithExpectedMaskPattern()
     {
-        var data = "HELLO WORLD WITH A LONGER TEST STRING TEST STRING TEST ST";
+        var data = "HELLO WORLD WITH A LONGER TEST STRING TEST STRING TEST ST"u8;
         var version = QrVersion.GetVersion(5);
-        var codewordsBuffer = QrDataEncoder.EncodeDataBits(QrDataEncoder.CreateSimpleDataEncoding(data, version, ErrorCorrectionLevel.H, ModeIndicator.Alphanumeric), data);
+        var codewordsBuffer = QrDataEncoder.EncodeDataBits(QrDataEncoder.CreateSimpleDataEncoding(data, version, ErrorCorrectionLevel.H, ModeIndicator.Alphanumeric, EciCode.Empty), data);
         var withErrorCorrection = QrDataEncoder.EncodeAndInterleaveErrorCorrectionBlocks(codewordsBuffer, version, ErrorCorrectionLevel.H);
 
         var (symbol, maskPattern) = QrSymbolBuilder.BuildSymbol(withErrorCorrection, version, ErrorCorrectionLevel.H);
@@ -1001,6 +1002,55 @@ public class QrSymbolBuilderTests
             X - X X X - X - - X X - X X - - - X X - X X - - - - X X - X - - X X X X -
             X - - - - - X - - X X - - - X - - X - - - - X - X X - - - - - - X - - X X
             X X X X X X X - - X - X - - - - X - - - X X X X - X - X X - - - X X - - X
+            """, MatrixToString(symbol));
+    }
+
+    [Fact]
+    public void BuildSymbol_4M_ProducesExpectedSymbolWithExpectedMaskPattern()
+    {
+        var data = Encoding.Latin1.GetBytes("Hello world with a longer string using Latin1 Encoding û þ ç Ã");
+        var version = QrVersion.GetVersion(4);
+        var errorCorrectionLevel = ErrorCorrectionLevel.M;
+        var codewordsBuffer = QrDataEncoder.EncodeDataBits(QrDataEncoder.CreateSimpleDataEncoding(data, version, errorCorrectionLevel, ModeIndicator.Byte, EciCode.Empty), data);
+        var withErrorCorrection = QrDataEncoder.EncodeAndInterleaveErrorCorrectionBlocks(codewordsBuffer, version, errorCorrectionLevel);
+
+        var (symbol, maskPattern) = QrSymbolBuilder.BuildSymbol(withErrorCorrection, version, errorCorrectionLevel);
+
+        Assert.Equal(MaskPattern.PatternSeven_Meadow, maskPattern);
+        Assert.Equal("""
+            X X X X X X X - - X X X - - X X - X X X - - X X - - X X X X X X X
+            X - - - - - X - - - - - X - - X X - X - X X X X X - X - - - - - X
+            X - X X X - X - - X X X X X - X X X X X X - - - - - X - X X X - X
+            X - X X X - X - - X X X - X X X - - X - - - - X X - X - X X X - X
+            X - X X X - X - - X - X X - X X - X X - - X - X X - X - X X X - X
+            X - - - - - X - X X X X - X X X X X X X - X - - - - X - - - - - X
+            X X X X X X X - X - X - X - X - X - X - X - X - X - X X X X X X X
+            - - - - - - - - - X - X X - X - - X - - - X - - X - - - - - - - -
+            X - - X - X X - X - - X X X X - - - - X - X - - - X - X - - - - -
+            - X - X - X - - - X - - X X - - X X - - X X X - X X X - - - - - X
+            - - X X X X X X X X - - - - X - - X - X X - - - X X X X X X X - X
+            X - X X X - - - - - - - - X - X X - X X - X - - - X X - - X - X X
+            X - - X X X X - X - X X X - X - X X X X X - - - X X X - - - - - X
+            X X - X - - - X X X - - - X - - - X - X X X X - X - - X X - - - X
+            X X - - X - X X X X - X - - - X X - - - - - - X - X X X - - X X -
+            X - X X - - - X X X X X - - - X - X X X X X - X - - X - - - - X -
+            X X X - - X X X X - X X X X X - X X - X X X X X X - X X X X - X -
+            X X X X - - - X - - X - - - - - X - - - - X - X - - - - - X X X -
+            - X X - X - X - X - X - - - - - - - X - X - - - X X - - X - X - X
+            X X X - - - - X - X - - X X X - X - - - - X - X X - - X X - - X X
+            X X - - - X X - - - X - X X - - X - - - - X - X X X - - - X - X -
+            - X - - - X - X - X X X X X X - - X X - X - - - X X X - - X - X -
+            X X X X X X X X X - - X - - X - - - - X - - - - X X X - X X - - X
+            - X - - - - - X X X X X - X - - X - X - - X - - X X - - X X - X -
+            X - - - - - X X - - - X - - X X - X - X X X X - X X X X X - - X -
+            - - - - - - - - X - X - - - - - - - X X - - X X X - - - X - X - X
+            X X X X X X X - - - - X X X - - X - X - X X - - X - X - X X X X -
+            X - - - - - X - X X - X X - X X - X X X - X - - X - - - X - - X X
+            X - X X X - X - - X - X X - X - X X X X X X X - X X X X X - - - -
+            X - X X X - X - X - X X X X - - X - - - - X - - - - X X X - X - -
+            X - X X X - X - - - X X X X - X X X X - - - X X - - - - X X X - X
+            X - - - - - X - - - X X X - - X X X - X - X X - X - - - - - - - -
+            X X X X X X X - X - - - - - - - X - X - - X - - X X - X - X - X -
             """, MatrixToString(symbol));
     }
 

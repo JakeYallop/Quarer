@@ -6,7 +6,7 @@ public sealed class AlphanumericEncoderTests
     public void Encode_WithEvenInput_WritesCorrectValues()
     {
         var writer = new BitWriter();
-        AlphanumericEncoder.Encode(writer, "ABC0:T");
+        AlphanumericEncoder.Encode(writer, "ABC0:T"u8);
 
         //3 pairs of 11 bits each
         Assert.Equal(33, writer.BitsWritten);
@@ -18,7 +18,7 @@ public sealed class AlphanumericEncoderTests
     public void Encode_WithOddInput_WritesCorrectValues()
     {
         var writer = new BitWriter();
-        AlphanumericEncoder.Encode(writer, "ABC0:");
+        AlphanumericEncoder.Encode(writer, "ABC0:"u8);
 
         //2 pairs of 11 bits each, 1 extra of 6 bits.
         Assert.Equal(28, writer.BitsWritten);
@@ -31,7 +31,7 @@ public sealed class AlphanumericEncoderTests
     }
 
     [Fact]
-    public void GetBitStreamLength_NoRemainder() => Assert.Equal(33, AlphanumericEncoder.GetBitStreamLength("ABCDEF"));
+    public void GetBitStreamLength_NoRemainder() => Assert.Equal(33, AlphanumericEncoder.GetBitStreamLength("ABCDEF"u8));
     [Fact]
-    public void GetBitStreamLength_OneRemainder() => Assert.Equal(39, AlphanumericEncoder.GetBitStreamLength("ABCDEFG"));
+    public void GetBitStreamLength_OneRemainder() => Assert.Equal(39, AlphanumericEncoder.GetBitStreamLength("ABCDEFG"u8));
 }

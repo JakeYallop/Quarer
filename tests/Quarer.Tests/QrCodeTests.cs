@@ -129,8 +129,8 @@ public partial class QrCodeTests
         var data2 = new ByteMatrix(25, 25);
         var qrCode2 = new QrCode(version2, data2, ErrorCorrectionLevel.M);
 
-        var result = qrCode1 == qrCode2;
-        Assert.False(result);
+        var result = qrCode1 != qrCode2;
+        Assert.True(result);
     }
 
     [Fact]
