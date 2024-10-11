@@ -46,8 +46,7 @@ public sealed partial class QrVersion : IEquatable<QrVersion>, IComparable<QrVer
         return (ushort)total;
     }
 
-    //TODO: Swap mode and ec level parameters for consistency
-    public static bool TryGetVersionForDataCapacity(int requestedCapacityDataCharacters, ModeIndicator mode, ErrorCorrectionLevel errorCorrectionLevel, EciCode eciCode, [NotNullWhen(true)] out QrVersion? version)
+    public static bool TryGetVersionForDataCapacity(int requestedCapacityDataCharacters, ErrorCorrectionLevel errorCorrectionLevel, ModeIndicator mode, EciCode eciCode, [NotNullWhen(true)] out QrVersion? version)
     {
         version = default!;
         if ((int)errorCorrectionLevel is < 0 or > 3)

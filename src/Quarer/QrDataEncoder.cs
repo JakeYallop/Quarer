@@ -19,7 +19,7 @@ public static class QrDataEncoder
         // For now, just use a single mode for the full set of data.
         var mode = DeriveMode(data);
         var dataLength = mode.GetDataCharacterLength(data);
-        if (!QrVersion.TryGetVersionForDataCapacity(dataLength, mode, requestedErrorCorrectionLevel, eciCode, out var version))
+        if (!QrVersion.TryGetVersionForDataCapacity(dataLength, requestedErrorCorrectionLevel, mode, eciCode, out var version))
         {
             return DataAnalysisResult.Invalid(AnalysisResult.DataTooLarge);
         }
@@ -162,7 +162,6 @@ public static class QrDataEncoder
             codewordsSeen = 0;
         }
 
-        //TODO: Evaluate SkipLocalsInit here or for entire project for performance
         // max number of blocks for a symbol is 81, max number of codewords per block is 30
         // ~4kb of stack space
         Span<ByteBuffer30> errorBlocks = stackalloc ByteBuffer30[81];

@@ -28,7 +28,6 @@ internal static class QrTerminatorBlock
         }
 
         var remainingBits = 8 - remainder;
-        //TODO: Maybe we can just get rid of this branch entirely?
         if (dataCodewordsCapacity > codewords)
         {
             // we have space to write the new terminator

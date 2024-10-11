@@ -88,7 +88,7 @@ public class QrVersionTests(ITestOutputHelper testOutput)
     [InlineData(784, ModeIndicator.Kanji, ErrorCorrectionLevel.H, 40)]
     public void TryGetVersionForCapacity_WithValidCapacity_ReturnsTrue(int characters, ModeIndicator mode, ErrorCorrectionLevel errorCorrectionLevel, int expectedVersion)
     {
-        Assert.True(QrVersion.TryGetVersionForDataCapacity(characters, mode, errorCorrectionLevel, EciCode.Empty, out var version));
+        Assert.True(QrVersion.TryGetVersionForDataCapacity(characters, errorCorrectionLevel, mode, EciCode.Empty, out var version));
         Assert.Equal(expectedVersion, version.Version);
     }
 
@@ -169,7 +169,7 @@ public class QrVersionTests(ITestOutputHelper testOutput)
 
         void AssertVersion(int inputDataCharacters, ModeIndicator expectedMode, ErrorCorrectionLevel requestedErrorCorrectionLevel, EciCode eciCode, int expectedVersion)
         {
-            var result = QrVersion.TryGetVersionForDataCapacity(inputDataCharacters, expectedMode, requestedErrorCorrectionLevel, eciCode, out var qrVersion);
+            var result = QrVersion.TryGetVersionForDataCapacity(inputDataCharacters, requestedErrorCorrectionLevel, expectedMode, eciCode, out var qrVersion);
             if (!result || qrVersion!.Version != expectedVersion)
             {
                 _testOutput.WriteLine($"Test failed for characterCount: {inputDataCharacters}, ec: {requestedErrorCorrectionLevel} mode: {expectedMode}, expectedVersion: {expectedVersion}, eciCode: {eciCode}, receivedVersion: {qrVersion!.Version}");
@@ -243,13 +243,13 @@ public class QrVersionTests(ITestOutputHelper testOutput)
 
     [Fact]
     public void TryGetVersionForCapacity_DataTooLarge_ReturnsFalse()
-        => Assert.False(QrVersion.TryGetVersionForDataCapacity(7089 + 1, ModeIndicator.Numeric, ErrorCorrectionLevel.L, EciCode.Empty, out _));
+        => Assert.False(QrVersion.TryGetVersionForDataCapacity(7089 + 1, ErrorCorrectionLevel.L, ModeIndicator.Numeric, EciCode.Empty, out _));
 
     [Theory]
     [InlineData(-1)]
     [InlineData(4)]
     public void TryGetVersionForCapacity_InvalidErrorCorrectionLevel_ReturnsFalse(int errorCorrectionLevel)
-        => Assert.False(QrVersion.TryGetVersionForDataCapacity(1, ModeIndicator.Numeric, (ErrorCorrectionLevel)errorCorrectionLevel, EciCode.Empty, out _));
+        => Assert.False(QrVersion.TryGetVersionForDataCapacity(1, (ErrorCorrectionLevel)errorCorrectionLevel, ModeIndicator.Numeric, EciCode.Empty, out _));
 
     [Theory]
     [InlineData(ModeIndicator.Terminator)]
@@ -258,7 +258,7 @@ public class QrVersionTests(ITestOutputHelper testOutput)
     [InlineData(ModeIndicator.Fnc1SecondPosition)]
     [InlineData(ModeIndicator.StructuredAppend)]
     public void TryGetVersionForCapacity_InvalidMode_ReturnsFalse(ModeIndicator mode)
-        => Assert.False(QrVersion.TryGetVersionForDataCapacity(1, mode, ErrorCorrectionLevel.L, EciCode.Empty, out _));
+        => Assert.False(QrVersion.TryGetVersionForDataCapacity(1, ErrorCorrectionLevel.L, mode, EciCode.Empty, out _));
 
     [Fact]
     public void Equality_IEquatable()
