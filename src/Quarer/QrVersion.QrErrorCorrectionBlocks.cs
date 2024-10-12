@@ -8,13 +8,13 @@ public sealed partial class QrVersion
 {
     public class QrErrorCorrectionBlocks(ushort errorCorrectionCodewordsPerBlock, ImmutableArray<QrErrorCorrectionBlock> blocks) : IEquatable<QrErrorCorrectionBlocks>
     {
-        private ushort _blockCount = 0;
-        private ushort _maxDataCodewordsInBlock = 0;
-        private ushort _totalDataCodewords = 0;
+        private int _blockCount = 0;
+        private int _maxDataCodewordsInBlock = 0;
+        private int _totalDataCodewords = 0;
 
-        public ushort ErrorCorrectionCodewordsPerBlock { get; } = errorCorrectionCodewordsPerBlock;
+        public int ErrorCorrectionCodewordsPerBlock { get; } = errorCorrectionCodewordsPerBlock;
         public ImmutableArray<QrErrorCorrectionBlock> Blocks { get; } = blocks;
-        public ushort TotalBlockCount
+        public int TotalBlockCount
         {
             get
             {
@@ -23,7 +23,7 @@ public sealed partial class QrVersion
                     return _blockCount;
                 }
 
-                ushort count = 0;
+                var count = 0;
                 foreach (var item in Blocks)
                 {
                     count += item.Count;
@@ -33,7 +33,7 @@ public sealed partial class QrVersion
             }
         }
 
-        public ushort MaxDataCodewordsInBlock
+        public int MaxDataCodewordsInBlock
         {
             get
             {
@@ -42,7 +42,7 @@ public sealed partial class QrVersion
                     return _maxDataCodewordsInBlock;
                 }
 
-                ushort max = 0;
+                var max = 0;
                 foreach (var item in Blocks)
                 {
                     if (item.DataCodewordsPerBlock > max)
@@ -55,7 +55,7 @@ public sealed partial class QrVersion
             }
         }
 
-        public ushort DataCodewordsCount
+        public int DataCodewordsCount
         {
             get
             {
@@ -64,10 +64,10 @@ public sealed partial class QrVersion
                     return _totalDataCodewords;
                 }
 
-                ushort total = 0;
+                var total = 0;
                 foreach (var item in Blocks)
                 {
-                    total += (ushort)(item.Count * item.DataCodewordsPerBlock);
+                    total += item.Count * item.DataCodewordsPerBlock;
                 }
                 Interlocked.CompareExchange(ref _totalDataCodewords, total, 0);
                 return _totalDataCodewords;

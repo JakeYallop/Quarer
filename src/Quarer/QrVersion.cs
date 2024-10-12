@@ -35,7 +35,7 @@ public sealed partial class QrVersion : IEquatable<QrVersion>, IComparable<QrVer
     public QrErrorCorrectionBlocks GetErrorCorrectionBlocks(ErrorCorrectionLevel errorCorrectionLevel)
         => GetErrorCorrectionBlocks(Version, errorCorrectionLevel);
 
-    public ushort GetDataCodewordsCapacity(ErrorCorrectionLevel errorCorrectionLevel)
+    public int GetDataCodewordsCapacity(ErrorCorrectionLevel errorCorrectionLevel)
     {
         var blocks = GetErrorCorrectionBlocks(errorCorrectionLevel);
         return blocks.DataCodewordsCount;

@@ -27,7 +27,11 @@ public sealed class FunctionModules
 
     internal static class FunctionModuleMatrixCache
     {
+#if NET9_0_OR_GREATER
         private static readonly Lock Lock = new();
+#else
+        private static readonly object Lock = new();
+#endif
         public static readonly FunctionModules[] Cache = new FunctionModules[40];
 
         public static FunctionModules GetFunctionModulesMatrix(QrVersion version)

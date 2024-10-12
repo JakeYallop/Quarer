@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>$(NetVersion)</TargetFramework>
+        <TargetFrameworks>$(NetVersions)</TargetFrameworks>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <!--TODO: Enable generate documentation file -->
         <GenerateDocumentationFile>false</GenerateDocumentationFile>

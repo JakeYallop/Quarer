@@ -1,6 +1,7 @@
 <Project>
   <PropertyGroup>    
-    <NetVersion>net9.0</NetVersion>
+    <NetVersionLatest>net9.0</NetVersionLatest>
+    <NetVersions>net8.0;$(NetVersionLatest)</NetVersions>
     
     <ImplicitUsings>enable</ImplicitUsings>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
