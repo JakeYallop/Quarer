@@ -205,4 +205,211 @@ public class FunctionModulesTests
             X X X X X X X X X - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
             """, MatrixToString(m));
     }
+
+    [Fact]
+    public void GetMaskableSegments_V2_ReturnsExpectedResults()
+    {
+        var version = QrVersion.GetVersion(2);
+        var functionModules = FunctionModules.GetForVersion(version);
+        var m = _matrix(functionModules);
+
+        /*
+            X X X X X X X X X - - - - - - - - X X X X X X X X
+            X X X X X X X X X - - - - - - - - X X X X X X X X
+            X X X X X X X X X - - - - - - - - X X X X X X X X
+            X X X X X X X X X - - - - - - - - X X X X X X X X
+            X X X X X X X X X - - - - - - - - X X X X X X X X
+            X X X X X X X X X - - - - - - - - X X X X X X X X
+            X X X X X X X X X X X X X X X X X X X X X X X X X
+            X X X X X X X X X - - - - - - - - X X X X X X X X
+            X X X X X X X X X - - - - - - - - X X X X X X X X
+            - - - - - - X - - - - - - - - - - - - - - - - - -
+            - - - - - - X - - - - - - - - - - - - - - - - - -
+            - - - - - - X - - - - - - - - - - - - - - - - - -
+            - - - - - - X - - - - - - - - - - - - - - - - - -
+            - - - - - - X - - - - - - - - - - - - - - - - - -
+            - - - - - - X - - - - - - - - - - - - - - - - - -
+            - - - - - - X - - - - - - - - - - - - - - - - - -
+            - - - - - - X - - - - - - - - - X X X X X - - - -
+            X X X X X X X X X - - - - - - - X X X X X - - - -
+            X X X X X X X X X - - - - - - - X X X X X - - - -
+            X X X X X X X X X - - - - - - - X X X X X - - - -
+            X X X X X X X X X - - - - - - - X X X X X - - - -
+            X X X X X X X X X - - - - - - - - - - - - - - - -
+            X X X X X X X X X - - - - - - - - - - - - - - - -
+            X X X X X X X X X - - - - - - - - - - - - - - - -
+            X X X X X X X X X - - - - - - - - - - - - - - - -
+        */
+
+        AssertMaskableSegmentInvariants(functionModules, version);
+        // above horizontal timing pattern
+        AssertContainsSegmentRange(functionModules, 9, version.ModulesPerSide - 8, 0, numberOfRows: 6, singleSegmentOnly: true);
+        // below horizontal timing pattern, between position detection patterns
+        AssertContainsSegmentRange(functionModules, 9, version.ModulesPerSide - 8, 7, numberOfRows: 2, singleSegmentOnly: true);
+        // left side of vertical timing pattern
+        AssertContainsSegmentRange(functionModules, 0, 6, 9, 8);
+
+        var patternCenter = version.AlignmentPatternCenters[1];
+        // right side of vertical timing pettern, avoiding overlapping with alignment pattern 
+        AssertContainsSegmentRange(functionModules, 7, version.ModulesPerSide, 9, 7);
+        // final row, which intersects with the alignment pattern
+        AssertContainsSegmentRange(functionModules, 7, patternCenter - 2, 16, numberOfRows: 1);
+        // remaining rows between position detection pattern and alignment pattern
+        AssertContainsSegmentRange(functionModules, 9, patternCenter - 2, 17, numberOfRows: 4);
+        // segments to the right of the alignment pattern
+        AssertContainsSegmentRange(functionModules, patternCenter + 3, version.ModulesPerSide, 16, numberOfRows: 5);
+        // segments between the position pattern and the end of the symbol
+        AssertContainsSegmentRange(functionModules, 9, version.ModulesPerSide, 21, numberOfRows: 4, singleSegmentOnly: true);
+    }
+
+    [Fact]
+    public void GetMaskableSegments_V7_ReturnsExpectedResults()
+    {
+        var version = QrVersion.GetVersion(7);
+        var functionModules = FunctionModules.GetForVersion(version);
+        var m = _matrix(functionModules);
+
+        /*
+            X X X X X X X X X - - - - - - - - - - - - - - - - - - - - - - - - - X X X X X X X X X X X
+            X X X X X X X X X - - - - - - - - - - - - - - - - - - - - - - - - - X X X X X X X X X X X
+            X X X X X X X X X - - - - - - - - - - - - - - - - - - - - - - - - - X X X X X X X X X X X
+            X X X X X X X X X - - - - - - - - - - - - - - - - - - - - - - - - - X X X X X X X X X X X
+            X X X X X X X X X - - - - - - - - - - - X X X X X - - - - - - - - - X X X X X X X X X X X
+            X X X X X X X X X - - - - - - - - - - - X X X X X - - - - - - - - - X X X X X X X X X X X
+            X X X X X X X X X X X X X X X X X X X X X X X X X X X X X X X X X X X X X X X X X X X X X
+            X X X X X X X X X - - - - - - - - - - - X X X X X - - - - - - - - - - - - X X X X X X X X
+            X X X X X X X X X - - - - - - - - - - - X X X X X - - - - - - - - - - - - X X X X X X X X
+            - - - - - - X - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+            - - - - - - X - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+            - - - - - - X - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+            - - - - - - X - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+            - - - - - - X - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+            - - - - - - X - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+            - - - - - - X - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+            - - - - - - X - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+            - - - - - - X - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+            - - - - - - X - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+            - - - - - - X - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+            - - - - X X X X X - - - - - - - - - - - X X X X X - - - - - - - - - - - X X X X X - - - -
+            - - - - X X X X X - - - - - - - - - - - X X X X X - - - - - - - - - - - X X X X X - - - -
+            - - - - X X X X X - - - - - - - - - - - X X X X X - - - - - - - - - - - X X X X X - - - -
+            - - - - X X X X X - - - - - - - - - - - X X X X X - - - - - - - - - - - X X X X X - - - -
+            - - - - X X X X X - - - - - - - - - - - X X X X X - - - - - - - - - - - X X X X X - - - -
+            - - - - - - X - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+            - - - - - - X - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+            - - - - - - X - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+            - - - - - - X - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+            - - - - - - X - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+            - - - - - - X - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+            - - - - - - X - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+            - - - - - - X - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+            - - - - - - X - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+            X X X X X X X - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+            X X X X X X X - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+            X X X X X X X - - - - - - - - - - - - - X X X X X - - - - - - - - - - - X X X X X - - - -
+            X X X X X X X X X - - - - - - - - - - - X X X X X - - - - - - - - - - - X X X X X - - - -
+            X X X X X X X X X - - - - - - - - - - - X X X X X - - - - - - - - - - - X X X X X - - - -
+            X X X X X X X X X - - - - - - - - - - - X X X X X - - - - - - - - - - - X X X X X - - - -
+            X X X X X X X X X - - - - - - - - - - - X X X X X - - - - - - - - - - - X X X X X - - - -
+            X X X X X X X X X - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+            X X X X X X X X X - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+            X X X X X X X X X - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+            X X X X X X X X X - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        */
+
+        var topOrLeftPatternCenter = version.AlignmentPatternCenters[0];
+        var middlePatternCenter = version.AlignmentPatternCenters[1];
+        var bottomOrRightPatternCenter = version.AlignmentPatternCenters[2];
+        AssertMaskableSegmentInvariants(functionModules, version);
+
+        // above horizontal timing pattern, avoiding version information
+        AssertContainsSegmentRange(functionModules, 9, version.ModulesPerSide - 11, 0, numberOfRows: 4, singleSegmentOnly: true);
+        // intersecting with first alignment pattern
+        AssertContainsSegmentRange(functionModules, 9, middlePatternCenter - 2, 4, numberOfRows: 2);
+        AssertContainsSegmentRange(functionModules, middlePatternCenter + 3, version.ModulesPerSide - 11, 4, numberOfRows: 2);
+        // after horizontal timing pattern, intersecting with alignment pattern
+        AssertContainsSegmentRange(functionModules, 9, middlePatternCenter - 2, 7, numberOfRows: 2);
+        AssertContainsSegmentRange(functionModules, middlePatternCenter + 3, version.ModulesPerSide - 8, 7, numberOfRows: 2);
+        // up to second row of three alignment patterns
+        AssertContainsSegmentRange(functionModules, 0, 6, 9, numberOfRows: 11);
+        AssertContainsSegmentRange(functionModules, 7, version.ModulesPerSide, 9, numberOfRows: 11);
+        // intersecting with second row of alignment patterns
+        AssertContainsSegmentRange(functionModules, 0, topOrLeftPatternCenter - 2, 20, numberOfRows: 4);
+        AssertContainsSegmentRange(functionModules, topOrLeftPatternCenter + 3, middlePatternCenter - 2, 20, numberOfRows: 5);
+        AssertContainsSegmentRange(functionModules, middlePatternCenter + 3, bottomOrRightPatternCenter - 2, 20, numberOfRows: 5);
+        AssertContainsSegmentRange(functionModules, bottomOrRightPatternCenter + 3, version.ModulesPerSide, 20, numberOfRows: 5);
+        // down to start of format information in lower half of symbol
+        AssertContainsSegmentRange(functionModules, 0, 6, 25, numberOfRows: 9);
+        // right side of vertical timing pattern, ignoring final row which intersects with third row of timing pattenrs
+        AssertContainsSegmentRange(functionModules, 7, version.ModulesPerSide, 25, numberOfRows: 11);
+        // row which intersects timing pattern
+        AssertContainsSegmentRange(functionModules, 7, middlePatternCenter - 2, 36, numberOfRows: 1);
+        AssertContainsSegmentRange(functionModules, middlePatternCenter + 3, bottomOrRightPatternCenter - 2, 36, numberOfRows: 1);
+        AssertContainsSegmentRange(functionModules, bottomOrRightPatternCenter + 3, version.ModulesPerSide, 36, numberOfRows: 1);
+        // remaining rows intersecting with timing patterns
+        AssertContainsSegmentRange(functionModules, 9, middlePatternCenter - 2, 37, numberOfRows: 4);
+        AssertContainsSegmentRange(functionModules, middlePatternCenter + 3, bottomOrRightPatternCenter - 2, 37, numberOfRows: 4);
+        AssertContainsSegmentRange(functionModules, bottomOrRightPatternCenter + 3, version.ModulesPerSide, 37, numberOfRows: 4);
+        // final rows
+        AssertContainsSegmentRange(functionModules, 9, version.ModulesPerSide, 41, numberOfRows: 4, singleSegmentOnly: true);
+    }
+
+    private static void AssertContainsSegmentRange(FunctionModules functionModules, int startX, int exclusiveEndX, int startY, int numberOfRows, bool singleSegmentOnly = false)
+    {
+        for (var i = startY; i < (startY + numberOfRows); i++)
+        {
+            var segments = functionModules.GetMaskableSegments(i);
+
+            AssertContainsRange(segments, startX, exclusiveEndX);
+
+            if (singleSegmentOnly)
+            {
+                Assert.Equal(1, segments.Length);
+            }
+        }
+    }
+
+    private static void AssertContainsRange(ReadOnlySpan<Range> ranges, int start, int end) => Assert.Contains(new Range(start, end), ranges.ToArray());
+
+    private static void AssertMaskableSegmentInvariants(FunctionModules functionModules, QrVersion version)
+    {
+        // horizontal timing pattern
+        var segment = functionModules.GetMaskableSegments(6);
+        Assert.Equal(0, segment.Length);
+
+        // vertical timing pattern
+        for (var i = 9; i < version.ModulesPerSide - 8; i++)
+        {
+            var segments = functionModules.GetMaskableSegments(i);
+            foreach (var range in segments)
+            {
+                AssertRangeDoesNotOverlap(range, 6);
+            }
+        }
+
+        // version information
+        if (version.Version >= 7)
+        {
+            for (var i = 0; i <= 3; i++)
+            {
+                var segments = functionModules.GetMaskableSegments(i);
+                foreach (var range in segments)
+                {
+                    AssertRangeDoesNotOverlap(range, version.ModulesPerSide - 11, version.ModulesPerSide - 9);
+                }
+            }
+
+            for (var i = version.ModulesPerSide - 11; i < version.ModulesPerSide - 8; i++)
+            {
+                var segments = functionModules.GetMaskableSegments(i);
+                foreach (var range in segments)
+                {
+                    AssertRangeDoesNotOverlap(range, 0, 3);
+                }
+            }
+        }
+    }
+
+    private static void AssertRangeDoesNotOverlap(Range range, int x) => Assert.False(range.Start.Value <= x && range.End.Value > x);
+    private static void AssertRangeDoesNotOverlap(Range range, int startX, int endX) => Assert.False(range.Start.Value <= endX && range.End.Value > startX);
 }

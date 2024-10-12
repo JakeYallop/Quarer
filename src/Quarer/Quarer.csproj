@@ -32,7 +32,7 @@
       <InternalsVisibleTo Include="LookupTableGenerator" />
     </ItemGroup>
 
-    <Target Name="RewriteVersionWhenPublishingLocally" BeforeTargets="GenerateNuspec" Condition="$(DoNotRewritePackageVersion) == 'true' and ($(CI) == '' or $(CI) == 'false')">
+    <Target Name="RewriteVersionWhenPublishingLocally" BeforeTargets="GenerateNuspec" Condition="$(DoNotRewritePackageVersion) != 'true' and ($(CI) == '' or $(CI) == 'false')">
       <Message Text="Rewriting version $(Version) to $(Version)-local due to not running in a CI build. Set &lt;DoNotRewritePackageVersion&gt; to true to override this behaviour." Importance="High" />
       <PropertyGroup>
         <!-- We define "Version" above, but PackageVersion (which defaults to $(Version) is what is actually used 

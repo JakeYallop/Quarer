@@ -57,19 +57,19 @@ public sealed class FunctionModules
                 for (var y = 0; y < newMatrix.Height; y++)
                 {
                     var isAtEnd = false;
-                    var reader = new RowModuleReader(newMatrix.GetRow(y));
+                    var reader = new RowModuleReader(newMatrix.Matrix.GetRow(y));
                     while (!isAtEnd)
                     {
-                        isAtEnd = reader.TryAdvanceToNextEmptyModule(out var segmentStart);
+                        isAtEnd = !reader.TryAdvanceToNextEmptyModule(out var segmentStart);
 
                         if (!isAtEnd)
                         {
-                            isAtEnd = reader.TryConsumeEmptyModules(out var endIndex);
+                            isAtEnd = !reader.TryConsumeEmptyModules(out var endIndex);
                             rowBuilder.Add(new Range(new(segmentStart), new(endIndex)));
                         }
                     }
 
-                    maskableRowSegmentsBuilder.Add(rowBuilder.ToImmutable());
+                    maskableRowSegmentsBuilder.Add(rowBuilder.DrainToImmutable());
                 }
 
                 Debug.Assert(maskableRowSegmentsBuilder.Count == newMatrix.Height);

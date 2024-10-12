@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 
 namespace Quarer;
@@ -34,7 +35,7 @@ public static class QrSymbolBuilder
 
         var patterns = (ReadOnlySpan<MaskPattern>)[MaskPattern.PatternZero_Checkerboard, MaskPattern.PatternOne_HorizontalLines, MaskPattern.PatternTwo_VerticalLines, MaskPattern.PatternThree_DiagonalLines, MaskPattern.PatternFour_LargeCheckerboard, MaskPattern.PatternFive_Fields, MaskPattern.PatternSix_Diamonds, MaskPattern.PatternSeven_Meadow];
 
-        var highestPenalty = int.MaxValue;
+        var lowestPenalty = int.MaxValue;
         var selectedMaskPattern = patterns[0];
 
         EncodeDataBits(matrix, version, dataCodewords);
@@ -43,9 +44,9 @@ public static class QrSymbolBuilder
         {
             ApplyMask(matrix, version, pattern);
             var penalty = CalculatePenalty(matrix);
-            if (penalty < highestPenalty)
+            if (penalty < lowestPenalty)
             {
-                highestPenalty = penalty;
+                lowestPenalty = penalty;
                 selectedMaskPattern = pattern;
             }
             // undo the mask
@@ -369,8 +370,26 @@ public static class QrSymbolBuilder
 
     public static void ApplyMask(ByteMatrix matrix, QrVersion version, MaskPattern mask)
     {
-        var maskFunction = GetMaskFunction(mask);
         var functionModules = FunctionModules.GetForVersion(version);
+        if (mask == MaskPattern.PatternZero_Checkerboard)
+        {
+            for (var i = 0; i < matrix.Height; i++)
+            {
+                var row = ByteMatrixMarshal.GetWritableRow(matrix, i);
+                var segments = functionModules.GetMaskableSegments(i);
+
+                foreach (var segmentRange in segments)
+                {
+                    var segment = row[segmentRange];
+                    var (offset, _) = segmentRange.GetOffsetAndLength(matrix.Width);
+                    CalculateCheckerboard(segment, (byte)((offset + i + 1) % 2), segment);
+                    ByteMatrixMarshal.UpdateColumnMajorOrder(matrix, i, offset, segment);
+                }
+            }
+            return;
+        }
+
+        var maskFunction = GetMaskFunction(mask);
         for (var y = 0; y < matrix.Height; y++)
         {
             for (var x = 0; x < matrix.Width; x++)
@@ -387,9 +406,9 @@ public static class QrSymbolBuilder
     {
         return mask switch
         {
-            MaskPattern.PatternZero_Checkerboard => static (bit, x, y) => bit != ((x + y) % 2 == 0),
-            MaskPattern.PatternOne_HorizontalLines => static (bit, x, y) => bit != (y % 2 == 0),
-            MaskPattern.PatternTwo_VerticalLines => static (bit, x, y) => bit != (x % 3 == 0),
+            MaskPattern.PatternZero_Checkerboard => static (bit, x, y) => bit != (((x + y) % 2) == 0),
+            MaskPattern.PatternOne_HorizontalLines => static (bit, x, y) => bit != ((y % 2) == 0),
+            MaskPattern.PatternTwo_VerticalLines => static (bit, x, y) => bit != ((x % 3) == 0),
             MaskPattern.PatternThree_DiagonalLines => static (bit, x, y) => bit != ((x + y) % 3 == 0),
             MaskPattern.PatternFour_LargeCheckerboard => static (bit, x, y) => bit != (((y / 2) + (x / 3)) % 2 == 0),
             MaskPattern.PatternFive_Fields => static (bit, x, y) => bit != ((y * x % 2) + (y * x % 3) == 0),
@@ -398,6 +417,35 @@ public static class QrSymbolBuilder
             null => static (bit, _, _) => bit,
             _ => throw new UnreachableException()
         };
+    }
+
+    // 64 bytes + 1 extra byte for additional starting offset (starting at 1 instead of 0)
+    private static ReadOnlySpan<byte> CheckerboardVector =>
+    [
+        0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1,
+        0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1,
+        0
+    ];
+
+    private static void CalculateCheckerboard(ReadOnlySpan<byte> data, byte startValue, Span<byte> destination)
+    {
+        Debug.Assert(CheckerboardVector.Length >= Vector<byte>.Count + startValue);
+        //TODO: use TensorPrimitives for this
+        var current = 0;
+        while (current >= Vector<byte>.Count)
+        {
+            var a = Vector.LoadUnsafe(in data[0], 0);
+            var b = Vector.LoadUnsafe(in CheckerboardVector[0], startValue);
+            Vector.Xor(a, b).CopyTo(destination);
+            destination = destination[Vector<byte>.Count..];
+            current++;
+            startValue = a[Vector<byte>.Count - 1];
+        }
+
+        for (var i = current; i < data.Length; i++)
+        {
+            destination[i] = (byte)(data[i] ^ CheckerboardVector[(i + startValue) % 2]);
+        }
     }
 
     private static ReadOnlySpan<byte> XRange(QrVersion version, Span<byte> destination)

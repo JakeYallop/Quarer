@@ -84,6 +84,8 @@ public class ByteMatrix
         return _matrixColumnMajorOrder[column];
     }
 
+
+
     public static bool operator ==(ByteMatrix? left, ByteMatrix? right) => left is null ? right is null : left.Equals(right);
     public static bool operator !=(ByteMatrix? left, ByteMatrix? right) => !(left == right);
     public bool Equals([NotNullWhen(true)] ByteMatrix? other)
@@ -164,7 +166,7 @@ internal sealed class ByteMatrixDebugView(ByteMatrix byteMatrix)
             {
                 for (var x = 0; x < _matrix.Width; x++)
                 {
-                    sb.Append($"{_matrix[x, y]:X2}");
+                    sb.Append($"{_matrix[x, y]:X1}");
                     if (x + 1 < _matrix.Width)
                     {
                         sb.Append(' ');
