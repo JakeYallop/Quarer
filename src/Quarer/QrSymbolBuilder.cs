@@ -430,7 +430,7 @@ public static class QrSymbolBuilder
     private static void CalculateCheckerboard(ReadOnlySpan<byte> data, byte startValue, Span<byte> destination)
     {
         Debug.Assert(CheckerboardVector.Length >= Vector<byte>.Count + startValue);
-        //TODO: use TensorPrimitives for this
+
         var current = 0;
         while (current >= Vector<byte>.Count)
         {
