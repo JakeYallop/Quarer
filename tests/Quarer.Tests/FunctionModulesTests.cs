@@ -211,7 +211,6 @@ public class FunctionModulesTests
     {
         var version = QrVersion.GetVersion(2);
         var functionModules = FunctionModules.GetForVersion(version);
-        var m = _matrix(functionModules);
 
         /*
             X X X X X X X X X - - - - - - - - X X X X X X X X
@@ -267,7 +266,6 @@ public class FunctionModulesTests
     {
         var version = QrVersion.GetVersion(7);
         var functionModules = FunctionModules.GetForVersion(version);
-        var m = _matrix(functionModules);
 
         /*
             X X X X X X X X X - - - - - - - - - - - - - - - - - - - - - - - - - X X X X X X X X X X X

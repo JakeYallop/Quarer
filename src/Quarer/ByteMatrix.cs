@@ -84,8 +84,6 @@ public class ByteMatrix
         return _matrixColumnMajorOrder[column];
     }
 
-
-
     public static bool operator ==(ByteMatrix? left, ByteMatrix? right) => left is null ? right is null : left.Equals(right);
     public static bool operator !=(ByteMatrix? left, ByteMatrix? right) => !(left == right);
     public bool Equals([NotNullWhen(true)] ByteMatrix? other)
