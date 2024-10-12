@@ -37,13 +37,8 @@ public sealed partial class QrVersion : IEquatable<QrVersion>, IComparable<QrVer
 
     public ushort GetDataCodewordsCapacity(ErrorCorrectionLevel errorCorrectionLevel)
     {
-        //TODO: hardcode this on startup instead
-        var total = 0;
-        foreach (var item in GetErrorCorrectionBlocks(errorCorrectionLevel).Blocks)
-        {
-            total += item.DataCodewordsPerBlock * item.Count;
-        }
-        return (ushort)total;
+        var blocks = GetErrorCorrectionBlocks(errorCorrectionLevel);
+        return blocks.DataCodewordsCount;
     }
 
     public static bool TryGetVersionForDataCapacity(int requestedCapacityDataCharacters, ErrorCorrectionLevel errorCorrectionLevel, ModeIndicator mode, EciCode eciCode, [NotNullWhen(true)] out QrVersion? version)
@@ -256,9 +251,9 @@ public sealed partial class QrVersion : IEquatable<QrVersion>, IComparable<QrVer
     ];
 
     // individual error blocks must be in ascending order of data codewords per block
-    // as this is key for the interleaving process, where smaller data blocks are intrerleaved first
+    // as this is key for the interleaving process, where smaller data blocks are interleaved first
 
-    private static readonly ImmutableArray<QrVersion.QrErrorCorrectionBlocks> QrVersionsLookupL =
+    private static readonly ImmutableArray<QrErrorCorrectionBlocks> QrVersionsLookupL =
     [
         new(7, [new(1, 19)]),
         new(10, [new(1, 34)]),
@@ -302,7 +297,7 @@ public sealed partial class QrVersion : IEquatable<QrVersion>, IComparable<QrVer
         new(30, [new(19, 118), new(6, 119)]),
     ];
 
-    private static readonly ImmutableArray<QrVersion.QrErrorCorrectionBlocks> QrVersionsLookupM =
+    private static readonly ImmutableArray<QrErrorCorrectionBlocks> QrVersionsLookupM =
     [
         new(10, [new(1, 16)]),
         new(16, [new(1, 28)]),
@@ -346,7 +341,7 @@ public sealed partial class QrVersion : IEquatable<QrVersion>, IComparable<QrVer
         new(28, [new(18, 47), new(31, 48)]),
     ];
 
-    private static readonly ImmutableArray<QrVersion.QrErrorCorrectionBlocks> QrVersionsLookupQ =
+    private static readonly ImmutableArray<QrErrorCorrectionBlocks> QrVersionsLookupQ =
     [
         new(13, [new(1, 13)]),
         new(22, [new(1, 22)]),
@@ -390,7 +385,7 @@ public sealed partial class QrVersion : IEquatable<QrVersion>, IComparable<QrVer
         new(30, [new(34, 24), new(34, 25)]),
     ];
 
-    private static readonly ImmutableArray<QrVersion.QrErrorCorrectionBlocks> QrVersionsLookupH =
+    private static readonly ImmutableArray<QrErrorCorrectionBlocks> QrVersionsLookupH =
     [
         new(17, [new(1, 9)]),
         new(28, [new(1, 16)]),

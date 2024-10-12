@@ -10,6 +10,7 @@ public sealed partial class QrVersion
     {
         private ushort _blockCount = 0;
         private ushort _maxDataCodewordsInBlock = 0;
+        private ushort _totalDataCodewords = 0;
 
         public ushort ErrorCorrectionCodewordsPerBlock { get; } = errorCorrectionCodewordsPerBlock;
         public ImmutableArray<QrErrorCorrectionBlock> Blocks { get; } = blocks;
@@ -51,6 +52,25 @@ public sealed partial class QrVersion
                 }
                 Interlocked.CompareExchange(ref _maxDataCodewordsInBlock, max, 0);
                 return _maxDataCodewordsInBlock;
+            }
+        }
+
+        public ushort DataCodewordsCount
+        {
+            get
+            {
+                if (_totalDataCodewords is not 0)
+                {
+                    return _totalDataCodewords;
+                }
+
+                ushort total = 0;
+                foreach (var item in Blocks)
+                {
+                    total += (ushort)(item.Count * item.DataCodewordsPerBlock);
+                }
+                Interlocked.CompareExchange(ref _totalDataCodewords, total, 0);
+                return _totalDataCodewords;
             }
         }
 
