@@ -1,4 +1,5 @@
-﻿using static Quarer.Tests.MatrixTestUtilities;
+﻿using System.Text;
+using static Quarer.Tests.MatrixTestUtilities;
 
 namespace Quarer.Tests;
 
@@ -208,6 +209,99 @@ public partial class QrCodeTests
             X - - - - - X - - X - - X - - - - X X X X - X - X X - - - X - - - X X X - X X X - - X - X
             X X X X X X X - - X X - X - X - X X X - X X - X X X X - - - X - - X X - X - - X X - X - -
             """, MatrixToString(code.Data));
+    }
+
+    [Fact]
+    public void Create4_14M()
+    {
+        // 14M chosen to exercise vectorized code paths so we have at least 2 full vectors of data plus some remainder.
+        // For this, we need at least 65 modules after the horizontal timing pattern.
+        var data = "1234567890";
+        var code = QrCode.Create(data, QrVersion.GetVersion(14), ErrorCorrectionLevel.M);
+        Assert.Equal("""
+            X X X X X X X - X X X - - - - X X X X - - X X X - X - - X - X - X - - X X X X X - - X - X - X X X X - - - - - X X - X - X - X - X - X X X X X X X
+            X - - - - - X - - - X X - X X - - X - - - - - - X - X X X X X X X X - - X - X - - X X X X X - X - X X - - - X X X - - - X - X - - - X - - - - - X
+            X - X X X - X - - - - X - X X - - - X X - - - - X X - - X - X X - - - - - X X - X - X X - - - - - X X X - - X - X - - X X - - - - - X - X X X - X
+            X - X X X - X - X - - - X - X X - X X - - X X X X - - X - X X - - X - X - - X X X X X - - - X X X X X - X - X X - - - - - X X X - - X - X X X - X
+            X - X X X - X - X X X X - X - - X - X X - - X - X X X X X X - - X X X X X - - X - X - - X X X X X - X X X X X - - X - X - - - X X - X - X X X - X
+            X - - - - - X - X - - X - - - X X X X - - X X - X - - - X - X X X - - - X X X - - - X X X - - - X X - X X - - - - - X X - X X - - - X - - - - - X
+            X X X X X X X - X - X - X - X - X - X - X - X - X - X - X - X - X - X - X - X - X - X - X - X - X - X - X - X - X - X - X - X - X - X X X X X X X
+            - - - - - - - - X - - X X - - X - - X X - X X - X - - - X X - X - X X - - - - - X X - - X - - - X - - X X X - - - X X X - - - - - - - - - - - - -
+            X - - - X - X X X - X X X - - - - X - X X X X X X X X X X X X X X X - - X - X - - X X X X X X X X X X - X - X X - - - - - X X - - X X X X X - - X
+            X - X X X X - - - X X X - - - X - X X X - X X - - - X - X - X - X - - X X X X X - - X - X - X X X X - - - - - X X - X - X X - - X X X X X - - - X
+            X - X - X X X - X X - X - - - - - - X X - X X X X X - - - - - - - - X X - X - X X - - - - - X - X - - X X X - - - X X X - - - X X X - - - - X - X
+            X - - - - - - - X - - X X X X - - - X - - - - X - X X - X - X X - - - - - X X - X - X X - - - - - - X X - X X - X X - X X - X X X - - X X X X X X
+            X X X - - - X X - X X X X X - - - - - X X - - - X - - - X - - X X - X - X X - - - - - X X X - - - X X X - - X - X - - X X X X - X X X X - X - X -
+            X X X X X - - - X X X X - X - X - - X X - - X - - - - - X X - - X X X X X - - X - X - - X - X X X X - X X - - - - - X X - X - X - X X - - X X X X
+            - X X - - - X X X - X X - - X - - - - X - - - X X X - - - X - - - X X X - - - X X X - - - X X - X - - - X X - X - X X - - - - - - - - X - X - X -
+            X X - X - X - - - - X X X X X - - X - - - X - X - X - - X X - X - X X - - - - - X X - X - X X - X - X X - X X - X X - X X - X - - X - - - - - - -
+            X - X - X X X - - X - X X - - - - X X X X - - - X X X - X X X X X X - - X - X - - X X X X - X - X X X X - - X - X - - X X X X - - X - - X - - - X
+            X - - X X - - - - X - X - X - X - - X X - - - - - - X X - - X - X - - X X X X X - - X - X - - - - X - X X - - - - - X X - X - - X - - X X - - - X
+            X - X - X X X - X - X X - - - - - - X X - X - X X X - - X - - - - - X X - X - X X - - - - - - X - - - - X X - X - X X - - - - X X - X - - - X - X
+            X - - X X - - - X X X X - - - - - - X - X X - X - X X X - - X - - - - X - X X X X - X X - - - X - - X X - X X - X X - X X - X X X X - X X - - X X
+            X X X - X X X X - X - - - - - X - - - - - X X - X - - - - - - - - - X X - X - X X - - X X X - - - X X X - - X - X - - X X X X - X X - X - - X X -
+            X X - X X - - - X - - X - X - X X X X - - - - - X - - - X X - X - X X - - - - - X X - X X - X X X X - X X - - - - - X X - X - X - - - - - - - - X
+            - X X - X X X X X - - X - - - - X - X - X X - X - X - - X X - X X X X - X - - - - X - X X X X - X - - - X X - X - X X - - - - - - - X X - - X - X
+            X X - X X - - - - X X - - - - X X - X - X X - - - X - X - - X X - - - - - X X - X - X - X X X - X - X X - X X - X X - X X - X - X X - - - X X X X
+            X - X - X X X X X X - - X - - - X - - - X X X - X X X X X - - X X - X - X X - - - - - - X X X X X X X X - - X - X - - X X X X - X X X X X X - X -
+            - X - X X - - - X - - - - X - - - X X X - - - - X - - - X X - - X X X X X - - X - X - - X - - - X X - X X - - - - - X X - X - X X - - - X - - - X
+            X - - X X - X - X - - - X - - X - - X X - X - X X - X - X X - - - X X X - - - X X X - X X - X - X - - - X X - X - X X - - - - - X - X - X - X - X
+            - - - X X - - - X X X X - - - - - - X X X X - X X - - - X - X - - - - X - X X X X - X - X - - - X X X X - - X - X - - X X X X X X - - - X X X X X
+            - - X X X X X X X X - - - - - - - - - - - X X - X X X X X - - - - - X X - X - X X - - X X X X X X - - X - X - - X X X X X - - X X X X X X X - X -
+            - X - - X X - - - - - X - X - X X X X X - - - - X X X X X X - X - X X - - - - - X X - X - - X - X - X X X X X - - X - X - - X X X X - - X - - - X
+            - - - - - X X X X - - - X - - X - X X - X - - X X X - - - X - X X X X - X - - - - X - - - X X X X - X - - X X X X X - - X - X X X X X - - - X - X
+            - - X - X X - - - - X - - - X - X - X - X - X - X X X - - - X X - - - - - X X - X - X - - - - X - - - X X X - - - X X X - - - - - - X X - X X X X
+            - - X - - X X X X - - - X X X - X X X - X X - - - - - - X - - X X - X - X X - - - - - X - X X - X X X - X - X X - - - - - X X - X - X X X X - X -
+            - X X - - X - X X X - - - - X - - - - X - X - - X X X - - X - - X X X X X - - X - X - - X X - - - X - - - - - X X - X - X X - X X X - - X - - - -
+            - - - - X - X - X X - - X - - X - - X X - X X X - X - X - X - - - X X X - - - X X X - X X X - - - - - X X X - - - X X X - - - X X X X - - - X X X
+            - - - - X X - - - X X X - - - - - - - X X X X X X X X - X - X - - - - X - X X X X - X X X X X - X X X X - - X - X - - X X X X - - - X X - X X X -
+            - - X - - - X X X - X - - - X - - - - - - - - - X X - - X - - - - - X X - X - X X - - X X - - X - - - X - X - - X X X X X - - - X - X X X X - - X
+            - X - - - X - X X - X X - X X X X - X X - X X - X X X X X X - X - X X - - - - - X X - X - - X - X - X X X X X - - X - X - - X X X - X - X X X X X
+            - - - - X X X - X - X - X - X X - X - - X - - X X X - - - X - X X X X - X - - - - X - - - X X X X - X - - X X X X X - - X - X X X - - - - X - X -
+            - - X - - - - - - - X - - - X - X - X - X - X - X X X - - X - - - X X X - - - X X X - - - X - X - - - X X X - - - X X X - - - - - X - X - - - - -
+            X - X - X - X X X - - - X X X - X X X - X X - - - X - - X X X - - X - X - - X X X X X X - - - - - X X - X - X X - - - - - X X - X X X X X - - - X
+            - X X - - X - X X X - - - - X - - - - X - X - - X X X - - - X X - - - - - X X - X - X - X - X - X X - - - - - X X - X - X X - X X X - - X - - - X
+            X - - - X - X - X X - - X - - X - - X X - X X X - X - X - - - X X - X - X X - - - - - X X X X X X - - X X X - - - X X X - - - - X X X - - - X - X
+            X - - - X X - X - X X X - - - - - - - X X X X X X X X - X - X - - - - X - X X X X - X X - X - X - X X X - - X - X - - X X X X X X - X - - X X X X
+            - X X - X X X X X - X - X - X X - - - - - - - - X X X X X - - - - - X X - X - X X - - X X X X X X - - X - X - - X X X X X - - X X X X X X X - X -
+            - X - - X - - - X - X - X X X - X - X X X X X - X - - - X X - X - X X - - - - - X X - - X - - - X - X X X X X - - X - X - - X - X - - - X X X X X
+            X - - - X - X - X - X - - - X X X X - - X - - X X - X - X X - X X X X - X - - - - X - X X - X - X - X - - X X X X X - - X - X X X - X - X X - X -
+            - X X - X - - - X - X - - - X - - - X X X - X X X - - - X X - - - X X X - - - X X X - - X - - - X X - X X - - - - - X X - X - X X - - - X - - - -
+            X X X - X X X X X - - - X X X X - X X - - X - - X X X X X X X - - X - X - - X X X X X - X X X X X - - - X X - X - X X - - - - - X X X X X - - - X
+            - X X - - - - X X X - - X - X - X - - X X X - X - X - - X - X X - - - - - X X - X - X - - - - - - - X - - X X X X X - - X - X - X - X - - - - - X
+            X - - X X - X X - - - - - X - X X X X - X X X - X - - - - - - X X - X - X X - - - - - - - X - X - - X X - X X - X X - X X - X - X X - - - - X - X
+            X - - - X X - - - X X - - - X - - X X X X X X X X X - - X - X - - - - X - X X X X - X X X X X X X X - X X - - - - - X X - X - - - - - - X X X X X
+            - X X - X X X - X - X - X - - X - X - - - X X X - - - - X - - - - - X X - X - X X - - X - - X - X - - - X X - X - X X - - - - X X - X X X X - X -
+            - X X - X - - - X - X - X X X - X X X X X X X X - - - X - X - X - X X - - - - - X X - - - - - - - - X - - X X X X X - - X - X - - X X - - X X X X
+            X - - X X - X - - - X - - - - X X - X - X - - - X X X - - X - X X X X - X - - - - X - - - X - X - - X X - X X - X X - X X - X X - - X - X - X X -
+            - X - - X - - - X X - - X - - - X - X X X - X X X X X - X X - X - X X - - - - - X X - X X X X X X X - X X - - - - - X X - X - X X X X X X - - - -
+            X X X - - - X - X - X X - - - X - - - - X - - X - X - - X X X X X X - - X - X - - X X X - - X - X - - - X X - X - X X - - - - - - X - - X - - - X
+            - X X - - - - X - - X X X X X X - X X - X - - X - X - X - - X - X - - X X X X X - - X - - - - - - - X - - X X X X X - - X - X - X - X X X X X X X
+            X - - X - - X - X - - X - - X X X - - X - - - - X X X - - - - - - - X X - X - X X - - - - X - X - - X X - X X - X X - X X - X - X X - X - X - X -
+            X - - - - X - X - X - X X - - - - - X X - - X X X - X - X - X - - X X X - - - X X X - X X X X X X X - X X - - - - - X X - X - - - X - - - - - - -
+            X X X - X X X - X - X - X - - X X - - - X - - X - - - - X - - - - X - X - - X X X X X X - X X - X - - - X X - X - X X - - - - X X - X X X - - - X
+            X X X - X - - - X - X - - X X X - X X - X - - X - - - X - X - X - - - - - X X - X - X - - X X - X - X - - X X X X X - - X - X - - - X - - X X X X
+            X X - X - X X - - - - X X - X X X - - X - - - - X X X X X X - X X - X - X X - - - - - X - - X X X - X X - X X - X X - X X - X X - X - - X X - X -
+            - - - X X - - - X X - - - - - X - - X - - - X X - X X X X X - X - X X - - - - - X X - - - X - - - - - X X X - - - X X X - - - X X - - X X - - - -
+            X - - - X - X - X - X X - - - - X - - X X - - X X X X X X X X X X X - - X - X - - X X - X X X X X X X - X - X X - - - - - X X - X X X X X - - - X
+            - - - - - - - - X - X - - X X X X X X X - - - - X - - - X - X - X - - X X X X X - - X X X - - - X X - - - - - X X - X - X X - X X - - - X X X X X
+            X X X X X X X - X X - - - X X - - X - X X X - - X - X - X - - - - - X X - X - X X - - - X - X - X - - X X X - - - X X X - - - X X - X - X X - X -
+            X - - - - - X - - X X - X - X - - X - - - - X - X - - - X - X - - X X X - - - X X X - - X - - - X X X X - - X - X - - X X X X X X - - - X - - - -
+            X - X X X - X - X X - - X X - X X X X - X X - X X X X X X - - - - X - X - - X X X X X X X X X X X - - X - X - - X X X X X - - - X X X X X - - - X
+            X - X X X - X - - X - - - X X X - X - - X X - X - X - - X X - X - - - - - X X - X - X X - - - X - - X X X X X - - X - X - - X X - - X - X X X - X
+            X - X X X - X - - - X X X X X X X - X X - X X - X - X - X X - X X - X - X X - - - - - X - X X - X - X - - X X X X X - - X - X X X - - - - X - X -
+            X - - - - - X - - X - - - X - X - - X - - - - - X X X - X X - X - X X - - - - - X X - X X X - X - - - X X X - - - X X X - - - - X X - X - - - - -
+            X X X X X X X - X - X X - X - - X X - X X - X X - X - - - X X X X X - - X - X - - X X - - - - - - X X - X - X X - - - - - X X - - X X X X - - - X
+            """, MatrixToString(code.Data));
+    }
+
+    [Fact]
+    public void Create3_40H()
+    {
+        var data = "Hello World!";
+        var code = QrCode.Create(Encoding.UTF8.GetBytes(data), QrVersion.GetVersion(40), ErrorCorrectionLevel.H, new(26));
+        Assert.Equal(ErrorCorrectionLevel.H, code.ErrorCorrectionLevel);
+        Assert.Equal(40, code.Version.Version);
     }
 
     [Fact]

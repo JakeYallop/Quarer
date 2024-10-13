@@ -427,24 +427,25 @@ public static class QrSymbolBuilder
         0
     ];
 
-    private static void CalculateCheckerboard(ReadOnlySpan<byte> data, byte startValue, Span<byte> destination)
+    private static void CalculateCheckerboard(ReadOnlySpan<byte> data, byte startOffset, Span<byte> destination)
     {
-        Debug.Assert(CheckerboardVector.Length >= Vector<byte>.Count + startValue);
+        Debug.Assert(CheckerboardVector.Length >= Vector<byte>.Count + startOffset);
 
-        var current = 0;
-        while (current >= Vector<byte>.Count)
+        var remaining = data.Length;
+        while (remaining >= Vector<byte>.Count)
         {
             var a = Vector.LoadUnsafe(in data[0], 0);
-            var b = Vector.LoadUnsafe(in CheckerboardVector[0], startValue);
+            var b = Vector.LoadUnsafe(in CheckerboardVector[0], startOffset);
             Vector.Xor(a, b).CopyTo(destination);
             destination = destination[Vector<byte>.Count..];
-            current++;
-            startValue = a[Vector<byte>.Count - 1];
+            data = data[Vector<byte>.Count..];
+            remaining -= Vector<byte>.Count;
+            startOffset = (byte)((startOffset + Vector<byte>.Count) % 2);
         }
 
-        for (var i = current; i < data.Length; i++)
+        for (var i = 0; i < destination.Length; i++)
         {
-            destination[i] = (byte)(data[i] ^ CheckerboardVector[(i + startValue) % 2]);
+            destination[i] = (byte)(data[i] ^ CheckerboardVector[(i + startOffset) % 2]);
         }
     }
 
