@@ -379,54 +379,26 @@ public static class QrSymbolBuilder
             MaskPattern.PatternTwo_VerticalLines => VerticalLinesPatternVector,
             MaskPattern.PatternThree_DiagonalLines => VerticalLinesPatternVector, // same pattern [1 0 0] with a different starting offset per row
             MaskPattern.PatternFour_LargeCheckerboard => LargeCheckboardPatternVector,
-            _ => []
-        };
-
-        if (patternVector.Length > 0)
-        {
-            for (var y = 0; y < matrix.Height; y++)
-            {
-                var row = ByteMatrixMarshal.GetWritableRow(matrix, y);
-                var segments = functionModules.GetMaskableSegments(y);
-
-                foreach (var segmentRange in segments)
-                {
-                    var segment = row[segmentRange];
-                    var (x, _) = segmentRange.GetOffsetAndLength(matrix.Width);
-                    ApplyMaskVectorized(segment, patternVector, patternOffsetFunc, x, y, segment);
-                    ByteMatrixMarshal.UpdateColumnMajorOrder(matrix, y, x, segment);
-                }
-            }
-            return;
-        }
-
-        var maskFunction = GetMaskFunction(mask);
-        for (var y = 0; y < matrix.Height; y++)
-        {
-            for (var x = 0; x < matrix.Width; x++)
-            {
-                if (!functionModules.IsFunctionModule(x, y))
-                {
-                    matrix[x, y] = maskFunction(matrix[x, y] != 0, x, y) ? (byte)1 : (byte)0;
-                }
-            }
-        }
-    }
-
-    private static Func<bool, int, int, bool> GetMaskFunction(MaskPattern mask)
-    {
-        return mask switch
-        {
-            MaskPattern.PatternZero_Checkerboard => static (bit, x, y) => bit != (((x + y) % 2) == 0),
-            MaskPattern.PatternOne_HorizontalLines => static (bit, x, y) => bit != ((y % 2) == 0),
-            MaskPattern.PatternTwo_VerticalLines => static (bit, x, y) => bit != ((x % 3) == 0),
-            MaskPattern.PatternThree_DiagonalLines => static (bit, x, y) => bit != ((x + y) % 3 == 0),
-            MaskPattern.PatternFour_LargeCheckerboard => static (bit, x, y) => bit != (((y / 2) + (x / 3)) % 2 == 0),
-            MaskPattern.PatternFive_Fields => static (bit, x, y) => bit != ((y * x % 2) + (y * x % 3) == 0),
-            MaskPattern.PatternSix_Diamonds => static (bit, x, y) => bit != (((x * y % 2) + (x * y % 3)) % 2 == 0),
-            MaskPattern.PatternSeven_Meadow => static (bit, x, y) => bit != ((((x + y) % 2) + (x * y % 3)) % 2 == 0),
+            MaskPattern.PatternFive_Fields => FieldsPatternVector,
+            MaskPattern.PatternSix_Diamonds => DiamondsPatternVector,
+            MaskPattern.PatternSeven_Meadow => MeadowPatternVector,
             _ => throw new UnreachableException()
         };
+
+        for (var y = 0; y < matrix.Height; y++)
+        {
+            var row = ByteMatrixMarshal.GetWritableRow(matrix, y);
+            var segments = functionModules.GetMaskableSegments(y);
+
+            foreach (var segmentRange in segments)
+            {
+                var segment = row[segmentRange];
+                var (x, _) = segmentRange.GetOffsetAndLength(matrix.Width);
+                ApplyMaskVectorized(segment, patternVector, patternOffsetFunc, x, y, segment);
+                ByteMatrixMarshal.UpdateColumnMajorOrder(matrix, y, x, segment);
+            }
+        }
+        return;
     }
 
     private static Func<int, int, int> GetPatternVectorOffsetFunc(MaskPattern mask)
@@ -444,9 +416,10 @@ public static class QrSymbolBuilder
             // by a full 3x2 rectangle, so for y == 0 or 1, we don't offset, for y == 2 or 3, we offset by 3 to
             // move into a new 3x2 rectangle
             MaskPattern.PatternFour_LargeCheckerboard => static (x, y) => (x + LargeCheckboardYToOffsetLookup[y % 4]) % 6,
-            MaskPattern.PatternFive_Fields => static (x, y) => (y * x % 2) + (y * x % 3),
-            MaskPattern.PatternSix_Diamonds => static (x, y) => ((x * y % 2) + (x * y % 3)) % 2,
-            MaskPattern.PatternSeven_Meadow => static (x, y) => (((x + y) % 2) + (x * y % 3)) % 2,
+            // Each row in the pattern vector corresponds to a row in the pattern, and each row is 72 bytes long
+            MaskPattern.PatternFive_Fields => static (x, y) => (x % 6) + FieldsYToOffsetLookup[y % 6],
+            MaskPattern.PatternSix_Diamonds => static (x, y) => (x % 6) + DiamondsYToOffsetLookup[y % 6],
+            MaskPattern.PatternSeven_Meadow => static (x, y) => (x % 6) + MeadowYToOffsetLookup[y % 6],
             _ => throw new UnreachableException()
         };
     }
@@ -482,6 +455,43 @@ public static class QrSymbolBuilder
     ];
 
     private static ReadOnlySpan<byte> LargeCheckboardYToOffsetLookup => [0, 0, 3, 3];
+
+    // We only need half the pattern here, the last 3 rows are the same as the first 3
+    private static ReadOnlySpan<byte> FieldsPatternVector =>
+    [
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+        1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0,
+        1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0,
+        1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0,
+     // 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0,
+     // 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0,
+     // 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    ];
+    private static ReadOnlySpan<byte> FieldsYToOffsetLookup => [0, 72, 72 * 2, 72 * 3, 72 * 2, 72];
+
+    private static ReadOnlySpan<byte> DiamondsPatternVector =>
+    [
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+        1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0,
+        1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0,
+        1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0,
+        1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1,
+        1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1,
+     // 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+     // last row here for readability to complete the full diamond, but its not actually part of the pattern
+    ];
+    private static ReadOnlySpan<ushort> DiamondsYToOffsetLookup => [0, 72, 72 * 2, 72 * 3, 72 * 4, 72 * 5];
+
+    private static ReadOnlySpan<byte> MeadowPatternVector =>
+    [
+        1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0,
+        0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1,
+        1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1,
+        0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1,
+        1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0,
+        0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0,
+    ];
+    private static ReadOnlySpan<ushort> MeadowYToOffsetLookup => DiamondsYToOffsetLookup;
 
     private static void ApplyMaskVectorized(ReadOnlySpan<byte> data, ReadOnlySpan<byte> patternVector, Func<int, int, int> computePatternVectorOffset, int x, int y, Span<byte> destination)
     {
