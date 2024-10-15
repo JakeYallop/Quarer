@@ -444,7 +444,7 @@ public class QrSymbolBuilderTests
             """, MatrixToString(m), ignoreLineEndingDifferences: true, ignoreAllWhiteSpace: true);
     }
 
-    private static (ByteMatrix, QrVersion) Get1MSymbolWithoutData(MaskPattern maskPattern)
+    private static (ByteMatrix, QrVersion) Get1MSymbolWithoutData()
     {
         var version = QrVersion.GetVersion(1);
         var m = new ByteMatrix(version.ModulesPerSide, version.ModulesPerSide);
@@ -454,266 +454,263 @@ public class QrSymbolBuilderTests
         QrSymbolBuilder.EncodePositionDetectionPattern(m, PositionDetectionPatternLocation.BottomLeft);
         QrSymbolBuilder.EncodePositionAdjustmentPatterns(m, version);
         QrSymbolBuilder.EncodeTimingPatterns(m);
-        QrSymbolBuilder.EncodeStaticDarkModule(m);
-        QrSymbolBuilder.EncodeFormatInformation(m, ErrorCorrectionLevel.M, maskPattern);
-        QrSymbolBuilder.EncodeVersionInformation(m, version);
-
+        // we skip encoding the static dark module and format information
         return (m, version);
     }
 
     [Fact]
     public void Encode_EncodeDataBits_WithCheckerboardMasking_EncodesExpectedSymbol()
     {
-        var (m, version) = Get1MSymbolWithoutData(MaskPattern.PatternZero_Checkerboard);
+        var (m, version) = Get1MSymbolWithoutData();
         var codewordsBuffer = AllZeroBuffer(version.TotalCodewords);
         QrSymbolBuilder.EncodeDataBits(m, version, codewordsBuffer);
         QrSymbolBuilder.ApplyMask(m, version, MaskPattern.PatternZero_Checkerboard);
         Assert.Equal("""
             X X X X X X X - - - X - X - X X X X X X X
-            X - - - - - X - X X - X - - X - - - - - X
+            X - - - - - X - - X - X - - X - - - - - X
             X - X X X - X - - - X - X - X - X X X - X
             X - X X X - X - - X - X - - X - X X X - X
-            X - X X X - X - X - X - X - X - X X X - X
+            X - X X X - X - - - X - X - X - X X X - X
             X - - - - - X - - X - X - - X - - - - - X
             X X X X X X X - X - X - X - X X X X X X X
             - - - - - - - - - X - X - - - - - - - - -
-            X - X - X - X - - - X - X - - - X - - X -
+            - - - - - - X - - - X - X - - - - - - - -
             - X - X - X - X - X - X - X - X - X - X -
             X - X - X - X - X - X - X - X - X - X - X
             - X - X - X - X - X - X - X - X - X - X -
             X - X - X - X - X - X - X - X - X - X - X
-            - - - - - - - - X X - X - X - X - X - X -
+            - - - - - - - - - X - X - X - X - X - X -
             X X X X X X X - - - X - X - X - X - X - X
             X - - - - - X - - X - X - X - X - X - X -
-            X - X X X - X - X - X - X - X - X - X - X
+            X - X X X - X - - - X - X - X - X - X - X
             X - X X X - X - - X - X - X - X - X - X -
-            X - X X X - X - X - X - X - X - X - X - X
+            X - X X X - X - - - X - X - X - X - X - X
             X - - - - - X - - X - X - X - X - X - X -
-            X X X X X X X - X - X - X - X - X - X - X
+            X X X X X X X - - - X - X - X - X - X - X
             """, MatrixToString(m));
     }
 
     [Fact]
     public void Encode_EncodeDataBits_WithHorizontalLinesMasking_EncodesExpectedSymbol()
     {
-        var (m, version) = Get1MSymbolWithoutData(MaskPattern.PatternOne_HorizontalLines);
+        var (m, version) = Get1MSymbolWithoutData();
         var codewordsBuffer = AllZeroBuffer(version.TotalCodewords);
         QrSymbolBuilder.EncodeDataBits(m, version, codewordsBuffer);
         QrSymbolBuilder.ApplyMask(m, version, MaskPattern.PatternOne_HorizontalLines);
         Assert.Equal("""
-            X X X X X X X - X X X X X - X X X X X X X
+            X X X X X X X - - X X X X - X X X X X X X
             X - - - - - X - - - - - - - X - - - - - X
-            X - X X X - X - X X X X X - X - X X X - X
+            X - X X X - X - - X X X X - X - X X X - X
             X - X X X - X - - - - - - - X - X X X - X
             X - X X X - X - - X X X X - X - X X X - X
-            X - - - - - X - X - - - - - X - - - - - X
+            X - - - - - X - - - - - - - X - - - - - X
             X X X X X X X - X - X - X - X X X X X X X
             - - - - - - - - - - - - - - - - - - - - -
-            X - X - - - X X - X X X X - - X - - X - X
+            - - - - - - X - - X X X X - - - - - - - -
             - - - - - - - - - - - - - - - - - - - - -
             X X X X X X X X X X X X X X X X X X X X X
             - - - - - - - - - - - - - - - - - - - - -
             X X X X X X X X X X X X X X X X X X X X X
-            - - - - - - - - X - - - - - - - - - - - -
-            X X X X X X X - X X X X X X X X X X X X X
+            - - - - - - - - - - - - - - - - - - - - -
+            X X X X X X X - - X X X X X X X X X X X X
             X - - - - - X - - - - - - - - - - - - - -
             X - X X X - X - - X X X X X X X X X X X X
             X - X X X - X - - - - - - - - - - - - - -
-            X - X X X - X - X X X X X X X X X X X X X
+            X - X X X - X - - X X X X X X X X X X X X
             X - - - - - X - - - - - - - - - - - - - -
-            X X X X X X X - X X X X X X X X X X X X X
+            X X X X X X X - - X X X X X X X X X X X X
             """, MatrixToString(m));
     }
 
     [Fact]
     public void Encode_EncodeDataBits_WithVerticalLinesMasking_EncodesExpectedSymbol()
     {
-        var (m, version) = Get1MSymbolWithoutData(MaskPattern.PatternTwo_VerticalLines);
+        var (m, version) = Get1MSymbolWithoutData();
         var codewordsBuffer = AllZeroBuffer(version.TotalCodewords);
         QrSymbolBuilder.EncodeDataBits(m, version, codewordsBuffer);
         QrSymbolBuilder.ApplyMask(m, version, MaskPattern.PatternTwo_VerticalLines);
         Assert.Equal("""
             X X X X X X X - - X - - X - X X X X X X X
             X - - - - - X - - X - - X - X - - - - - X
-            X - X X X - X - X X - - X - X - X X X - X
-            X - X X X - X - X X - - X - X - X X X - X
-            X - X X X - X - X X - - X - X - X X X - X
-            X - - - - - X - X X - - X - X - - - - - X
+            X - X X X - X - - X - - X - X - X X X - X
+            X - X X X - X - - X - - X - X - X X X - X
+            X - X X X - X - - X - - X - X - X X X - X
+            X - - - - - X - - X - - X - X - - - - - X
             X X X X X X X - X - X - X - X X X X X X X
-            - - - - - - - - X X - - X - - - - - - - -
-            X - X X X X X - - X - - X - X X X X X - -
+            - - - - - - - - - X - - X - - - - - - - -
+            - - - - - - X - - X - - X - - - - - - - -
             X - - X - - - - - X - - X - - X - - X - -
             X - - X - - X - - X - - X - - X - - X - -
             X - - X - - - - - X - - X - - X - - X - -
             X - - X - - X - - X - - X - - X - - X - -
-            - - - - - - - - X X - - X - - X - - X - -
+            - - - - - - - - - X - - X - - X - - X - -
             X X X X X X X - - X - - X - - X - - X - -
-            X - - - - - X - X X - - X - - X - - X - -
-            X - X X X - X - X X - - X - - X - - X - -
-            X - X X X - X - X X - - X - - X - - X - -
-            X - X X X - X - X X - - X - - X - - X - -
             X - - - - - X - - X - - X - - X - - X - -
-            X X X X X X X - X X - - X - - X - - X - -
+            X - X X X - X - - X - - X - - X - - X - -
+            X - X X X - X - - X - - X - - X - - X - -
+            X - X X X - X - - X - - X - - X - - X - -
+            X - - - - - X - - X - - X - - X - - X - -
+            X X X X X X X - - X - - X - - X - - X - -
             """, MatrixToString(m));
     }
 
     [Fact]
     public void Encode_EncodeDataBits_WithDiagonalLinesMasking_EncodesExpectedSymbol()
     {
-        var (m, version) = Get1MSymbolWithoutData(MaskPattern.PatternTwo_VerticalLines);
+        var (m, version) = Get1MSymbolWithoutData();
         var codewordsBuffer = AllZeroBuffer(version.TotalCodewords);
         QrSymbolBuilder.EncodeDataBits(m, version, codewordsBuffer);
         QrSymbolBuilder.ApplyMask(m, version, MaskPattern.PatternThree_DiagonalLines);
         Assert.Equal("""
             X X X X X X X - - X - - X - X X X X X X X
             X - - - - - X - - - - X - - X - - - - - X
-            X - X X X - X - X - X - - - X - X X X - X
-            X - X X X - X - X X - - X - X - X X X - X
-            X - X X X - X - X - - X - - X - X X X - X
-            X - - - - - X - X - X - - - X - - - - - X
+            X - X X X - X - - - X - - - X - X X X - X
+            X - X X X - X - - X - - X - X - X X X - X
+            X - X X X - X - - - - X - - X - X X X - X
+            X - - - - - X - - - X - - - X - - - - - X
             X X X X X X X - X - X - X - X X X X X X X
-            - - - - - - - - X - - X - - - - - - - - -
-            X - X X X X X - - - X - - - X X X X X - -
+            - - - - - - - - - - - X - - - - - - - - -
+            - - - - - - X - - - X - - - - - - - - - -
             X - - X - - - - - X - - X - - X - - X - -
             - - X - - X X - X - - X - - X - - X - - X
             - X - - X - - X - - X - - X - - X - - X -
             X - - X - - X - - X - - X - - X - - X - -
-            - - - - - - - - X - - X - - X - - X - - X
+            - - - - - - - - - - - X - - X - - X - - X
             X X X X X X X - - - X - - X - - X - - X -
-            X - - - - - X - X X - - X - - X - - X - -
-            X - X X X - X - X - - X - - X - - X - - X
-            X - X X X - X - X - X - - X - - X - - X -
-            X - X X X - X - X X - - X - - X - - X - -
+            X - - - - - X - - X - - X - - X - - X - -
+            X - X X X - X - - - - X - - X - - X - - X
+            X - X X X - X - - - X - - X - - X - - X -
+            X - X X X - X - - X - - X - - X - - X - -
             X - - - - - X - - - - X - - X - - X - - X
-            X X X X X X X - X - X - - X - - X - - X -
+            X X X X X X X - - - X - - X - - X - - X -
             """, MatrixToString(m));
     }
 
     [Fact]
     public void Encode_EncodeDataBits_WithLargeCheckboardMasking_EncodesExpectedSymbol()
     {
-        var (m, version) = Get1MSymbolWithoutData(MaskPattern.PatternTwo_VerticalLines);
+        var (m, version) = Get1MSymbolWithoutData();
         var codewordsBuffer = AllZeroBuffer(version.TotalCodewords);
         QrSymbolBuilder.EncodeDataBits(m, version, codewordsBuffer);
         QrSymbolBuilder.ApplyMask(m, version, MaskPattern.PatternFour_LargeCheckerboard);
         Assert.Equal("""
             X X X X X X X - - - - - X - X X X X X X X
             X - - - - - X - - - - - X - X - - - - - X
-            X - X X X - X - X X X X - - X - X X X - X
-            X - X X X - X - X X X X - - X - X X X - X
-            X - X X X - X - X - - - X - X - X X X - X
-            X - - - - - X - X - - - X - X - - - - - X
+            X - X X X - X - - X X X - - X - X X X - X
+            X - X X X - X - - X X X - - X - X X X - X
+            X - X X X - X - - - - - X - X - X X X - X
+            X - - - - - X - - - - - X - X - - - - - X
             X X X X X X X - X - X - X - X X X X X X X
-            - - - - - - - - X X X X - - - - - - - - -
-            X - X X X X X - - - - - X - X X X X X - -
+            - - - - - - - - - X X X - - - - - - - - -
+            - - - - - - X - - - - - X - - - - - - - -
             X X X - - - - X X - - - X X X - - - X X X
             - - - X X X X - - X X X - - - X X X - - -
             - - - X X X - - - X X X - - - X X X - - -
             X X X - - - X X X - - - X X X - - - X X X
-            - - - - - - - - X - - - X X X - - - X X X
+            - - - - - - - - - - - - X X X - - - X X X
             X X X X X X X - - X X X - - - X X X - - -
-            X - - - - - X - X X X X - - - X X X - - -
-            X - X X X - X - X - - - X X X - - - X X X
-            X - X X X - X - X - - - X X X - - - X X X
-            X - X X X - X - X X X X - - - X X X - - -
             X - - - - - X - - X X X - - - X X X - - -
-            X X X X X X X - X - - - X X X - - - X X X
+            X - X X X - X - - - - - X X X - - - X X X
+            X - X X X - X - - - - - X X X - - - X X X
+            X - X X X - X - - X X X - - - X X X - - -
+            X - - - - - X - - X X X - - - X X X - - -
+            X X X X X X X - - - - - X X X - - - X X X
             """, MatrixToString(m));
     }
 
     [Fact]
     public void Encode_EncodeDataBits_WithFieldsMasking_EncodesExpectedSymbol()
     {
-        var (m, version) = Get1MSymbolWithoutData(MaskPattern.PatternTwo_VerticalLines);
+        var (m, version) = Get1MSymbolWithoutData();
         var codewordsBuffer = AllZeroBuffer(version.TotalCodewords);
         QrSymbolBuilder.EncodeDataBits(m, version, codewordsBuffer);
         QrSymbolBuilder.ApplyMask(m, version, MaskPattern.PatternFive_Fields);
         Assert.Equal("""
             X X X X X X X - - X X X X - X X X X X X X
             X - - - - - X - - - - - X - X - - - - - X
-            X - X X X - X - X X - - X - X - X X X - X
-            X - X X X - X - X - X - X - X - X X X - X
-            X - X X X - X - X X - - X - X - X X X - X
-            X - - - - - X - X - - - X - X - - - - - X
+            X - X X X - X - - X - - X - X - X X X - X
+            X - X X X - X - - - X - X - X - X X X - X
+            X - X X X - X - - X - - X - X - X X X - X
+            X - - - - - X - - - - - X - X - - - - - X
             X X X X X X X - X - X - X - X X X X X X X
-            - - - - - - - - X - - - X - - - - - - - -
-            X - X X X X X - - X - - X - X X X X X - -
+            - - - - - - - - - - - - X - - - - - - - -
+            - - - - - - X - - X - - X - - - - - - - -
             X - X - X - - - X - X - X - X - X - X - X
             X - - X - - X - - X - - X - - X - - X - -
             X - - - - - - - - - - - X - - - - - X - -
             X X X X X X X X X X X X X X X X X X X X X
-            - - - - - - - - X - - - X - - - - - X - -
+            - - - - - - - - - - - - X - - - - - X - -
             X X X X X X X - - X - - X - - X - - X - -
-            X - - - - - X - X - X - X - X - X - X - X
-            X - X X X - X - X X - - X - - X - - X - -
-            X - X X X - X - X - - - X - - - - - X - -
-            X - X X X - X - X X X X X X X X X X X X X
+            X - - - - - X - - - X - X - X - X - X - X
+            X - X X X - X - - X - - X - - X - - X - -
+            X - X X X - X - - - - - X - - - - - X - -
+            X - X X X - X - - X X X X X X X X X X X X
             X - - - - - X - - - - - X - - - - - X - -
-            X X X X X X X - X X - - X - - X - - X - -
+            X X X X X X X - - X - - X - - X - - X - -
             """, MatrixToString(m));
     }
 
     [Fact]
     public void Encode_EncodeDataBits_WithDiamondsMasking_EncodesExpectedSymbol()
     {
-        var (m, version) = Get1MSymbolWithoutData(MaskPattern.PatternTwo_VerticalLines);
+        var (m, version) = Get1MSymbolWithoutData();
         var codewordsBuffer = AllZeroBuffer(version.TotalCodewords);
         QrSymbolBuilder.EncodeDataBits(m, version, codewordsBuffer);
         QrSymbolBuilder.ApplyMask(m, version, MaskPattern.PatternSix_Diamonds);
         Assert.Equal("""
             X X X X X X X - - X X X X - X X X X X X X
             X - - - - - X - - - - - X - X - - - - - X
-            X - X X X - X - X X X - X - X - X X X - X
-            X - X X X - X - X - X - X - X - X X X - X
-            X - X X X - X - X X - X X - X - X X X - X
-            X - - - - - X - X - X X X - X - - - - - X
+            X - X X X - X - - X X - X - X - X X X - X
+            X - X X X - X - - - X - X - X - X X X - X
+            X - X X X - X - - X - X X - X - X X X - X
+            X - - - - - X - - - X X X - X - - - - - X
             X X X X X X X - X - X - X - X X X X X X X
-            - - - - - - - - X - - - X - - - - - - - -
-            X - X X X X X - - X X - X - X X X X X - -
+            - - - - - - - - - - - - X - - - - - - - -
+            - - - - - - X - - X X - X - - - - - - - -
             X - X - X - - - X - X - X - X - X - X - X
             X - X X - X X - X X - X X - X X - X X - X
             X - - - X X - - - - X X X - - - X X X - -
             X X X X X X X X X X X X X X X X X X X X X
-            - - - - - - - - X - - - X X X - - - X X X
+            - - - - - - - - - - - - X X X - - - X X X
             X X X X X X X - - X X - X X - X X - X X -
-            X - - - - - X - X - X - X - X - X - X - X
-            X - X X X - X - X X - X X - X X - X X - X
-            X - X X X - X - X - X X X - - - X X X - -
-            X - X X X - X - X X X X X X X X X X X X X
+            X - - - - - X - - - X - X - X - X - X - X
+            X - X X X - X - - X - X X - X X - X X - X
+            X - X X X - X - - - X X X - - - X X X - -
+            X - X X X - X - - X X X X X X X X X X X X
             X - - - - - X - - - - - X X X - - - X X X
-            X X X X X X X - X X X - X X - X X - X X -
+            X X X X X X X - - X X - X X - X X - X X -
             """, MatrixToString(m));
     }
 
     [Fact]
     public void Encode_EncodeDataBits_WithMeadowMasking_EncodesExpectedSymbol()
     {
-        var (m, version) = Get1MSymbolWithoutData(MaskPattern.PatternTwo_VerticalLines);
+        var (m, version) = Get1MSymbolWithoutData();
         var codewordsBuffer = AllZeroBuffer(version.TotalCodewords);
         QrSymbolBuilder.EncodeDataBits(m, version, codewordsBuffer);
         QrSymbolBuilder.ApplyMask(m, version, MaskPattern.PatternSeven_Meadow);
         Assert.Equal("""
             X X X X X X X - - - X - X - X X X X X X X
             X - - - - - X - - X X X - - X - - - - - X
-            X - X X X - X - X - X X X - X - X X X - X
-            X - X X X - X - X X - X - - X - X X X - X
-            X - X X X - X - X - - - X - X - X X X - X
-            X - - - - - X - X X - - - - X - - - - - X
+            X - X X X - X - - - X X X - X - X X X - X
+            X - X X X - X - - X - X - - X - X X X - X
+            X - X X X - X - - - - - X - X - X X X - X
+            X - - - - - X - - X - - - - X - - - - - X
             X X X X X X X - X - X - X - X X X X X X X
-            - - - - - - - - X X X X - - - - - - - - -
-            X - X X X X X - - - X X X - X X X X X - -
+            - - - - - - - - - X X X - - - - - - - - -
+            - - - - - - X - - - X X X - - - - - - - -
             - X - X - X - X - X - X - X - X - X - X -
             X X X - - - X X X - - - X X X - - - X X X
             - X X X - - - X X X - - - X X X - - - X X
             X - X - X - X - X - X - X - X - X - X - X
-            - - - - - - - - X X X X - - - X X X - - -
+            - - - - - - - - - X X X - - - X X X - - -
             X X X X X X X - - - X X X - - - X X X - -
-            X - - - - - X - X X - X - X - X - X - X -
-            X - X X X - X - X - - - X X X - - - X X X
-            X - X X X - X - X X - - - X X X - - - X X
-            X - X X X - X - X - X - X - X - X - X - X
+            X - - - - - X - - X - X - X - X - X - X -
+            X - X X X - X - - - - - X X X - - - X X X
+            X - X X X - X - - X - - - X X X - - - X X
+            X - X X X - X - - - X - X - X - X - X - X
             X - - - - - X - - X X X - - - X X X - - -
-            X X X X X X X - X - X X X - - - X X X - -
+            X X X X X X X - - - X X X - - - X X X - -
             """, MatrixToString(m));
     }
 
