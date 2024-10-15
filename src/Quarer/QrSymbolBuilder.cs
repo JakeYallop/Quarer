@@ -371,19 +371,30 @@ public static class QrSymbolBuilder
     public static void ApplyMask(ByteMatrix matrix, QrVersion version, MaskPattern mask)
     {
         var functionModules = FunctionModules.GetForVersion(version);
-        if (mask == MaskPattern.PatternZero_Checkerboard)
+        var patternOffsetFunc = GetPatternVectorOffsetFunc(mask);
+        var patternVector = mask switch
         {
-            for (var i = 0; i < matrix.Height; i++)
+            MaskPattern.PatternZero_Checkerboard => CheckerboardPatternVector,
+            MaskPattern.PatternOne_HorizontalLines => HorizontalLinesPatternVector,
+            MaskPattern.PatternTwo_VerticalLines => VerticalLinesPatternVector,
+            MaskPattern.PatternThree_DiagonalLines => VerticalLinesPatternVector, // same pattern [1 0 0] with a different starting offset per row
+            MaskPattern.PatternFour_LargeCheckerboard => LargeCheckboardPatternVector,
+            _ => []
+        };
+
+        if (patternVector.Length > 0)
+        {
+            for (var y = 0; y < matrix.Height; y++)
             {
-                var row = ByteMatrixMarshal.GetWritableRow(matrix, i);
-                var segments = functionModules.GetMaskableSegments(i);
+                var row = ByteMatrixMarshal.GetWritableRow(matrix, y);
+                var segments = functionModules.GetMaskableSegments(y);
 
                 foreach (var segmentRange in segments)
                 {
                     var segment = row[segmentRange];
-                    var (offset, _) = segmentRange.GetOffsetAndLength(matrix.Width);
-                    CalculateCheckerboard(segment, (byte)((offset + i + 1) % 2), segment);
-                    ByteMatrixMarshal.UpdateColumnMajorOrder(matrix, i, offset, segment);
+                    var (x, _) = segmentRange.GetOffsetAndLength(matrix.Width);
+                    ApplyMaskVectorized(segment, patternVector, patternOffsetFunc, x, y, segment);
+                    ByteMatrixMarshal.UpdateColumnMajorOrder(matrix, y, x, segment);
                 }
             }
             return;
@@ -402,7 +413,7 @@ public static class QrSymbolBuilder
         }
     }
 
-    private static Func<bool, int, int, bool> GetMaskFunction(MaskPattern? mask)
+    private static Func<bool, int, int, bool> GetMaskFunction(MaskPattern mask)
     {
         return mask switch
         {
@@ -414,38 +425,85 @@ public static class QrSymbolBuilder
             MaskPattern.PatternFive_Fields => static (bit, x, y) => bit != ((y * x % 2) + (y * x % 3) == 0),
             MaskPattern.PatternSix_Diamonds => static (bit, x, y) => bit != (((x * y % 2) + (x * y % 3)) % 2 == 0),
             MaskPattern.PatternSeven_Meadow => static (bit, x, y) => bit != ((((x + y) % 2) + (x * y % 3)) % 2 == 0),
-            null => static (bit, _, _) => bit,
+            _ => throw new UnreachableException()
+        };
+    }
+
+    private static Func<int, int, int> GetPatternVectorOffsetFunc(MaskPattern mask)
+    {
+        return mask switch
+        {
+            // Trivial pattern - we either want to start at 0 or 1 depending on the x and y values
+            MaskPattern.PatternZero_Checkerboard => static (x, y) => (x + y) % 2,
+            // We either need all 1s or all 0s, and each run of 1s or 0s in the pattern vector is 64 bytes long
+            MaskPattern.PatternOne_HorizontalLines => static (x, y) => (y & 1) == 0 ? 0 : 64,
+            // Trivial pattern - we just find the starting point via the x value
+            MaskPattern.PatternTwo_VerticalLines => static (x, y) => x % 3,
+            MaskPattern.PatternThree_DiagonalLines => static (x, y) => (x + y) % 3,
+            // The pattern here repeats every 6 modules in the x direction. Ever 2 rows, the pattern is offset
+            // by a full 3x2 rectangle, so for y == 0 or 1, we don't offset, for y == 2 or 3, we offset by 3 to
+            // move into a new 3x2 rectangle
+            MaskPattern.PatternFour_LargeCheckerboard => static (x, y) => (x + LargeCheckboardYToOffsetLookup[y % 4]) % 6,
+            MaskPattern.PatternFive_Fields => static (x, y) => (y * x % 2) + (y * x % 3),
+            MaskPattern.PatternSix_Diamonds => static (x, y) => ((x * y % 2) + (x * y % 3)) % 2,
+            MaskPattern.PatternSeven_Meadow => static (x, y) => (((x + y) % 2) + (x * y % 3)) % 2,
             _ => throw new UnreachableException()
         };
     }
 
     // 64 bytes + 1 extra byte for additional starting offset (starting at 1 instead of 0)
-    private static ReadOnlySpan<byte> CheckerboardVector =>
+    private static ReadOnlySpan<byte> CheckerboardPatternVector =>
     [
-        0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1,
-        0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1,
-        0
+        1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0,
+        1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0,
+        1
     ];
 
-    private static void CalculateCheckerboard(ReadOnlySpan<byte> data, byte startOffset, Span<byte> destination)
-    {
-        Debug.Assert(CheckerboardVector.Length >= Vector<byte>.Count + startOffset);
+    private static ReadOnlySpan<byte> HorizontalLinesPatternVector =>
+    [
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    ];
 
+    private static ReadOnlySpan<byte> VerticalLinesPatternVector =>
+    [
+        1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0,
+        1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0,
+        1, 0, 0,
+    ];
+
+    private static ReadOnlySpan<byte> LargeCheckboardPatternVector =>
+    [
+        1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1,
+        1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0,
+        0, 0, 1, 1, 1, 0
+    ];
+
+    private static ReadOnlySpan<byte> LargeCheckboardYToOffsetLookup => [0, 0, 3, 3];
+
+    private static void ApplyMaskVectorized(ReadOnlySpan<byte> data, ReadOnlySpan<byte> patternVector, Func<int, int, int> computePatternVectorOffset, int x, int y, Span<byte> destination)
+    {
         var remaining = data.Length;
+        var currentOffset = x;
+        Debug.Assert(patternVector.Length >= Vector<byte>.Count + computePatternVectorOffset(x, y), "pattern vector too small");
         while (remaining >= Vector<byte>.Count)
         {
+            currentOffset = computePatternVectorOffset(currentOffset, y);
             var a = Vector.LoadUnsafe(in data[0], 0);
-            var b = Vector.LoadUnsafe(in CheckerboardVector[0], startOffset);
+            var b = Vector.LoadUnsafe(in patternVector[0], (nuint)currentOffset);
             Vector.Xor(a, b).CopyTo(destination);
             destination = destination[Vector<byte>.Count..];
             data = data[Vector<byte>.Count..];
             remaining -= Vector<byte>.Count;
-            startOffset = (byte)((startOffset + Vector<byte>.Count) % 2);
+            currentOffset = computePatternVectorOffset(currentOffset + Vector<byte>.Count, y);
+            Debug.Assert(patternVector.Length >= Vector<byte>.Count + currentOffset, "pattern vector too small");
         }
 
         for (var i = 0; i < destination.Length; i++)
         {
-            destination[i] = (byte)(data[i] ^ CheckerboardVector[(i + startOffset) % 2]);
+            destination[i] = (byte)(data[i] ^ patternVector[computePatternVectorOffset(i + currentOffset, y)]);
         }
     }
 
