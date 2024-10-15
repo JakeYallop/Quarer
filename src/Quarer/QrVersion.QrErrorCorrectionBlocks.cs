@@ -112,11 +112,17 @@ public sealed partial class QrVersion
         public static bool operator ==(QrErrorCorrectionBlocks? left, QrErrorCorrectionBlocks? right) => left is null ? right is null : left.Equals(right);
         public static bool operator !=(QrErrorCorrectionBlocks? left, QrErrorCorrectionBlocks? right) => !(left == right);
         public override bool Equals([NotNullWhen(true)] object? obj) => obj is QrErrorCorrectionBlocks blocks && Equals(blocks);
-        public bool Equals([NotNullWhen(true)] QrErrorCorrectionBlocks? other) => other is not null && ErrorCorrectionCodewordsPerBlock == other.ErrorCorrectionCodewordsPerBlock;
+        public bool Equals([NotNullWhen(true)] QrErrorCorrectionBlocks? other) =>
+            other is not null &&
+            ErrorCorrectionCodewordsPerBlock == other.ErrorCorrectionCodewordsPerBlock &&
+            TotalBlockCount == other.TotalBlockCount &&
+            DataCodewordsCount == other.DataCodewordsCount;
         public override int GetHashCode()
         {
             var hashCode = new HashCode();
             hashCode.Add(ErrorCorrectionCodewordsPerBlock);
+            hashCode.Add(TotalBlockCount);
+            hashCode.Add(DataCodewordsCount);
             foreach (var b in Blocks)
             {
                 hashCode.Add(b);
