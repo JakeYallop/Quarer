@@ -22,7 +22,7 @@
       <RepositoryType>git</RepositoryType>
       <PackageTags>QR;QR Code;QRCode;Galois Field;Finite Field;Encoding</PackageTags>
       <!--TODO: Improve this -->
-      <Description>A fast and efficient QR Code encoding library, with benchmarks.</Description>
+      <Description>A fast and efficient QR Code encoding library, with vectorized data detection and masking. Benchmarks are available.</Description>
       <PackageLicenseExpression>MIT</PackageLicenseExpression>
       <PublishRepositoryUrl>true</PublishRepositoryUrl>
     </PropertyGroup>
