@@ -31,10 +31,13 @@ public class BinaryFiniteFieldTests
     [InlineData(255, 1, 255)]
     [InlineData(255, 255, 1)]
     [InlineData(30, 40, 201)]
-    public void Divide_returnsExpectedResult(byte a, byte b, byte expected) => Assert.Equal(expected, BinaryFiniteField.Divide(a, b));
+    public void Divide_ReturnsExpectedResult(byte a, byte b, byte expected) => Assert.Equal(expected, BinaryFiniteField.Divide(a, b));
 
     [Fact]
     public void Divide_DivisorIsZero_ThrowsDivideByZeroException() => Assert.Throws<DivideByZeroException>(() => BinaryFiniteField.Divide(1, 0));
+
+    [Fact]
+    public void Divide_DestinationTooSmall_ThrowsArgumentException() => Assert.Throws<ArgumentException>(() => BinaryFiniteField.Divide([1], [1], [0]));
 
     [Theory]
     [InlineData(0, 0, 1)]
