@@ -45,7 +45,7 @@ public sealed class FunctionModules
 
             lock (Lock)
             {
-                var newMatrix = new TrackingMatrix(version.ModulesPerSide, version.ModulesPerSide);
+                var newMatrix = new TrackingMatrix(version.Width, version.Height);
 
                 QrSymbolBuilder.EncodePositionDetectionPattern(newMatrix, PositionDetectionPatternLocation.TopLeft);
                 QrSymbolBuilder.EncodePositionDetectionPattern(newMatrix, PositionDetectionPatternLocation.TopRight);

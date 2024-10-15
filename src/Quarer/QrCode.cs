@@ -18,8 +18,8 @@ public sealed class QrCode : IEquatable<QrCode>
     public ByteMatrix Data { get; }
     public QrVersion Version { get; }
     public ErrorCorrectionLevel ErrorCorrectionLevel { get; }
-    public int Width => Version.ModulesPerSide;
-    public int Height => Version.ModulesPerSide;
+    public int Width => Version.Width;
+    public int Height => Version.Height;
 
     private static bool IsValidLatin1(ReadOnlySpan<char> data) => !Latin1Validator.ContainsNonLatin1Characters(data);
     private static ReadOnlySpan<byte> Transcode(ReadOnlySpan<char> data, out EciCode eciCode)

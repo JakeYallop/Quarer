@@ -5,7 +5,7 @@ namespace Quarer;
 public static partial class QrSymbolBuilder
 {
     public static (ByteMatrix Matrix, MaskPattern SelectedMaskPattern) BuildSymbol(BitBuffer dataCodewords, QrVersion version, ErrorCorrectionLevel errorCorrectionLevel, MaskPattern? maskPattern = null)
-        => BuildSymbol(new ByteMatrix(version.ModulesPerSide, version.ModulesPerSide), dataCodewords, version, errorCorrectionLevel, maskPattern);
+        => BuildSymbol(new ByteMatrix(version.Width, version.Height), dataCodewords, version, errorCorrectionLevel, maskPattern);
 
     private static (ByteMatrix Matrix, MaskPattern SelectedMaskPattern) BuildSymbol(ByteMatrix matrix, BitBuffer dataCodewords, QrVersion version, ErrorCorrectionLevel errorCorrectionLevel, MaskPattern? maskPattern = null)
     {
@@ -284,7 +284,7 @@ public static partial class QrSymbolBuilder
         }
 
         var versionInformation = VersionInformation[version.Version];
-        var size = version.ModulesPerSide;
+        var size = version.Width;
 
         Debug.Assert(matrix.Width == matrix.Height);
         if (size != matrix.Width)

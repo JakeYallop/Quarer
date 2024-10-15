@@ -6,9 +6,9 @@ namespace Quarer;
 
 public sealed partial class QrVersion : IEquatable<QrVersion>, IComparable<QrVersion>
 {
-    public const byte MinVersion = 1;
-    public const byte MaxVersion = 40;
-    public const int MaxModulesPerSide = 17 + (4 * MaxVersion);
+    internal const byte MinVersion = 1;
+    internal const byte MaxVersion = 40;
+    internal const int MaxModulesPerSide = 17 + (4 * MaxVersion);
 
     internal QrVersion(byte version, ushort totalCodewords, byte remainderBits)
     {
@@ -16,8 +16,16 @@ public sealed partial class QrVersion : IEquatable<QrVersion>, IComparable<QrVer
         AlignmentPatternCenters = AlignmentPatternCentersLookup[version - 1];
         RemainderBits = remainderBits;
         TotalCodewords = totalCodewords;
+        var modulesPerSide = (byte)(17 + (byte)(4 * version));
+        Width = modulesPerSide;
+        Height = modulesPerSide;
     }
 
+    /// <summary>
+    /// Get version information for a QR Code version.
+    /// </summary>
+    /// <param name="version">The version to use.</param>
+    /// <returns></returns>
     public static QrVersion GetVersion(byte version)
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(version, 1);
@@ -26,11 +34,30 @@ public sealed partial class QrVersion : IEquatable<QrVersion>, IComparable<QrVer
         return QrVersionsLookup[version - 1];
     }
 
+    /// <summary>
+    /// The version of this QR Code.
+    /// </summary>
     public byte Version { get; }
+    /// <summary>
+    /// The placement of alignment patterns for this QR Code version.
+    /// </summary>
     public ImmutableArray<byte> AlignmentPatternCenters { get; }
+    /// <summary>
+    /// The total number of codewords (data + ecc) in this QR code version.
+    /// </summary>
     public ushort TotalCodewords { get; }
+    /// <summary>
+    /// The number of remainder bits left over after filling the capacity of the symbol.
+    /// </summary>
     public byte RemainderBits { get; }
-    public byte ModulesPerSide => (byte)(17 + (byte)(4 * Version));
+    /// <summary>
+    /// The width of this QR Code version.
+    /// </summary>
+    public byte Width { get; }
+    /// <summary>
+    /// The height of this QR Code version.
+    /// </summary>
+    public byte Height { get; }
 
     public QrErrorCorrectionBlocks GetErrorCorrectionBlocks(ErrorCorrectionLevel errorCorrectionLevel)
         => GetErrorCorrectionBlocks(Version, errorCorrectionLevel);
