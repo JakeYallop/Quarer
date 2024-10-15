@@ -6,14 +6,32 @@ namespace Quarer;
 
 public sealed partial class QrVersion
 {
-    public class QrErrorCorrectionBlocks(ushort errorCorrectionCodewordsPerBlock, ImmutableArray<QrErrorCorrectionBlock> blocks) : IEquatable<QrErrorCorrectionBlocks>
+    /// <summary>
+    /// A set of error correction blocks of potentially different sizes that appear within a QR code.
+    /// </summary>
+    public class QrErrorCorrectionBlocks : IEquatable<QrErrorCorrectionBlocks>
     {
         private int _blockCount = 0;
         private int _maxDataCodewordsInBlock = 0;
         private int _totalDataCodewords = 0;
 
-        public int ErrorCorrectionCodewordsPerBlock { get; } = errorCorrectionCodewordsPerBlock;
-        public ImmutableArray<QrErrorCorrectionBlock> Blocks { get; } = blocks;
+        internal QrErrorCorrectionBlocks(ushort errorCorrectionCodewordsPerBlock, ImmutableArray<QrErrorCorrectionBlock> blocks)
+        {
+            ErrorCorrectionCodewordsPerBlock = errorCorrectionCodewordsPerBlock;
+            Blocks = blocks;
+        }
+
+        /// <summary>
+        /// The number of error correction codewords in all of the error blocks.
+        /// </summary>
+        public int ErrorCorrectionCodewordsPerBlock { get; }
+        /// <summary>
+        /// The set of error correction blocks.
+        /// </summary>
+        public ImmutableArray<QrErrorCorrectionBlock> Blocks { get; }
+        /// <summary>
+        /// The total number of error correction blocks in this set.
+        /// </summary>
         public int TotalBlockCount
         {
             get
@@ -33,6 +51,9 @@ public sealed partial class QrVersion
             }
         }
 
+        /// <summary>
+        /// The maximum number of data codewords in a single block out of all the blocks in the set.
+        /// </summary>
         public int MaxDataCodewordsInBlock
         {
             get
@@ -55,6 +76,9 @@ public sealed partial class QrVersion
             }
         }
 
+        /// <summary>
+        /// The total number of data codewords between all of the error blocks after repetition.
+        /// </summary>
         public int DataCodewordsCount
         {
             get
@@ -74,6 +98,9 @@ public sealed partial class QrVersion
             }
         }
 
+        /// <summary>
+        /// Enumerates each individual block up to <see cref="QrErrorCorrectionBlock.Count"/> times, in round-robin order.
+        /// </summary>
         public IEnumerable<QrErrorCorrectionBlock> EnumerateIndividualBlocks() =>
             new IndividualBlocksEnumerator(Blocks);
 
@@ -109,14 +136,24 @@ public sealed partial class QrVersion
             readonly IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
         }
 
+        /// <summary>
+        /// Returns a value indicating if two <see cref="QrErrorCorrectionBlocks"/> instances are equal.
+        /// </summary>
         public static bool operator ==(QrErrorCorrectionBlocks? left, QrErrorCorrectionBlocks? right) => left is null ? right is null : left.Equals(right);
+        /// <summary>
+        /// Returns a value indicating if two <see cref="QrErrorCorrectionBlocks"/> instances are not equal.
+        /// </summary>
         public static bool operator !=(QrErrorCorrectionBlocks? left, QrErrorCorrectionBlocks? right) => !(left == right);
+
+        /// <inheritdoc />
         public override bool Equals([NotNullWhen(true)] object? obj) => obj is QrErrorCorrectionBlocks blocks && Equals(blocks);
+        /// <inheritdoc />
         public bool Equals([NotNullWhen(true)] QrErrorCorrectionBlocks? other) =>
             other is not null &&
             ErrorCorrectionCodewordsPerBlock == other.ErrorCorrectionCodewordsPerBlock &&
             TotalBlockCount == other.TotalBlockCount &&
             DataCodewordsCount == other.DataCodewordsCount;
+        /// <inheritdoc />
         public override int GetHashCode()
         {
             var hashCode = new HashCode();

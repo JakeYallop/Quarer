@@ -4,6 +4,9 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Quarer;
 
+/// <summary>
+/// Represents a specific version of a QR Code with all associated information including size, alignment patterns and error correction blocks.
+/// </summary>
 public sealed partial class QrVersion : IEquatable<QrVersion>, IComparable<QrVersion>
 {
     internal const byte MinVersion = 1;
@@ -25,7 +28,6 @@ public sealed partial class QrVersion : IEquatable<QrVersion>, IComparable<QrVer
     /// Get version information for a QR Code version.
     /// </summary>
     /// <param name="version">The version to use.</param>
-    /// <returns></returns>
     public static QrVersion GetVersion(byte version)
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(version, 1);
@@ -43,7 +45,7 @@ public sealed partial class QrVersion : IEquatable<QrVersion>, IComparable<QrVer
     /// </summary>
     public ImmutableArray<byte> AlignmentPatternCenters { get; }
     /// <summary>
-    /// The total number of codewords (data + ecc) in this QR code version.
+    /// The total number of codewords (data + ecc) in this QR Code version.
     /// </summary>
     public ushort TotalCodewords { get; }
     /// <summary>
@@ -59,15 +61,30 @@ public sealed partial class QrVersion : IEquatable<QrVersion>, IComparable<QrVer
     /// </summary>
     public byte Height { get; }
 
+    /// <summary>
+    /// Get the error correction blocks for this QR Code version for the given <see cref="ErrorCorrectionLevel" />.
+    /// </summary>
     public QrErrorCorrectionBlocks GetErrorCorrectionBlocks(ErrorCorrectionLevel errorCorrectionLevel)
         => GetErrorCorrectionBlocks(Version, errorCorrectionLevel);
 
+    /// <summary>
+    /// Get the number of data codewords present in this QR Code version, at the given <see cref="ErrorCorrectionLevel"/>.
+    /// </summary>
+    /// <param name="errorCorrectionLevel"></param>
     public int GetDataCodewordsCapacity(ErrorCorrectionLevel errorCorrectionLevel)
     {
         var blocks = GetErrorCorrectionBlocks(errorCorrectionLevel);
         return blocks.DataCodewordsCount;
     }
 
+    /// <summary>
+    /// Given the number of characters (for a given mode), along with an error correction level and optionally an ECI encoding, find the smallest version that can fit the data.
+    /// </summary>
+    /// <param name="requestedCapacityDataCharacters">The number of characters to try to store in the QR Code. These are mode specific - byte mode is 1 per byte, kanji is 1 per 2 bytes etc.</param>
+    /// <param name="errorCorrectionLevel">The error correction level to use.</param>
+    /// <param name="mode">The mode we are encoding in.</param>
+    /// <param name="eciCode">The ECI code to use, may be <see cref="EciCode.Empty"/>.</param>
+    /// <param name="version">The QR Code version that can fit the <paramref name="requestedCapacityDataCharacters"/>, null if the data is too large.</param>
     public static bool TryGetVersionForDataCapacity(int requestedCapacityDataCharacters, ErrorCorrectionLevel errorCorrectionLevel, ModeIndicator mode, EciCode eciCode, [NotNullWhen(true)] out QrVersion? version)
     {
         version = default!;
@@ -92,6 +109,9 @@ public sealed partial class QrVersion : IEquatable<QrVersion>, IComparable<QrVer
         return true;
     }
 
+    /// <summary>
+    /// Given a QR version and some data, returns true if the data can fit within the QR Code.
+    /// </summary>
     public static bool VersionCanFitData(QrVersion version, ReadOnlySpan<byte> data, ErrorCorrectionLevel errorCorrectionLevel, ModeIndicator mode, EciCode eciCode)
     {
         const int ModeIndicatorBits = 4;
@@ -101,7 +121,13 @@ public sealed partial class QrVersion : IEquatable<QrVersion>, IComparable<QrVer
         return capacity >= mode.GetBitStreamLength(data);
     }
 
+    /// <summary>
+    /// Returns a value representing whether two <see cref="QrVersion"/> instances are equal.
+    /// </summary>
     public static bool operator ==(QrVersion? left, QrVersion? right) => left is null ? right is null : left.Equals(right);
+    /// <summary>
+    /// Returns a value representing whether two <see cref="QrVersion"/> instances are not equal.
+    /// </summary>
     public static bool operator !=(QrVersion? left, QrVersion? right) => !(left == right);
 
     /// <inheritdoc />
@@ -111,6 +137,7 @@ public sealed partial class QrVersion : IEquatable<QrVersion>, IComparable<QrVer
     public override bool Equals([NotNullWhen(true)] object? obj) => obj != null && obj is QrVersion qrVersion && Equals(qrVersion);
     /// <inheritdoc />
     public bool Equals([NotNullWhen(true)] QrVersion? other) => other is not null && Version == other.Version;
+    /// <inheritdoc />
     public override int GetHashCode() => Version.GetHashCode();
 
     private static int BinarySearchUpperBoundForVersionWithCapacity(int requestedCapacityDataCharacters, ErrorCorrectionLevel level, ModeIndicator mode, EciCode eciCode)
