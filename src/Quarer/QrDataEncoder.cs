@@ -7,13 +7,25 @@ using Quarer.Numerics;
 
 namespace Quarer;
 
+/// <summary>
+/// A class that provides methods for encoding data that can be placed into a QR Code.
+/// </summary>
 public static class QrDataEncoder
 {
-    public static readonly SearchValues<byte> AlphanumericCharacters = SearchValues.Create(AlphanumericEncoder.Characters);
-    public static readonly SearchValues<byte> NumericCharacters = SearchValues.Create("0123456789"u8);
+    internal static readonly SearchValues<byte> AlphanumericCharacters = SearchValues.Create(AlphanumericEncoder.Characters);
+    internal static readonly SearchValues<byte> NumericCharacters = SearchValues.Create(NumericEncoder.Characters);
 
-    public static DataAnalysisResult AnalyzeSimple(ReadOnlySpan<byte> data, ErrorCorrectionLevel requestedErrorCorrectionLevel)
-        => AnalyzeSimple(data, requestedErrorCorrectionLevel, EciCode.Empty);
+    /// <summary>
+    /// Performs a simple analysis on the provided data to determine the best encoding and smallest possible version
+    /// that can fit the provided data using the given error correction level and optional ECI code.
+    /// <para>
+    /// If the data cannot fit within the QR code, an <see cref="AnalysisResult.DataTooLarge"/> reason will be returned.
+    /// </para>
+    /// </summary>
+    /// <param name="data"></param>
+    /// <param name="requestedErrorCorrectionLevel"></param>
+    /// <param name="eciCode"></param>
+    /// <returns></returns>
     public static DataAnalysisResult AnalyzeSimple(ReadOnlySpan<byte> data, ErrorCorrectionLevel requestedErrorCorrectionLevel, EciCode eciCode)
     {
         // For now, just use a single mode for the full set of data.
@@ -45,6 +57,10 @@ public static class QrDataEncoder
         return encoding;
     }
 
+    /// <summary>
+    /// Determines the best encoding to use for the provided data. Does not compute the optimal encoding sequence
+    /// for a given set of data.
+    /// </summary>
     public static ModeIndicator DeriveMode(ReadOnlySpan<byte> data)
     {
         return data.ContainsAnyExcept(AlphanumericCharacters)
@@ -130,10 +146,22 @@ public static class QrDataEncoder
         }
     }
 
+    /// <summary>
+    /// The first pattern used to pad the final codewords in a QR code.
+    /// </summary>
     public const byte PadPattern8_1 = 0b1110_1100;
+    /// <summary>
+    /// The second pattern used to pad the final codewords in a QR code.
+    /// </summary>
     public const byte PadPattern8_2 = 0b0001_0001;
+    /// <summary>
+    /// 2 pairs of padding patterns encoded in big-endian format in a 32-bit integer.
+    /// </summary>
     public const uint PadPattern32Bits = unchecked((uint)((PadPattern8_1 << 24) | (PadPattern8_2 << 16) | (PadPattern8_1 << 8) | PadPattern8_2));
 
+    /// <summary>
+    /// Computes the error correction codewords for the provided data codewords, and interleaves them into a new bit buffer.
+    /// </summary>
     [SkipLocalsInit]
     public static unsafe BitBuffer EncodeAndInterleaveErrorCorrectionBlocks(BitBuffer dataCodewordsBitBuffer, QrVersion version, ErrorCorrectionLevel errorCorrectionLevel)
     {
@@ -205,35 +233,3 @@ public static class QrDataEncoder
         public byte _0;
     }
 }
-
-public enum AnalysisResult
-{
-    Success = 1,
-    DataTooLarge
-}
-
-public sealed class DataAnalysisResult
-{
-    private DataAnalysisResult(QrEncodingInfo encoding) : this(encoding, AnalysisResult.Success)
-    {
-    }
-
-    private DataAnalysisResult(QrEncodingInfo? encoding, AnalysisResult result)
-    {
-        Value = encoding;
-        Reason = result;
-    }
-    public QrEncodingInfo? Value { get; }
-    public AnalysisResult Reason { get; }
-    [MemberNotNullWhen(true, nameof(Value))]
-    public bool Success => Reason is AnalysisResult.Success;
-
-    public static DataAnalysisResult Invalid(AnalysisResult result)
-        => result == AnalysisResult.Success
-            ? throw new ArgumentException("Cannot create an invalid result from a success.", nameof(result))
-            : new(null, result);
-
-    public static DataAnalysisResult Successful(QrEncodingInfo encoding)
-        => new(encoding);
-}
-

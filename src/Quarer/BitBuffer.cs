@@ -50,8 +50,11 @@ public sealed class BitBuffer : IEquatable<BitBuffer>
     }
 
     /// <summary>
-    /// Address an individual bit in this buffer.
+    /// Gets or sets the bit at the specified <paramref name="index"/>.
     /// </summary>
+    /// <param name="index"></param>
+    /// <returns></returns>
+    /// <exception cref="ArgumentOutOfRangeException"></exception>
     public bool this[int index]
     {
         get
@@ -96,7 +99,7 @@ public sealed class BitBuffer : IEquatable<BitBuffer>
     /// Logically, this means for a value <c>111000</c> written to an empty buffer at position 0: <c>buffer[0] == 1</c>, <c>buffer[3] == 0</c>.
     /// </para>
     /// </summary>
-    /// <typeparam name="T"></typeparam>
+    /// <typeparam name="T">The numeric type to write.</typeparam>
     /// <param name="position">The start position.</param>
     /// <param name="value">The value to write.</param>
     /// <param name="bitCount">The number of bits from <paramref name="value"/> to use. For example, using <paramref name="value"/>: 0 and <paramref name="bitCount"/>: 10, we would write 10 <c>0</c> bits to the buffer.</param>

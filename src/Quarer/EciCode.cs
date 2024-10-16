@@ -3,8 +3,14 @@ using System.Globalization;
 
 namespace Quarer;
 
+/// <summary>
+/// Represents an Extended Channel Interpretation (ECI) code.
+/// </summary>
 public readonly record struct EciCode
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="EciCode"/> struct with the specified ECI code.
+    /// </summary>
     public EciCode(byte? value)
     {
         if (value > 127)
@@ -15,10 +21,20 @@ public readonly record struct EciCode
         Value = value;
     }
 
+    /// <summary>
+    /// The ECI code value.
+    /// </summary>
     public byte? Value { get; }
 
+    /// <summary>
+    /// An empty ECI code. When encoding this will be act as if no ECI code has been specified.
+    /// </summary>
     public static EciCode Empty => new(null);
 
+    /// <summary>
+    /// Returns <see langword="true"/> if this ECI code is empty.
+    /// </summary>
+    /// <returns></returns>
     [MemberNotNullWhen(false, nameof(Value))]
     public bool IsEmpty() => Value.GetValueOrDefault() == 0;
 
@@ -28,6 +44,10 @@ public readonly record struct EciCode
     /// <returns></returns>
     public int GetDataSegmentLength() => Value is not null ? 12 : 0; //ECI mode indicator (4) + ECI code (8)
 
+    /// <summary>
+    /// Returns a string representation of this ECI code. Returns an empty string if the ECI code is empty.
+    /// </summary>
+    /// <returns></returns>
     public override string ToString()
     {
         var value = Value.GetValueOrDefault();

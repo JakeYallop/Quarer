@@ -29,4 +29,8 @@ public class DataSegmentTests
         var dataLength = 10;
         _ = Assert.Throws<ArgumentOutOfRangeException>(() => DataSegment.Create(characterCount, ModeIndicator.Byte, dataLength, .., new EciCode(128)));
     }
+
+    [Fact]
+    public void Create_ModeIndicatorNotByte_AndEciCodeNotEmpty_ThrowsArgumentException()
+        => Assert.Throws<ArgumentException>(() => DataSegment.Create(10, ModeIndicator.Numeric, 10, .., new EciCode(26)));
 }

@@ -3,6 +3,12 @@ using System.Diagnostics;
 
 namespace Quarer;
 
+/// <summary>
+/// Used for determining which modules within a QR Code for a given QR Code version are function modules.
+/// </summary>
+/// <remarks>
+/// Maintains a cache of the information for each QR Code version, that is lazily populated the first time a version is requested.
+/// </remarks>
 public sealed class FunctionModules
 {
     private readonly ByteMatrix _matrix;
@@ -13,17 +19,21 @@ public sealed class FunctionModules
         _maskableRowSegments = maskableRowSegments;
     }
 
+    /// <summary>
+    /// Determines if the module at the specified <paramref name="x"/> and <paramref name="y"/> coordinates is a function module.
+    /// Also returns true for the blocked version and format information modules.
+    /// </summary>
     public bool IsFunctionModule(int x, int y) => _matrix[x, y] != 0;
-    public ReadOnlySpan<Range> GetMaskableSegments(int row) => _maskableRowSegments[row].AsSpan();
+    /// <summary>
+    /// Gets a set of segments that represent the maskable parts of a given row within a symbol. This will include all modules that
+    /// are not function modules, or version and format information.
+    /// </summary>
+    public ReadOnlySpan<Range> GetMaskableSegments(int y) => _maskableRowSegments[y].AsSpan();
+
+    /// <summary>
+    /// Gets the function modules (and version and format information) matrix for the specified <paramref name="version"/>.
+    /// </summary>
     public static FunctionModules GetForVersion(QrVersion version) => FunctionModuleMatrixCache.GetFunctionModulesMatrix(version);
-
-    private readonly struct Segment(int start, int end)
-    {
-        public int Start { get; } = start;
-        public int End { get; } = end;
-
-        public Range ToRange() => new(new(Start), new(End));
-    }
 
     internal static class FunctionModuleMatrixCache
     {

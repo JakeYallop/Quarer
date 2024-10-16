@@ -22,7 +22,7 @@ public sealed class QrDataEncoderTests
         var data = "1234567890"u8;
         var errorCorrectionLevel = ErrorCorrectionLevel.M;
 
-        var result = QrDataEncoder.AnalyzeSimple(data, errorCorrectionLevel);
+        var result = QrDataEncoder.AnalyzeSimple(data, errorCorrectionLevel, EciCode.Empty);
 
         Assert.True(result.Success);
         Assert.NotNull(result);
@@ -38,7 +38,7 @@ public sealed class QrDataEncoderTests
         var data = "HELLO123"u8;
         var errorCorrectionLevel = ErrorCorrectionLevel.L;
 
-        var result = QrDataEncoder.AnalyzeSimple(data, errorCorrectionLevel);
+        var result = QrDataEncoder.AnalyzeSimple(data, errorCorrectionLevel, EciCode.Empty);
 
         Assert.True(result.Success);
         Assert.NotNull(result);
@@ -54,7 +54,7 @@ public sealed class QrDataEncoderTests
         var data = "HELLO WORLD 123456790"u8;
         var errorCorrectionLevel = ErrorCorrectionLevel.H;
 
-        var result = QrDataEncoder.AnalyzeSimple(data, errorCorrectionLevel);
+        var result = QrDataEncoder.AnalyzeSimple(data, errorCorrectionLevel, EciCode.Empty);
 
         Assert.True(result.Success);
         Assert.NotNull(result);
@@ -70,7 +70,7 @@ public sealed class QrDataEncoderTests
         var data = Enumerable.Repeat((byte)'A', 5000).ToArray(); // Exceed typical QR code capacity
         var errorCorrectionLevel = ErrorCorrectionLevel.Q;
 
-        var result = QrDataEncoder.AnalyzeSimple(data, errorCorrectionLevel);
+        var result = QrDataEncoder.AnalyzeSimple(data, errorCorrectionLevel, EciCode.Empty);
 
         Assert.NotNull(result);
         Assert.Null(result.Value);

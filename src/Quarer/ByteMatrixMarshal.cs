@@ -3,6 +3,9 @@ using System.Runtime.CompilerServices;
 
 namespace Quarer;
 
+/// <summary>
+/// An unsafe class that enables manipulation and direct access to the internals of a <see cref="ByteMatrix"/>.
+/// </summary>
 public static class ByteMatrixMarshal
 {
     /// <summary>

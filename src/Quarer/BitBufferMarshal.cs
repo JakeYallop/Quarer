@@ -2,18 +2,19 @@
 using System.Runtime.InteropServices;
 
 namespace Quarer;
-
+/// <summary>
+/// An unsafe class that enables manipulation and direct access to the internals of a <see cref="BitBuffer"/>.
+/// </summary>
 public static class BitBufferMarshal
 {
     /// <summary>
-    /// Set the <see cref="Count"/> of this bitBuffer to the specified number of bits. If the underlying buffer is expanded, any new bits are
+    /// Set the <see cref="BitBuffer.Count"/> of this bitBuffer to the specified number of bits. If the underlying buffer is expanded, any new bits are
     /// set to zero.
     /// <para>
     /// Under certain conditions, additional non-zeroed data could be exposed. Writing to the buffer, then calling <c>SetCount</c>
     /// to shrink it will not zero-out the underlying storage used by the buffer.
     /// </para>
     /// </summary>
-    /// <param name="bitCount"></param>
     public static void SetCount(BitBuffer bitBuffer, int bitCount)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(bitCount);
@@ -22,17 +23,8 @@ public static class BitBufferMarshal
     }
 
     /// <summary>
-    /// Reads a set of bytes from the buffer, starting from the byte offset given by <paramref name="start"/>.
-    /// <para>
-    /// On little-endian systems, (where <see cref="BitConverter.IsLittleEndian"/> returns <see langword="true"/>) the bytes need
-    /// to be reversed to big-endian order, this requires some storage to be allocated. Prefer calling the
-    /// <see cref="GetBytes(BitBuffer, Range, Span{byte})"/> overload to avoid this allocation.
-    /// </para>
+    /// Reads a set of bytes from the provided <see cref="BitBuffer"/>, spanning the provided range.
     /// </summary>
-    /// <param name="bitBuffer">The <see cref="BitBuffer"/> to read from.</param>
-    /// <param name="start">The byte index to start from.</param>
-    /// <param name="length">The number of bytes to read.</param>
-    /// <returns></returns>
     public static ReadOnlySpan<byte> GetBytes(BitBuffer bitBuffer, Range range)
     {
         var (offset, length) = range.GetOffsetAndLength(bitBuffer.ByteCount);
@@ -40,17 +32,8 @@ public static class BitBufferMarshal
     }
 
     /// <summary>
-    /// Reads a set of bytes from the buffer, starting from the byte offset given by <paramref name="start"/>.
-    /// <para>
-    /// On little-endian systems, (where <see cref="BitConverter.IsLittleEndian"/> returns <see langword="true"/>) the bytes need
-    /// to be reversed to big-endian order, this requires some storage to be allocated. Prefer calling the
-    /// <see cref="GetBytes(BitBuffer, int, int, Span{byte})"/> overload to avoid this allocation.
-    /// </para>
+    /// Reads a set of bytes from the provided <see cref="BitBuffer"/>, starting from the byte offset given by <paramref name="start"/>.
     /// </summary>
-    /// <param name="bitBuffer">The <see cref="BitBuffer"/> to read from.</param>
-    /// <param name="start">The byte index to start from.</param>
-    /// <param name="length">The number of bytes to read.</param>
-    /// <returns></returns>
     public static ReadOnlySpan<byte> GetBytes(BitBuffer bitBuffer, int start, int length)
     {
         if ((uint)start > bitBuffer.ByteCount || (uint)length > (uint)(bitBuffer.ByteCount - start))

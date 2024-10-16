@@ -4,7 +4,7 @@
         <TargetFrameworks>$(NetVersions)</TargetFrameworks>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <!--TODO: Enable generate documentation file -->
-        <GenerateDocumentationFile>false</GenerateDocumentationFile>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(Configuration)' == 'Debug'">

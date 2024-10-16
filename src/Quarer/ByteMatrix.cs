@@ -4,12 +4,18 @@ using System.Text;
 
 namespace Quarer;
 
+/// <summary>
+/// A matrix of bytes that can be accessed by index, row, or column.
+/// </summary>
 [DebuggerTypeProxy(typeof(ByteMatrixDebugView))]
 public class ByteMatrix
 {
     private readonly byte[][] _matrixRowMajorOrder;
     private readonly byte[][] _matrixColumnMajorOrder;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ByteMatrix"/> class with the specified width and height.
+    /// </summary>
     public ByteMatrix(int width, int height)
     {
         Width = width;
@@ -27,8 +33,22 @@ public class ByteMatrix
         }
     }
 
+    /// <summary>
+    /// The width of the matrix.
+    /// </summary>
     public int Width { get; }
+
+    /// <summary>
+    /// The height of the matrix.
+    /// </summary>
     public int Height { get; }
+
+    /// <summary>
+    /// Gets or sets the byte at the specified <paramref name="x"/> and <paramref name="y"/> coordinates.
+    /// </summary>
+    /// <remarks>
+    /// <paramref name="x"/> is left-to-right.and <paramref name="y"/> is top-to-bottom. Said another way, [0, 0] is the top-left corner of the matrix.
+    /// </remarks>
     public virtual byte this[int x, int y]
     {
         get
@@ -66,26 +86,40 @@ public class ByteMatrix
     [DoesNotReturn]
     private static void ThrowArgumentOutOfRangeException(string paramName) => throw new ArgumentOutOfRangeException(paramName);
 
-    public ReadOnlySpan<byte> GetRow(int row)
+    /// <summary>
+    /// Returns a read-only view of the row at the specified y value.
+    /// </summary>
+    public ReadOnlySpan<byte> GetRow(int y)
     {
-        if (unchecked((uint)row >= Height))
+        if (unchecked((uint)y >= Height))
         {
-            ThrowArgumentOutOfRangeException(nameof(row));
+            ThrowArgumentOutOfRangeException(nameof(y));
         }
-        return _matrixRowMajorOrder[row];
+        return _matrixRowMajorOrder[y];
     }
 
-    public ReadOnlySpan<byte> GetColumn(int column)
+    /// <summary>
+    /// Returns a read-only view of the column at the specified <paramref name="x"/> value.
+    /// </summary>
+    public ReadOnlySpan<byte> GetColumn(int x)
     {
-        if (unchecked((uint)column >= Width))
+        if (unchecked((uint)x >= Width))
         {
-            ThrowArgumentOutOfRangeException(nameof(column));
+            ThrowArgumentOutOfRangeException(nameof(x));
         }
-        return _matrixColumnMajorOrder[column];
+        return _matrixColumnMajorOrder[x];
     }
 
+    /// <summary>
+    /// Returns a value indicating if two <see cref="ByteMatrix"/> instances are equal.
+    /// </summary>
     public static bool operator ==(ByteMatrix? left, ByteMatrix? right) => left is null ? right is null : left.Equals(right);
+    /// <summary>
+    /// Returns a value indicating if two <see cref="ByteMatrix"/> instances are not equal.
+    /// </summary>
     public static bool operator !=(ByteMatrix? left, ByteMatrix? right) => !(left == right);
+
+    /// <inheritdoc />
     public bool Equals([NotNullWhen(true)] ByteMatrix? other)
     {
         if (ReferenceEquals(this, other))
@@ -124,7 +158,9 @@ public class ByteMatrix
         return true;
     }
 
+    /// <inheritdoc />
     public override bool Equals([NotNullWhen(true)] object? obj) => obj is ByteMatrix other && Equals(other);
+    /// <inheritdoc />
     public override int GetHashCode()
     {
         var hashCode = new HashCode();

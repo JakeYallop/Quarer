@@ -4,6 +4,11 @@ namespace Quarer;
 
 internal static class NumericEncoder
 {
+    /// <summary>
+    /// The set of characters that can be encoded in numeric mode.
+    /// </summary>
+    public static ReadOnlySpan<byte> Characters => "0123456789"u8;
+
     public static void Encode(BitWriter writer, scoped ReadOnlySpan<byte> data)
     {
         var position = 0;
