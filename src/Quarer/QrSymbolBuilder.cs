@@ -2,8 +2,16 @@
 
 namespace Quarer;
 
+/// <summary>
+/// Methods for creating a QR Code symbol, including masking, penaltly calculationsm and data and function module placement.
+/// </summary>
 public static partial class QrSymbolBuilder
 {
+    /// <summary>
+    /// Create a QR Code symbol from the given data codewords, version, error correction level, and mask pattern.
+    /// If a mask pattern is not provided, the mask pattern than minimises the penalty score for a complete symbol will
+    /// be calculated and used.
+    /// </summary>
     public static (ByteMatrix Matrix, MaskPattern SelectedMaskPattern) BuildSymbol(BitBuffer dataCodewords, QrVersion version, ErrorCorrectionLevel errorCorrectionLevel, MaskPattern? maskPattern = null)
         => BuildSymbol(new ByteMatrix(version.Width, version.Height), dataCodewords, version, errorCorrectionLevel, maskPattern);
 
@@ -24,7 +32,7 @@ public static partial class QrSymbolBuilder
         if (maskPattern is not null)
         {
             EncodeFormatInformation(matrix, errorCorrectionLevel, maskPattern.Value);
-            EncodeDataBits(matrix, version, dataCodewords);
+            EncodeDataCodewords(matrix, version, dataCodewords);
             ApplyMask(matrix, version, maskPattern.Value);
             return (matrix, maskPattern.Value);
         }
@@ -36,7 +44,7 @@ public static partial class QrSymbolBuilder
         var lowestPenalty = int.MaxValue;
         var selectedMaskPattern = patterns[0];
 
-        EncodeDataBits(matrix, version, dataCodewords);
+        EncodeDataCodewords(matrix, version, dataCodewords);
 
         foreach (var pattern in patterns)
         {
@@ -67,6 +75,9 @@ public static partial class QrSymbolBuilder
 
     private static int MaxAbsoluteValue(Point p) => Math.Max(Math.Abs(p.X), Math.Abs(p.Y));
 
+    /// <summary>
+    /// Embed position detection patterns onto the symbol, at the given location.
+    /// </summary>
     public static void EncodePositionDetectionPattern(ByteMatrix matrix, PositionDetectionPatternLocation location)
     {
         //version 1 code is 21x21
@@ -119,24 +130,20 @@ public static partial class QrSymbolBuilder
         }
     }
 
+    /// <summary>
+    /// Encode the static dark module into the symbol.
+    /// </summary>
     public static void EncodeStaticDarkModule(ByteMatrix matrix) => matrix[8, matrix.Height - 8] = 1;
 
     /// <summary>
-    /// Encode position adjustment patterns into the symbol. This step must be done bfore encoding the timing patterns.
+    /// Encode position adjustment patterns into the symbol.
     /// </summary>
-    /// <param name="matrix"></param>
-    /// <param name="version"></param>
     public static void EncodePositionAdjustmentPatterns(ByteMatrix matrix, QrVersion version)
     {
         // version 1 QrCode does not have any alignment patterns
         if (version.Version <= 1)
         {
             return;
-        }
-
-        if (matrix[6, 9] == 1)
-        {
-            throw new InvalidOperationException("Timing patterns or position adjustment patterns have already been encoded. Ensure adjustment patterns are added before timing patters.");
         }
 
         var positions = version.AlignmentPatternCenters;
@@ -220,6 +227,9 @@ public static partial class QrSymbolBuilder
     /// </summary>
     public const int VersionInformationGeneratorPolynomial = 0b1111100100101;
 
+    /// <summary>
+    /// Encode format information into the symbol.
+    /// </summary>
     public static void EncodeFormatInformation(ByteMatrix matrix, ErrorCorrectionLevel errorCorrectionLevel, MaskPattern maskPattern)
     {
         var formatInformation = GetFormatInformation(errorCorrectionLevel, (byte)maskPattern);
@@ -276,6 +286,9 @@ public static partial class QrSymbolBuilder
         return formatInfo;
     }
 
+    /// <summary>
+    /// Encode version information into the symbol. Version 6 symbols and below do not include version information.
+    /// </summary>
     public static void EncodeVersionInformation(ByteMatrix matrix, QrVersion version)
     {
         if (version.Version is < 7)
@@ -361,12 +374,4 @@ public static partial class QrSymbolBuilder
         0x209D5, 0x216F0, 0x228BA, 0x2379F, 0x24B0B,
         0x2542E, 0x26A64, 0x27541, 0x28C69
     ];
-
-}
-
-public enum PositionDetectionPatternLocation
-{
-    TopLeft = 1,
-    TopRight,
-    BottomLeft,
 }

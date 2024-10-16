@@ -6,6 +6,9 @@ namespace Quarer;
 
 public static partial class QrSymbolBuilder
 {
+    /// <summary>
+    /// Applies the specified mask to the QR Code symbol.
+    /// </summary>
     public static void ApplyMask(ByteMatrix matrix, QrVersion version, MaskPattern mask)
     {
         var functionModules = FunctionModules.GetForVersion(version);

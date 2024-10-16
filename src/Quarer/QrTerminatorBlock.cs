@@ -7,8 +7,6 @@ internal static class QrTerminatorBlock
     /// <summary> 
     /// QR Code terminator block, may not write anything if there is not enough space to write the terminator.
     /// </summary>
-    /// <param name="bitWriter"></param>
-    /// <param name="version"></param>
     public static void WriteTerminator(BitWriter bitWriter, QrVersion version, ErrorCorrectionLevel errorCorrectionLevel)
     {
         var (codewords, remainder) = int.DivRem(bitWriter.BitsWritten, 8);

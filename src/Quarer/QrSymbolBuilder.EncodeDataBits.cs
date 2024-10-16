@@ -4,8 +4,11 @@ using System.Runtime.CompilerServices;
 namespace Quarer;
 public static partial class QrSymbolBuilder
 {
+    /// <summary>
+    /// Places data codewords onto the QR code symbol.
+    /// </summary>
     [SkipLocalsInit]
-    public static void EncodeDataBits(ByteMatrix matrix, QrVersion version, BitBuffer data)
+    public static void EncodeDataCodewords(ByteMatrix matrix, QrVersion version, BitBuffer data)
     {
         if (version.TotalCodewords != data.ByteCount)
         {

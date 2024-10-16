@@ -3,6 +3,11 @@
 namespace Quarer;
 public static partial class QrSymbolBuilder
 {
+    /// <summary>
+    /// Calculates the penaly score for a QR code symbol. Lower is better.
+    /// </summary>
+    /// <param name="matrix"></param>
+    /// <returns></returns>
     public static int CalculatePenalty(ByteMatrix matrix)
     {
         var (rowPenalty, rowPatternPenalty) = CalculateRowPenalty(matrix);
@@ -124,8 +129,6 @@ public static partial class QrSymbolBuilder
     /// <summary>
     /// Calculates the penalty for 2x2 blocks of dark or light modules in a symbol.
     /// </summary>
-    /// <param name="matrix"></param>
-    /// <returns></returns>
     public static int CalculateBlocksPenalty(ByteMatrix matrix)
     {
         var blocksPenalty = 0;
@@ -162,6 +165,10 @@ public static partial class QrSymbolBuilder
         60, 60, 60, 60, 60, 70, 70, 70, 70, 70, 80, 80, 80, 80, 80, // 31 - 45
         90, 90, 90, 90, 90, // 46 - 50 (inclusive)
     ];
+
+    /// <summary>
+    /// Calculates the penalty for the ratio of dark modules vs light modules in a symbol. 50/50 produces no penalty.
+    /// </summary>
     public static int CalculateRatioPenalty(ByteMatrix matrix)
     {
         var darkModules = 0;

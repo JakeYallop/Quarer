@@ -31,6 +31,9 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Quarer.Tests", "tests\Quarer.Tests\Quarer.Tests.csproj", "{5C4A736D-0E63-41D8-A229-CA3F52509069}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tools", "tools", "{22972AD8-4094-4D3C-A4AE-5F34CAA63B41}"
+	ProjectSection(SolutionItems) = preProject
+		tools\Directory.Build.props = tools\Directory.Build.props
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LookupTableGenerator", "tools\LookupTableGenerator\LookupTableGenerator.csproj", "{681DFB74-BC27-4E3A-8FF5-CA7D3B1C79F5}"
 EndProject
@@ -40,7 +43,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "benchmarks", "benchmarks", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BenchmarkGraphGenerator", "tools\BenchmarkGraphGenerator\BenchmarkGraphGenerator.csproj", "{CFBDB0E5-BEE7-4982-ADD6-E86D20914E57}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Quarer.Playground", "tools\Playground\Playground.csproj", "{091EF172-9540-4ADE-988E-AEE432947499}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Playground", "tools\Playground\Playground.csproj", "{091EF172-9540-4ADE-988E-AEE432947499}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
