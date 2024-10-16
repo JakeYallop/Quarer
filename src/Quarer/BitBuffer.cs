@@ -5,17 +5,27 @@ using System.Runtime.InteropServices;
 
 namespace Quarer;
 
+/// <summary>
+/// Holds a collection of bits, allowing for efficient read and write operations.
+/// </summary>
 public sealed class BitBuffer : IEquatable<BitBuffer>
 {
     internal const int BitsPerElement = 8;
 
     private readonly List<byte> _buffer;
 
+    /// <summary>
+    /// Creates a new instance of the <see cref="BitBuffer"/> class.
+    /// </summary>
     public BitBuffer()
     {
         _buffer = new(2);
     }
 
+    /// <summary>
+    /// Creates a new instance of the <see cref="BitBuffer"/> class that can hold the specified number of bits before requiring a resize.
+    /// </summary>
+    /// <param name="initialBitCapacity"></param>
     public BitBuffer(int initialBitCapacity)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(initialBitCapacity);
@@ -39,6 +49,9 @@ public sealed class BitBuffer : IEquatable<BitBuffer>
         }
     }
 
+    /// <summary>
+    /// Address an individual bit in this buffer.
+    /// </summary>
     public bool this[int index]
     {
         get
@@ -77,6 +90,16 @@ public sealed class BitBuffer : IEquatable<BitBuffer>
 
     private static int GetBitIndex(int index) => index & (BitsPerElement - 1);
 
+    /// <summary>
+    /// Writes a value to this <see cref="BitBuffer"/> at the specified position, in big endian order.
+    /// <para>
+    /// Logically, this means for a value <c>111000</c> written to an empty buffer at position 0: <c>buffer[0] == 1</c>, <c>buffer[3] == 0</c>.
+    /// </para>
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="position">The start position.</param>
+    /// <param name="value">The value to write.</param>
+    /// <param name="bitCount">The number of bits from <paramref name="value"/> to use. For example, using <paramref name="value"/>: 0 and <paramref name="bitCount"/>: 10, we would write 10 <c>0</c> bits to the buffer.</param>
     public void WriteBitsBigEndian<T>(int position, T value, int bitCount) where T : IBinaryInteger<T>
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(position, 0);
@@ -101,23 +124,6 @@ public sealed class BitBuffer : IEquatable<BitBuffer>
         }
 
         Count = Math.Max(Count, position + bitCount);
-    }
-
-    public IEnumerable<bool> AsBitEnumerable()
-    {
-        var current = 0;
-        foreach (var element in _buffer)
-        {
-            for (var currentBit = 0; currentBit < BitsPerElement; currentBit++)
-            {
-                if (current == Count)
-                {
-                    yield break;
-                }
-                yield return ReadBit(element, currentBit);
-                current++;
-            }
-        }
     }
 
     /// <summary>
@@ -156,6 +162,11 @@ public sealed class BitBuffer : IEquatable<BitBuffer>
         }
     }
 
+    /// <summary>
+    /// Copy this <see cref="BitBuffer"/> to the destination <see cref="BitBuffer"/>.
+    /// </summary>
+    /// <param name="destination"></param>
+    /// <exception cref="ArgumentException"></exception>
     public void CopyTo(BitBuffer destination)
     {
         ArgumentNullException.ThrowIfNull(destination);
@@ -247,9 +258,17 @@ public sealed class BitBuffer : IEquatable<BitBuffer>
     private static bool ReadBit(byte element, int offset) => (element & GetBitMask(offset)) != 0;
     private static byte GetBitMask(int bitIndex) => (byte)(1 << (BitsPerElement - bitIndex - 1));
 
+    /// <summary>
+    /// Returns a value indicating whether two <see cref="BitBuffer" /> instances are equal.
+    /// </summary>
     public static bool operator ==(BitBuffer? left, BitBuffer? right) => left is null ? right is null : left.Equals(right);
+    /// <summary>
+    /// Returns a value indicating whether two <see cref="BitBuffer" /> instances are not equal.
+    /// </summary>
     public static bool operator !=(BitBuffer? left, BitBuffer? right) => !(left == right);
+    /// <inheritdoc />
     public override bool Equals([NotNullWhen(true)] object? obj) => obj is BitBuffer other && Equals(other);
+    /// <inheritdoc />
     public bool Equals(BitBuffer? other)
     {
         if (other is null)
@@ -304,6 +323,7 @@ public sealed class BitBuffer : IEquatable<BitBuffer>
         return true;
     }
 
+    /// <inheritdoc />
     public override int GetHashCode()
     {
         var buffer = CollectionsMarshal.AsSpan(_buffer);

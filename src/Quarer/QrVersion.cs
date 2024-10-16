@@ -122,11 +122,11 @@ public sealed partial class QrVersion : IEquatable<QrVersion>, IComparable<QrVer
     }
 
     /// <summary>
-    /// Returns a value representing whether two <see cref="QrVersion"/> instances are equal.
+    /// Returns a value indicating whether two <see cref="QrVersion"/> instances are equal.
     /// </summary>
     public static bool operator ==(QrVersion? left, QrVersion? right) => left is null ? right is null : left.Equals(right);
     /// <summary>
-    /// Returns a value representing whether two <see cref="QrVersion"/> instances are not equal.
+    /// Returns a value indicating whether two <see cref="QrVersion"/> instances are not equal.
     /// </summary>
     public static bool operator !=(QrVersion? left, QrVersion? right) => !(left == right);
 
