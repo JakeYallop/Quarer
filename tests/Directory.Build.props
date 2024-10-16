@@ -6,6 +6,10 @@
     <IsTestProject>true</IsTestProject>
   </PropertyGroup>
 
+   <PropertyGroup>
+    <NoWarn>$(NoWarn);EnableGenerateDocumentationFile</NoWarn>
+  </PropertyGroup>
+
   <ItemGroup>
     <Using Include="Xunit"/>
   </ItemGroup>

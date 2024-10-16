@@ -11,9 +11,11 @@ public sealed partial class QrVersion
     /// </summary>
     public class QrErrorCorrectionBlocks : IEquatable<QrErrorCorrectionBlocks>
     {
+#pragma warning disable IDE0032 // Use auto property
         private int _blockCount = 0;
         private int _maxDataCodewordsInBlock = 0;
         private int _totalDataCodewords = 0;
+#pragma warning restore IDE0032 // Use auto property
 
         internal QrErrorCorrectionBlocks(ushort errorCorrectionCodewordsPerBlock, ImmutableArray<QrErrorCorrectionBlock> blocks)
         {
