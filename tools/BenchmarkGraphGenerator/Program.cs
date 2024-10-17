@@ -3,7 +3,6 @@ using System.Globalization;
 using CsvHelper;
 using CsvHelper.Configuration.Attributes;
 using ScottPlot;
-using ScottPlot.Plottables;
 
 const string BenchmarkResultsPath = "../../../../../benchmarks/BenchmarkDotNet.Artifacts/results/Benchmarks-report.csv";
 if (!File.Exists(BenchmarkResultsPath))

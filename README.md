@@ -1,15 +1,14 @@
-Quarer
+﻿Quarer
 =========
 A fast and simple-to-use QR code encoding library.
 
 <!-- TODO: Add badges here -->
 
-By vectorizing many parts of the QR Code creation process, Quarer is the fatest QR code library around, without compromising on features or memory usage.
+By vectorizing many parts of the QR Code creation process, Quarer manages to be much faster than many other libraries. Quarer supports ECI mode encoding as well as Kanji.
 
 ![Benchmark](./assets/timing-focused-1.png)
 
-See the full [benchmarks](./benchmarks).
-
+See the full results - [benchmarks](./benchmarks). Want to add get your library added to the benchmarks? Open an [issue](/JakeYallop/Quarer/issues)!
 
 ## Installation
 ```bash
@@ -29,6 +28,83 @@ Console.WriteLine(qrCode.Width);
 Console.WriteLine(qrCode.ErrorCorrectionLevel);
 ```
 
-<!-- TODO: Output QR code to terminal in snippet -->
+Output the QR code using a tool of your choice. The example below outputs directly to the console:
+```csharp
+Console.WriteLine("Encoding \"Hello, World!\"");
+
+var qrCode = QrCode.Create("Hello, World");
+
+var sb = new StringBuilder();
+
+OutputYPadding(sb, qrCode.Width);
+for (var y = 0; y < qrCode.Height; y++)
+{
+    for (var x = -4; x < qrCode.Width + 4; x++)
+    {
+        if (x < 0 || x >= qrCode.Width)
+        {
+            sb.Append("██");
+            continue;
+        }
+
+        var v = qrCode.Data[x, y] != 0;
+        var s = v ? "  " : "██";
+        sb.Append(s);
+    }
+    sb.AppendLine();
+}
+OutputYPadding(sb, qrCode.Width);
+
+Console.WriteLine(sb.ToString());
+
+static void OutputYPadding(StringBuilder sb, int width)
+{
+    for (var y = 0; y < 4; y++)
+    {
+        for (var x = 0; x < width + 8; x++)
+        {
+            sb.Append('█');
+            sb.Append('█');
+        }
+        sb.AppendLine();
+    }
+}
+```
+```
+██████████████████████████████████████████████████████████
+██████████████████████████████████████████████████████████
+██████████████████████████████████████████████████████████
+██████████████████████████████████████████████████████████
+████████              ██    ██    ██              ████████
+████████  ██████████  ██  ████  ████  ██████████  ████████
+████████  ██      ██  ████  ██  ████  ██      ██  ████████
+████████  ██      ██  ██        ████  ██      ██  ████████
+████████  ██      ██  ██████  ██████  ██      ██  ████████
+████████  ██████████  ████    ██████  ██████████  ████████
+████████              ██  ██  ██  ██              ████████
+████████████████████████    ██████████████████████████████
+████████  ██    ██      ██    ██████  ████  ██    ████████
+████████  ██      ████  ████  ██    ██████    ██  ████████
+████████          ██    ██    ██    ██  ██████    ████████
+████████    ██      ██    ██████  ██████    ██  ██████████
+████████████████      ██    ██  ████    ████████  ████████
+████████████████████████  ████  ██  ████  ██  ██  ████████
+████████              ██  ██  ██████  ██  ████████████████
+████████  ██████████  ██    ████    ██  ██    ████████████
+████████  ██      ██  ████  ██████  ██          ██████████
+████████  ██      ██  ██      ██    ██████      ██████████
+████████  ██      ██  ██    ██    ██    ████  ████████████
+████████  ██████████  ████  ██  ██        ██████  ████████
+████████              ██  ██            ████  ████████████
+██████████████████████████████████████████████████████████
+██████████████████████████████████████████████████████████
+██████████████████████████████████████████████████████████
+██████████████████████████████████████████████████████████
+```
 
 See the [playground](./tools/Playground) for other examples of how to generate an image for a QR code.
+
+## Roadmap
+- Micro QR Codes
+- rMQR Codes
+- QR Code Decoding

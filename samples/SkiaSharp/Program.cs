@@ -2,7 +2,7 @@
 using Quarer;
 using SkiaSharp;
 
-var qrCode = QrCode.Create("OH YEAH WRITER");
+var qrCode = QrCode.Create("Hello, World");
 
 var moduleSize = 10;
 using var image = new SKBitmap(moduleSize * (qrCode.Width + 8), moduleSize * (qrCode.Height + 8));

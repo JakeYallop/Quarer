@@ -12,8 +12,4 @@
     <PackageReference Include="SkiaSharp" Version="2.88.8" />
   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\..\src\Quarer\Quarer.csproj" />
-  </ItemGroup>
-
 </Project>
