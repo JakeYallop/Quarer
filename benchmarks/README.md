@@ -1,8 +1,8 @@
 ﻿Want to add your library? Open an [issue](/JakeYallop/Quarer/issues)!
 
-![](../assets/timing-focused-1.png)
-![](../assets/memory-focused-1.png)
-![](../assets/memory-quarer-qrcoder.png)
+![benchmark - timing](../assets/timing-focused-1.png)
+![benchmark - memory](../assets/memory-focused-1.png)
+![benchmark - memory focused](../assets/memory-quarer-qrcoder.png)
 
 
 The full list of bencharks (some libraries were excluded from the graphs above for readability):
