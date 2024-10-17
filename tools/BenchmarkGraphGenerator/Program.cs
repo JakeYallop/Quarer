@@ -3,16 +3,22 @@ using System.Globalization;
 using CsvHelper;
 using CsvHelper.Configuration.Attributes;
 using ScottPlot;
+using ScottPlot.Plottables;
 
-if (!File.Exists("../../../../../benchmarks/bin/Release/net9.0/BenchmarkDotNet.Artifacts/results/Benchmarks-report.csv"))
+const string BenchmarkResultsPath = "../../../../../benchmarks/BenchmarkDotNet.Artifacts/results/Benchmarks-report.csv";
+if (!File.Exists(BenchmarkResultsPath))
 {
+    var oldBackgroundColor = Console.BackgroundColor;
+    var oldForegroundColor = Console.ForegroundColor;
     Console.BackgroundColor = ConsoleColor.Black;
     Console.ForegroundColor = ConsoleColor.Red;
     Console.WriteLine("Benchmark results file not found. Please run the benchmarks project first (remmeber to run it in release configuration).");
+    Console.BackgroundColor = oldBackgroundColor;
+    Console.ForegroundColor = oldForegroundColor;
     return;
 }
 
-using var streamReader = new StreamReader("../../../../../benchmarks/bin/Release/net9.0/BenchmarkDotNet.Artifacts/results/Benchmarks-report.csv");
+using var streamReader = new StreamReader(BenchmarkResultsPath);
 using var csvParser = new CsvReader(streamReader, CultureInfo.InvariantCulture);
 
 var results = new List<Result>(160);
@@ -70,8 +76,10 @@ foreach (var chunkedResults in sortedByVersion.Chunk(40))
     });
 };
 
-SavePlot(timingPlot, "timing", "Time", "Encoding time (ns), numeric data, error correction level M", legend, sortedByVersion.Max(x => x.Mean * 1.05));
-SavePlot(memoryPlot, "memory", "Allocated", "Memory allocated (bytes), numeric data, error correction level M", legend, sortedByVersion.Max(x => x.Allocated * 1.05));
+var timingUnits = results[0].MeanUnits;
+var memoryUnits = results[0].AllocatedUnits;
+SavePlot(timingPlot, "timing", "Time", $"Encoding time ({timingUnits}), numeric data, error correction level M", legend, sortedByVersion.Max(x => x.Mean * 1.05));
+SavePlot(memoryPlot, "memory", "Allocated", $"Memory allocated ({memoryUnits}), numeric data, error correction level M", legend, sortedByVersion.Max(x => x.Allocated * 1.05));
 
 static void SavePlot(Plot plot, string plotName, string yLabel, string title, List<LegendItem> legend, double yLimit)
 {
@@ -139,9 +147,6 @@ public sealed class BenchmarkRecord
     public string StdDev { get; init; } = null!;
     public string Ratio { get; init; } = null!;
     public string RatioSD { get; init; } = null!;
-    public string Gen0 { get; init; } = null!;
-    public string Gen1 { get; init; } = null!;
-    public string Gen2 { get; init; } = null!;
     public string Allocated { get; init; } = null!;
     [Name("Alloc Ratio")]
     public string AllocRatio { get; init; } = null!;

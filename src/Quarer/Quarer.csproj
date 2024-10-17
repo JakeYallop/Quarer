@@ -13,10 +13,9 @@
 
     <PropertyGroup>
       <PackageId>Quarer</PackageId>
-      <Version>0.1.0</Version>
+      <Version>0.2.0</Version>
       <Authors>JakeYallop</Authors>
-      <!--TODO: Add readme -->
-      <!--<PackageReadmeFile>README.md</PackageReadmeFile>-->
+      <PackageReadmeFile>README.md</PackageReadmeFile>
       <PackageProjectUrl>https://github.com/JakeYallop/Quarer</PackageProjectUrl>
       <RepositoryUrl>https://github.com/JakeYallop/Quarer.git</RepositoryUrl>
       <RepositoryType>git</RepositoryType>
