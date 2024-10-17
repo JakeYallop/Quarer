@@ -1,4 +1,4 @@
-﻿Want to add your library? Open an [issue](/JakeYallop/Quarer/issues)!
+﻿Want to add your library? Open an [issue](https://github.com/JakeYallop/Quarer/issues/new)!
 
 ![benchmark - timing](../assets/timing-focused-1.png)
 ![benchmark - memory](../assets/memory-focused-1.png)

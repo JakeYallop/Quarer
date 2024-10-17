@@ -8,7 +8,7 @@ By vectorizing many parts of the QR Code creation process, Quarer manages to be 
 
 ![benchmark graph](./assets/timing-focused-1.png)
 
-See the full results - [benchmarks](./benchmarks). Want to add get your library added to the benchmarks? Open an [issue](/JakeYallop/Quarer/issues)!
+See the full results - [benchmarks](./benchmarks). Want to add get your library added to the benchmarks? Open an [issue](https://github.com/JakeYallop/Quarer/issues/new)!
 
 ## Installation
 ```bash
@@ -72,7 +72,7 @@ static void OutputYPadding(StringBuilder sb, int width)
 ```
 ![QR code output in the console](./assets/qrcode%20output.png)
 
-See the [playground](./tools/Playground) for other examples of how to generate an image for a QR code.
+See more examples in the [samples](./samples) folder.
 
 ## Roadmap
 - Micro QR Codes
