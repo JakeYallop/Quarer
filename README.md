@@ -70,7 +70,7 @@ static void OutputYPadding(StringBuilder sb, int width)
     }
 }
 ```
-![QR code output in the console](./assets/qrcode output.png)
+![QR code output in the console](./assets/qrcode%20output.png)
 
 See the [playground](./tools/Playground) for other examples of how to generate an image for a QR code.
 
