@@ -72,9 +72,9 @@ static void OutputYPadding(StringBuilder sb, int width)
 ```
 ![QR code output in the console](./assets/qrcode%20output.png)
 
-See more examples in the [samples](./samples) folder.
+See more [samples](./samples).
 
 ## Roadmap
 - Micro QR Codes
 - rMQR Codes
-- QR Code Decoding
+- QR code Decoding
