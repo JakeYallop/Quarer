@@ -25,8 +25,19 @@
       <PublishRepositoryUrl>true</PublishRepositoryUrl>
     </PropertyGroup>
 
+    <PropertyGroup>
+      <!-- Include symbol files (*.pdb) in the built .nupkg -->
+      <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
+      <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    </PropertyGroup>
+
+    
+  <PropertyGroup Condition="'$(CI)' == 'true' or '$(GITHUB_ACTIONS)' == 'true'">
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+  </PropertyGroup>
+
     <ItemGroup>
-        <None Include="../../README.md" Pack="true" PackagePath="/"/>
+        <None Include="../../README.md" Pack="true" PackagePath="/" />
     </ItemGroup>
 
     <ItemGroup>
@@ -34,7 +45,14 @@
       <InternalsVisibleTo Include="LookupTableGenerator" />
     </ItemGroup>
 
-    <Target Name="RewriteVersionWhenPublishingLocally" BeforeTargets="GenerateNuspec" Condition="$(DoNotRewritePackageVersion) != 'true' and ($(CI) == '' or $(CI) == 'false')">
+    <ItemGroup>
+      <PackageReference Include="Microsoft.SourceLink.GitHub">
+        <PrivateAssets>all</PrivateAssets>
+        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      </PackageReference>
+    </ItemGroup>
+
+    <Target Name="RewriteVersionWhenPublishingLocally" BeforeTargets="GenerateNuspec" Condition="$(DoNotRewritePackageVersion) != 'true' and $(ContinuousIntegrationBuild) != 'true'">
       <Message Text="Rewriting version $(Version) to $(Version)-local due to not running in a CI build. Set &lt;DoNotRewritePackageVersion&gt; to true to override this behaviour." Importance="High" />
       <PropertyGroup>
         <!-- We define "Version" above, but PackageVersion (which defaults to $(Version) is what is actually used 
