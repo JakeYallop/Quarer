@@ -8,7 +8,7 @@ By vectorizing many parts of the QR Code creation process, Quarer manages to be 
 
 ![benchmark graph](./assets/timing-focused-1.png)
 
-See the full results - [benchmarks](./benchmarks). Want to add get your library added to the benchmarks? Open an [issue](https://github.com/JakeYallop/Quarer/issues/new)!
+See the [full results](./benchmarks). Want to add get your library added to the benchmarks? Open an [issue](https://github.com/JakeYallop/Quarer/issues/new)!
 
 ## Installation
 ```bash
