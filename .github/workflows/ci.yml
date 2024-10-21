@@ -25,6 +25,8 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 9.x
+        dotnet-quality: validated
+        
     - name: Restore dependencies
       run: dotnet restore
     - name: Build
