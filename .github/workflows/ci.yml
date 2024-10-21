@@ -28,7 +28,7 @@ jobs:
     - name: Build
       run: dotnet build --no-restore
     - name: Test
-      run: dotnet test --no-build --verbosity normal --logger trx --resuls-driectory "TestResults"
+      run: dotnet test --no-build --verbosity normal --logger trx --resuls-directory "TestResults"
       
     - name: Output test results
       uses: phoenix-actions/test-reporting@v15
