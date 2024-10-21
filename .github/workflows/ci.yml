@@ -39,3 +39,4 @@ jobs:
         reporter: dotnet-trx
         list-suites: failed
         list-tests: failed
+        output-to: step-summary
