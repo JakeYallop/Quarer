@@ -28,4 +28,14 @@ jobs:
     - name: Build
       run: dotnet build --no-restore
     - name: Test
-      run: dotnet test --no-build --verbosity detailed
+      run: dotnet test --no-build --verbosity normal --logger trx --resuls-driectory "TestResults"
+      
+    - name: Output test results
+      uses: phoenix-actions/test-reporting@v15
+      if: always()
+      with:
+        name: Tests
+        path: TestResults/*.trx
+        reporter: dotnet-trx
+        list-suites: failed
+        list-tests: failed
