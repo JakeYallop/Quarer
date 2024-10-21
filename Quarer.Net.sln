@@ -53,7 +53,14 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OutputToConsole", "samples\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OutputToConsole2", "samples\OutputToConsole2\OutputToConsole2.csproj", "{DCB4E302-CD29-4DA7-89CE-109D86B3AA95}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SkiaSharp", "samples\SkiaSharp\SkiaSharp.csproj", "{53C542B9-2E1F-4E1C-8F42-D5D9B1984670}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SkiaSharpSample", "samples\SkiaSharpSample\SkiaSharpSample.csproj", "{53C542B9-2E1F-4E1C-8F42-D5D9B1984670}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".github", ".github", "{E92E7C65-15B9-4A65-A49B-DF83D5E21EA5}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{880E2DF5-95C8-4014-9B38-872126E83A59}"
+	ProjectSection(SolutionItems) = preProject
+		.github\workflows\ci.yml = .github\workflows\ci.yml
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -106,6 +113,7 @@ Global
 		{D22709ED-D617-4F83-A443-4B4DF157ACBD} = {960A728B-6135-4EDE-B33B-A51CA977DFB3}
 		{DCB4E302-CD29-4DA7-89CE-109D86B3AA95} = {960A728B-6135-4EDE-B33B-A51CA977DFB3}
 		{53C542B9-2E1F-4E1C-8F42-D5D9B1984670} = {960A728B-6135-4EDE-B33B-A51CA977DFB3}
+		{880E2DF5-95C8-4014-9B38-872126E83A59} = {E92E7C65-15B9-4A65-A49B-DF83D5E21EA5}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {07476B4C-08E1-4BFF-8EF3-9596BCA23498}
