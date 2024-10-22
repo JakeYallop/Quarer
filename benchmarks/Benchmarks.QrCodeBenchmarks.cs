@@ -38,10 +38,6 @@ public partial class Benchmarks
         using var generator = new Aspose.BarCode.Generation.BarcodeGenerator(Aspose.BarCode.Generation.EncodeTypes.QR, Version.Data);
         generator.Parameters.Barcode.QR.QrErrorLevel = Aspose.BarCode.Generation.QRErrorLevel.LevelM;
         generator.Save(Stream.Null, Aspose.BarCode.Generation.BarCodeImageFormat.Png);
-
-        // "Hello, World!" in UTF-8
-        var qrCode = QrCode.Create([0x48, 0x65, 0x6c, 0x6c, 0x6f, 0x20, 0x57, 0x6f, 0x72, 0x6c, 0x64, 0x21], ErrorCorrectionLevel.M, new EciCode(26));
-        // 26 == ECI code for UTF-8
     }
 
     [Benchmark(Description = "QrCode.Net")]
