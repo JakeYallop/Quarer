@@ -100,15 +100,15 @@ var qrCode = QrCode.Create("Hello, World!", QrVersion.GetVersion(5), ErrorCorrec
 
 * Encode binary data
 ```csharp
-// "Hello, World!" interpreted as UTF-8
-var qrCode = QrCode.Create([0x48, 0x65, 0x6c, 0x6c, 0x6f, 0x20, 0x57, 0x6f, 0x72, 0x6c, 0x64, 0x21]);
+var qrCode = QrCode.Create([0xFE, 0xED, 0xCA, 0xFE]);
 ```
 
 * ECI support
 ```csharp
-// "Hello, World!" in UTF-8
-var qrCode = QrCode.Create([0x48,0x65,0x6c,0x6c,0x6f,0x20,0x57,0x6f,0x72,0x6c,0x64,0x21], ErrorCorrectionLevel.M, new EciCode(26));
-// 26 == ECI code for UTF-8
+// 26 is the ECI code for UTF-8
+var eciCode = new EciCode(26);
+var data = Encoding.UTF8.GetBytes("Hello, World!");
+var qrCode = QrCode.Create(data, ErrorCorrectionLevel.M, eciCode);
 ```
 
 
