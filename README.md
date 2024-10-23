@@ -1,4 +1,4 @@
-﻿Quarer
+Quarer
 =========
 A fast and simple-to-use QR code encoding library.
 
@@ -6,7 +6,7 @@ A fast and simple-to-use QR code encoding library.
 
 By vectorizing many parts of the QR Code creation process, Quarer manages to be much faster than many other libraries. Quarer supports ECI mode encoding as well as Kanji.
 
-![benchmark graph](./assets/timing-focused-1.png)
+![benchmark graph](https://github.com/JakeYallop/Quarer/blob/4be7c754ecaf9676552325ed483f0486016c304e/assets/timing-focused-1.png?raw=true)
 
 See the [full results](./benchmarks). Want to add get your library added to the benchmarks? Open an [issue](https://github.com/JakeYallop/Quarer/issues/new)!
 
@@ -70,7 +70,7 @@ static void OutputYPadding(StringBuilder sb, int width)
     }
 }
 ```
-![QR code output in the console](./assets/qrcode%20output.png)
+![QR code output in the console](https://github.com/JakeYallop/Quarer/blob/4be7c754ecaf9676552325ed483f0486016c304e/assets/qrcode%20output.png?raw=true)
 
 See more [samples](./samples).
 
