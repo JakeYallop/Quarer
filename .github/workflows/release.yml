@@ -1,0 +1,62 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+  release:
+    types: [published]
+
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: 1
+  DOTNET_NOLOGO: 1
+
+jobs:
+  pack:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.x
+      - name: Verify package version matches tag
+        shell: pwsh
+        run: |
+          $version = (Select-String -Pattern "<Version>(\d\.\d\.\d)</Version>" -Path .\src\Quarer\Quarer.csproj).Matches.Groups[1].Value;
+          if ($version -eq "${{ github.ref_name }}")
+          {
+            Write-Host "Version matches"
+          }
+          else
+          {
+            Write-Error "Version '$version' does not match ref_name '${{ github.ref_name }}'"
+            Exit 1
+          }
+      - name: Pack
+        run: dotnet pack "src/Quarer/Quarer.csproj" -c Release -o ./pack
+      - name: Upload package artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: nuget-packages
+          path: ./pack
+  release:
+    needs: pack
+    if: github.event_name == 'release'
+    environment: ${{ github.event_name == 'release' && 'release' || 'none' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.x
+      - name: Download package artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: nuget-packages
+          path: ./pack
+      - name: Publish
+        run: dotnet nuget push ./pack/*.nupkg --api-key ${{ secrets.NUGET_KEY }} --source ${{ vars.NUGET_FEED }}
