@@ -1,4 +1,4 @@
-![image](https://github.com/user-attachments/assets/5183c359-8353-4c75-9b27-d3ae71fd8ffd)![image](https://github.com/user-attachments/assets/87a7bd22-b44e-4e24-8808-36f0332d0a74)﻿Quarer
+Quarer
 =========
 A fast and simple-to-use QR code encoding library.
 
