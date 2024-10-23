@@ -16,7 +16,7 @@
 
     <PropertyGroup>
       <PackageId>Quarer</PackageId>
-      <Version>0.2.0</Version>
+      <Version>0.2.1</Version>
       <Authors>JakeYallop</Authors>
       <PackageReadmeFile>README.md</PackageReadmeFile>
       <PackageProjectUrl>https://github.com/JakeYallop/Quarer</PackageProjectUrl>
