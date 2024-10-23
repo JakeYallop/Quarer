@@ -2,8 +2,12 @@
 
     <PropertyGroup>
         <TargetFrameworks>$(NetVersions)</TargetFrameworks>
-        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    </PropertyGroup>
+
+    <!-- workaround for https://github.com/dotnet/sdk/issues/10335 -->
+    <PropertyGroup Condition="$(ContinuousIntegrationBuild) != 'true'">
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
@@ -30,11 +34,6 @@
       <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
       <EmbedUntrackedSources>true</EmbedUntrackedSources>
     </PropertyGroup>
-
-    
-  <PropertyGroup Condition="'$(CI)' == 'true' or '$(GITHUB_ACTIONS)' == 'true'">
-    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
-  </PropertyGroup>
 
     <ItemGroup>
         <None Include="../../README.md" Pack="true" PackagePath="/" />

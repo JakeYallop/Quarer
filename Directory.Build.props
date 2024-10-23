@@ -1,4 +1,8 @@
 <Project>
+  <PropertyGroup Condition="'$(CI)' == 'true' or '$(GITHUB_ACTIONS)' == 'true'">
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+  </PropertyGroup>
+
   <PropertyGroup>    
     <NetVersionLatest>net9.0</NetVersionLatest>
     <NetVersions>net8.0;$(NetVersionLatest)</NetVersions>
