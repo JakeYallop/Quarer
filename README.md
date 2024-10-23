@@ -87,7 +87,6 @@ Console.WriteLine(Encoding.UTF8.GetBytes(s).Length); // 2
 Console.WriteLine(Encoding.Latin1.GetBytes(s).Length); // 1
 ```
 
-
 * Encode at a specific error correction level
 ```csharp
 var qrCode = QrCode.Create("Hello, World!", ErrorCorrectionLevel.H);
