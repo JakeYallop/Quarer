@@ -45,6 +45,8 @@ jobs:
     environment: ${{ github.event_name == 'release' && 'release' || 'none' }}
     runs-on: ubuntu-latest
     steps:
+      - name: Output event name
+        run: echo ${{ github.event_name }}
       - name: Check out the repository
         uses: actions/checkout@v4
       - name: Setup .NET
@@ -56,5 +58,5 @@ jobs:
         with:
           name: nuget-packages
           path: ./pack
-      - name: Publish
-        run: dotnet nuget push ./pack/*.nupkg --api-key ${{ secrets.NUGET_KEY }} --source ${{ vars.NUGET_FEED }}
+      # - name: Publish
+      #   run: dotnet nuget push ./pack/*.nupkg --api-key ${{ secrets.NUGET_KEY }} --source ${{ vars.NUGET_FEED }}
