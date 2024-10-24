@@ -399,3 +399,6 @@ FodyWeavers.xsd
 
 # Ignore binlog files
 *.binlog
+
+# act event files
+*.local.json

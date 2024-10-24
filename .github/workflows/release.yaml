@@ -19,21 +19,36 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 9.x
-      - name: Verify package version matches tag
+      - name: Extract version information
+        id: version-info
+        # expects x.x.x[-previewN]
+        run: |
+          echo "version=$(echo ${{ github.ref_name }} | cut -d "-" -f 1)" >> $GITHUB_OUTPUT
+          echo "full-version=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+      - name: Validate extracted version information
+        run: |
+          if [[ ${{ steps.version-info.outputs.full-version }} =~ ^[[:digit:]]\.[[:digit:]]\.[[:digit:]](-preview([[:digit:]])+)?$ ]]; then
+            echo "Found valid version";
+            exit 0;
+          else
+            echo "Expected version to match 'x.x.x[-previewN]' got ${{ steps.version-info.outputs.full-version }}";
+            exit 1;
+          fi
+      - name: Verify package short version matches short version in tag
         shell: pwsh
         run: |
           $version = (Select-String -Pattern "<Version>(\d\.\d\.\d)</Version>" -Path .\src\Quarer\Quarer.csproj).Matches.Groups[1].Value;
-          if ($version -eq "${{ github.ref_name }}")
+          if ($version -eq "${{ steps.version-info.outputs.version  }}")
           {
             Write-Host "Version matches"
           }
           else
           {
-            Write-Error "Version '$version' does not match ref_name '${{ github.ref_name }}'"
+            Write-Error "Version '$version' does not match expected ref_name version '${{ steps.version-info.outputs.version }}' (from ${{ github.ref_name }})"
             Exit 1
           }
       - name: Pack
-        run: dotnet pack "src/Quarer/Quarer.csproj" -c Release -o ./pack
+        run: dotnet pack "src/Quarer/Quarer.csproj" -c Release -o ./pack /p:Version=${{ steps.version-info.outputs.full-version }}
       - name: Upload package artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -41,7 +56,6 @@ jobs:
           path: ./pack
   push:
     needs: pack
-    if: ${{ !github.event.release.prerelease }}
     environment: release
     runs-on: ubuntu-latest
     steps:
