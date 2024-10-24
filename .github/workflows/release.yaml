@@ -46,7 +46,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Output event name
-        run: echo ${{ github.event_name }}
+        run: echo ${{ github.event.action }}
       - name: Check out the repository
         uses: actions/checkout@v4
       - name: Setup .NET
