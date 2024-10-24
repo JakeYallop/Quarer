@@ -39,14 +39,12 @@ jobs:
         with:
           name: nuget-packages
           path: ./pack
-  release:
+  push:
     needs: pack
-    # if: github.event_name == 'release'
-    environment: ${{ github.event_name == 'release' && 'release' || 'none' }}
+    if: ${{ !github.event.release.prerelease }}
+    environment: release
     runs-on: ubuntu-latest
     steps:
-      - name: Output event name
-        run: echo ${{ toJson(github) }}
       - name: Check out the repository
         uses: actions/checkout@v4
       - name: Setup .NET
@@ -58,5 +56,7 @@ jobs:
         with:
           name: nuget-packages
           path: ./pack
+      - name: Echo
+        run: echo Skipping publish
       # - name: Publish
       #   run: dotnet nuget push ./pack/*.nupkg --api-key ${{ secrets.NUGET_KEY }} --source ${{ vars.NUGET_FEED }}
