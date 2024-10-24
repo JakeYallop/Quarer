@@ -41,12 +41,12 @@ jobs:
           path: ./pack
   release:
     needs: pack
-    if: github.event_name == 'release'
+    # if: github.event_name == 'release'
     environment: ${{ github.event_name == 'release' && 'release' || 'none' }}
     runs-on: ubuntu-latest
     steps:
       - name: Output event name
-        run: echo ${{ github.event.action }}
+        run: echo ${{ toJson(github) }}
       - name: Check out the repository
         uses: actions/checkout@v4
       - name: Setup .NET
