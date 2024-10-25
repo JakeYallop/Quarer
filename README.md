@@ -1,8 +1,13 @@
 Quarer
 =========
+
+![NuGet Version](https://img.shields.io/nuget/v/Quarer)
+![GitHub License](https://img.shields.io/github/license/JakeYallop/Quarer)
+
+<!-- TODO: Add codecoverage (coveralls), codacy? badges here -->
+
 A fast and simple-to-use QR code encoding library.
 
-<!-- TODO: Add badges here -->
 
 By vectorizing many parts of the QR Code creation process, Quarer manages to be much faster than many other libraries. Quarer supports ECI mode encoding as well as Kanji.
 
