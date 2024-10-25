@@ -22,7 +22,7 @@
       <PackageProjectUrl>https://github.com/JakeYallop/Quarer</PackageProjectUrl>
       <RepositoryUrl>https://github.com/JakeYallop/Quarer.git</RepositoryUrl>
       <RepositoryType>git</RepositoryType>
-      <PackageTags>QR;QR Code;QRCode;Galois Field;Finite Field;Encoding</PackageTags>
+      <PackageTags>qr;qrcode;qr-code-generator;galois field;finite field;encoding</PackageTags>
       <!--TODO: Improve this -->
       <Description>A fast and efficient QR Code encoding library, with vectorized data detection and masking. Benchmarks are available.</Description>
       <PackageLicenseExpression>MIT</PackageLicenseExpression>
