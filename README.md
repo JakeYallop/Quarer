@@ -81,33 +81,32 @@ See more [samples](./samples).
 
 ## Features
 
-#### Automatic Latin1 detection
+### Automatic Latin1 detection
 
 Byte-mode encoding for a QR Code defaults to Latin1. Quarer detects when it could be beneficial to transcode a string to Latin1, otherwise, Quarer defaults to UTF-8. Latin1 is a more compact encoding than UTF-8 for some characters. In addition, Quarer can also skip emitting the ECI indicator for such a case.
 
-For example:
 ```csharp
 var s = "Ã";
 Console.WriteLine(Encoding.UTF8.GetBytes(s).Length); // 2
 Console.WriteLine(Encoding.Latin1.GetBytes(s).Length); // 1
 ```
 
-#### Encode at a specific error correction level
+### Encode at a specific error correction level
 ```csharp
 var qrCode = QrCode.Create("Hello, World!", ErrorCorrectionLevel.H);
 ```
 
-#### Encode using a specific version
+### Encode using a specific version
 ```csharp
 var qrCode = QrCode.Create("Hello, World!", QrVersion.GetVersion(5), ErrorCorrectionLevel.M);
 ```
 
-#### Encode binary data
+### Encode binary data
 ```csharp
 var qrCode = QrCode.Create([0xFE, 0xED, 0xCA, 0xFE]);
 ```
 
-#### ECI support
+### ECI support
 ```csharp
 // 26 is the ECI code for UTF-8
 var eciCode = new EciCode(26);
