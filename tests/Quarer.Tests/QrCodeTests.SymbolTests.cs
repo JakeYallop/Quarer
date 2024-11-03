@@ -75,7 +75,7 @@ public partial class QrCodeTests
     public void Create_2H()
     {
         var data = "HELLO WORLD";
-        var code = QrCode.Create(data, ErrorCorrectionLevel.H);
+        var code = QrCode.Create(data, new(ErrorCorrectionLevel.H));
         Assert.Equal(ErrorCorrectionLevel.H, code.ErrorCorrectionLevel);
         Assert.Equal(2, code.Version.Version);
         Assert.Equal("""
@@ -111,7 +111,7 @@ public partial class QrCodeTests
     public void Create2_5H()
     {
         var data = "HELLO WORLD WITH A LONGER TEST STRING TEST STRING TEST ST";
-        var code = QrCode.Create(data, ErrorCorrectionLevel.H);
+        var code = QrCode.Create(data, new(ErrorCorrectionLevel.H));
         Assert.Equal(ErrorCorrectionLevel.H, code.ErrorCorrectionLevel);
         Assert.Equal(5, code.Version.Version);
         Assert.Equal("""
@@ -159,7 +159,7 @@ public partial class QrCodeTests
     public void Create3_7H()
     {
         var data = "HELLO WORLD WITH A LONGER TEST STRING TEST STRING TEST STRING STRING STRING STRING STRING";
-        var code = QrCode.Create(data, ErrorCorrectionLevel.H);
+        var code = QrCode.Create(data, new(ErrorCorrectionLevel.H));
         Assert.Equal(ErrorCorrectionLevel.H, code.ErrorCorrectionLevel);
         Assert.Equal(7, code.Version.Version);
         Assert.Equal("""
@@ -217,7 +217,7 @@ public partial class QrCodeTests
         // 14M chosen to exercise vectorized code paths so we have at least 2 full vectors of data plus some remainder.
         // For this, we need at least 65 modules after the horizontal timing pattern.
         var data = "1234567890";
-        var code = QrCode.Create(data, QrVersion.GetVersion(14), ErrorCorrectionLevel.M);
+        var code = QrCode.Create(data, new(QrVersion.GetVersion(14), ErrorCorrectionLevel.M));
         Assert.Equal("""
             X X X X X X X - X X X - - - - X X X X - - X X X - X - - X - X - X - - X X X X X - - X - X - X X X X - - - - - X X - X - X - X - X - X X X X X X X
             X - - - - - X - - - X X - X X - - X - - - - - - X - X X X X X X X X - - X - X - - X X X X X - X - X X - - - X X X - - - X - X - - - X - - - - - X
@@ -299,7 +299,7 @@ public partial class QrCodeTests
     public void Create3_40H()
     {
         var data = "Hello World!";
-        var code = QrCode.Create(Encoding.UTF8.GetBytes(data), QrVersion.GetVersion(40), ErrorCorrectionLevel.H, new(26));
+        var code = QrCode.Create(Encoding.UTF8.GetBytes(data), new(QrVersion.GetVersion(40), ErrorCorrectionLevel.H, new(26)));
         Assert.Equal(ErrorCorrectionLevel.H, code.ErrorCorrectionLevel);
         Assert.Equal(40, code.Version.Version);
     }
@@ -363,7 +363,7 @@ public partial class QrCodeTests
     {
         // This string completely fills the QR Code capacity - it cannot fit ECI information as well
         // Γ = 2 bytes when encoded as UTF-8
-        var result = QrCode.TryCreate(new string('a', 2951) + "Γ", QrVersion.GetVersion(40), ErrorCorrectionLevel.L);
+        var result = QrCode.TryCreate(new string('a', 2951) + "Γ", new(QrVersion.GetVersion(40), ErrorCorrectionLevel.L));
         Assert.False(result.Success);
         Assert.Equal(QrCreationResult.DataTooLargeSimple, result.Reason);
     }

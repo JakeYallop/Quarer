@@ -93,12 +93,21 @@ Console.WriteLine(Encoding.Latin1.GetBytes(s).Length); // 1
 
 ### Encode at a specific error correction level
 ```csharp
-var qrCode = QrCode.Create("Hello, World!", ErrorCorrectionLevel.H);
+var qrCodeEncodingOptions = new QrCodeEncodingOptions
+{
+    ErrorCorrectionLevel = ErrorCorrectionLevel.H
+};
+var qrCode = QrCode.Create("Hello, World!", qrCodeEncodingOptions);
 ```
 
 ### Encode using a specific version
 ```csharp
-var qrCode = QrCode.Create("Hello, World!", QrVersion.GetVersion(5), ErrorCorrectionLevel.M);
+var qrCodeEncodingOptions = new QrCodeEncodingOptions
+{
+    Version = QrVersion.GetVersion(5)
+    ErrorCorrectionLevel = ErrorCorrectionLevel.M
+};
+var qrCode = QrCode.Create("Hello, World!", qrCodeEncodingOptions);
 ```
 
 ### Encode binary data
@@ -111,10 +120,41 @@ var qrCode = QrCode.Create([0xFE, 0xED, 0xCA, 0xFE]);
 // 26 is the ECI code for UTF-8
 var eciCode = new EciCode(26);
 var data = Encoding.UTF8.GetBytes("Hello, World!");
-var qrCode = QrCode.Create(data, ErrorCorrectionLevel.M, eciCode);
+var qrCodeEncodingOptions = new QrCodeEncodingOptions
+{
+    ErrorCorrectionLevel = ErrorCorrectionLevel.M
+    EciCode = eciCode
+};
+var qrCode = QrCode.Create(data, qrCodeEncodingOptions);
 ```
 
+## Advanced Usage
 
+The entire toolset used to encode a QR Code is exposed publicly. This allows for more advanced use cases, for example, choosing a specific mask level or inspecting parts of the QR Code creation process.
+
+For example, encoding a QR code using a specific mask pattern:
+```csharp
+using System.Text;
+using Quarer;
+
+var str = "ABC123";
+var data = Encoding.Latin1.GetBytes(str);
+var errorCorrectionLevel = ErrorCorrectionLevel.M;
+var eciCode = EciCode.Empty;
+var analysisResult = QrDataEncoder.AnalyzeSimple(, errorCorrectionLevel, eciCode);
+if (!analysisResult.Success)
+{
+    throw new InvalidOperationException("Data too large to fit into QR code.");
+}
+
+var maskPattern = MaskPattern.PatternThree_DiagonalLines;
+var qrCodeEncodingInfo = analysisResult.Value;
+var dataCodewords = QrDataEncoder.EncodeDataBits(qrCodeEncodingInfo, data);
+var withErrorCodewords = QrDataEncoder.EncodeAndInterleaveErrorCorrectionBlocks(dataCodewords, qrCodeEncodingInfo.Version, qrCodeEncodingInfo.ErrorCorrectionLevel);
+// passing in a specific mask pattern here skips all the mask pattern analysis logic
+var (matrix, _) = QrSymbolBuilder.BuildSymbol(withErrorCodewords, qrCodeEncodingInfo.Version, qrCodeEncodingInfo.ErrorCorrectionLevel, maskPattern);
+// matrix contains the complete QR code.
+```
 
 ## Roadmap
 - Micro QR Codes

@@ -13,7 +13,7 @@ public partial class QrCodeTests
     public void Create_DataTooLarge_ThrowsQrCodeException2()
     {
         var data = new string('1', 3058); //3058 numeric characters for 40H QR Code
-        Assert.Throws<QrCodeException>(() => QrCode.Create(data, ErrorCorrectionLevel.H));
+        Assert.Throws<QrCodeException>(() => QrCode.Create(data, new(ErrorCorrectionLevel.H)));
     }
 
     [Fact]
@@ -21,7 +21,14 @@ public partial class QrCodeTests
     {
         var version = QrVersion.GetVersion(1);
         var data = new string('A', 21); // max 20 characters for 1M alphanumeric QR Code
-        Assert.Throws<QrCodeException>(() => QrCode.Create(data, version, ErrorCorrectionLevel.M));
+        Assert.Throws<QrCodeException>(() => QrCode.Create(data, new(version, ErrorCorrectionLevel.M)));
+    }
+
+    [Fact]
+    public void Create_Char_EciCodeProvided_ThrowsQrCodeException()
+    {
+        var eciCode = new EciCode(1);
+        Assert.Throws<QrCodeException>(() => QrCode.Create("AAA", new() { EciCode = eciCode }));
     }
 
     [Fact]
@@ -38,7 +45,7 @@ public partial class QrCodeTests
     public void TryCreate_DataTooLarge_ReturnsDataTooLargeResult2()
     {
         var data = new string('1', 3058); //3058 numeric characters for 40H QR Code
-        var result = QrCode.TryCreate(data, ErrorCorrectionLevel.H);
+        var result = QrCode.TryCreate(data, new(ErrorCorrectionLevel.H));
         Assert.False(result.Success);
         Assert.Equal(QrCreationResult.DataTooLargeSimple, result.Reason);
         Assert.Null(result.Value);
@@ -49,9 +56,19 @@ public partial class QrCodeTests
     {
         var version = QrVersion.GetVersion(1);
         var data = new string('A', 21); // max 20 characters for 1M alphanumeric QR Code
-        var result = QrCode.TryCreate(data, version, ErrorCorrectionLevel.M);
+        var result = QrCode.TryCreate(data, new(version, ErrorCorrectionLevel.M));
         Assert.False(result.Success);
         Assert.Equal(QrCreationResult.DataTooLargeSimple, result.Reason);
+        Assert.Null(result.Value);
+    }
+
+    [Fact]
+    public void TryCreate_Byte_EciCodeProvided_ReturnsEciCodeNotAllowedForCharacterDataResult()
+    {
+        var eciCode = new EciCode(1);
+        var result = QrCode.TryCreate("AAA", new() { EciCode = eciCode });
+        Assert.False(result.Success);
+        Assert.Equal(QrCreationResult.EciCodeNotAllowedForCharacterData, result.Reason);
         Assert.Null(result.Value);
     }
 

@@ -40,189 +40,99 @@ public sealed class QrCode : IEquatable<QrCode>
     public int Height => Version.Height;
 
     /// <summary>
-    /// Creates a QR Code from the provided string. The string is converted to Latin-1 if possible or UTF-8 otherwise
-    /// before encoding.
-    /// For specific binary data, prefer using the <see cref="Create(ReadOnlySpan{byte})"/> overloads.
-    /// </summary>
-    public static QrCode Create(ReadOnlySpan<char> data)
-    {
-        var transcodedData = TranscodeToLatin1OrUtf8(data, out var eciCode);
-        return Create(transcodedData, eciCode);
-    }
-
-    /// <summary>
-    /// Creates a QR Code from the provided string with the specified error correction level. The string is
-    /// converted to Latin-1 if possible or UTF-8 otherwise before encoding.
-    /// For specific binary data, prefer using the <see cref="Create(ReadOnlySpan{byte}, ErrorCorrectionLevel)"/> overloads.
-    /// </summary>
-    public static QrCode Create(ReadOnlySpan<char> data, ErrorCorrectionLevel errorCorrectionLevel)
-    {
-        var transcodedData = TranscodeToLatin1OrUtf8(data, out var eciCode);
-        return Create(transcodedData, errorCorrectionLevel, eciCode);
-    }
-
-    /// <summary>
     /// Creates a QR Code from the provided string with the specified version and error correction level. The string is
-    /// converted to Latin-1 if possible or UTF-8 otherwise before encoding.
-    /// For specific binary data, prefer using the <see cref="Create(ReadOnlySpan{byte}, QrVersion, ErrorCorrectionLevel)"/> overloads.
+    /// converted to Latin-1 if possible or UTF-8 otherwise before encoding. For binary data, prefer using the
+    /// <see cref="Create(ReadOnlySpan{byte}, QrCodeEncodingOptions?)"/> overload.
     /// </summary>
-    public static QrCode Create(ReadOnlySpan<char> data, QrVersion version, ErrorCorrectionLevel errorCorrectionLevel)
+    public static QrCode Create(ReadOnlySpan<char> data, QrCodeEncodingOptions? options = null)
     {
-        var transcodedData = TranscodeToLatin1OrUtf8(data, out var eciCode);
-        return Create(transcodedData, version, errorCorrectionLevel, eciCode);
+        var result = TryCreate(data, options);
+        return ToValue(result);
     }
 
     /// <summary>
-    /// Creates a QR Code from the provided data.
+    /// Creates a QR Code from the provided data with the specified options.
     /// </summary>
-    public static QrCode Create(ReadOnlySpan<byte> data) => Create(data, EciCode.Empty);
-
-    /// <summary>
-    /// Creates a QR Code from the provided data, with the format or encoding of the data specified using an ECI code.
-    /// </summary>
-    public static QrCode Create(ReadOnlySpan<byte> data, EciCode eciCode)
+    public static QrCode Create(ReadOnlySpan<byte> data, QrCodeEncodingOptions? options = null)
     {
-        var result = TryCreate(data, eciCode);
-        return result.Success ? result.Value : throw new QrCodeException(QrCodeDataTooLargeMessage);
+        var result = TryCreate(data, options);
+        return ToValue(result);
     }
 
-    /// <summary>
-    /// Creates a QR Code from the provided data with the specified error correction level.
-    /// </summary>
-    public static QrCode Create(ReadOnlySpan<byte> data, ErrorCorrectionLevel errorCorrectionLevel) => Create(data, errorCorrectionLevel, EciCode.Empty);
-
-    /// <summary>
-    /// Creates a QR Code from the provided data with the specified error correction level and with the format o
-    /// encoding of the data specified using an ECI code.
-    /// </summary>
-    public static QrCode Create(ReadOnlySpan<byte> data, ErrorCorrectionLevel errorCorrectionLevel, EciCode eciCode)
+    private static QrCode ToValue(QrCodeCreationResult result)
     {
-        var result = TryCreate(data, errorCorrectionLevel, eciCode);
-        return result.Success ? result.Value : throw new QrCodeException(QrCodeDataTooLargeMessage);
-    }
-
-    /// <summary>
-    /// Creates a QR Code from the provided data with the specified version and error correction level.
-    /// </summary>
-    public static QrCode Create(ReadOnlySpan<byte> data, QrVersion version, ErrorCorrectionLevel errorCorrectionLevel) => Create(data, version, errorCorrectionLevel, EciCode.Empty);
-
-    /// <summary>
-    /// Creates a QR Code from the provided data with the specified version, error correction level, with the format or
-    /// encoding of the data specified using an ECI code.
-    /// </summary>
-    public static QrCode Create(ReadOnlySpan<byte> data, QrVersion version, ErrorCorrectionLevel errorCorrectionLevel, EciCode eciCode)
-    {
-        var result = TryCreate(data, version, errorCorrectionLevel, eciCode);
-        return result.Success ? result.Value : throw new QrCodeException(QrCodeDataTooLargeMessage);
-    }
-
-    /// <summary>
-    /// Creates a QR Code from the provided data. The string is
-    /// converted to Latin-1 if possible or UTF-8 otherwise before encoding. If the QR code cannot be created, for
-    /// example because the the data is too large to fit into the QR Code, this method will return a result with a
-    /// <see cref="QrCodeCreationResult.Success"/> value of <see langword="false"/> and the reason for the failure.
-    /// </summary>
-    public static QrCodeCreationResult TryCreate(ReadOnlySpan<char> data)
-    {
-        var transcodedData = TranscodeToLatin1OrUtf8(data, out var eciCode);
-        return TryCreate(transcodedData, eciCode);
-    }
-
-    /// <summary>
-    /// Creates a QR Code from the provided data with the specified error correction level. The string is converted to
-    /// Latin-1 if possible or UTF-8 otherwise before encoding. If the QR code cannot be created, for example because
-    /// the the data is too large to fit into the QR Code, this method will return a result with a
-    /// <see cref="QrCodeCreationResult.Success"/> value of <see langword="false"/> and the reason for the failure.
-    /// </summary>
-    public static QrCodeCreationResult TryCreate(ReadOnlySpan<char> data, ErrorCorrectionLevel errorCorrectionLevel)
-    {
-        var transcodedData = TranscodeToLatin1OrUtf8(data, out var eciCode);
-        return TryCreate(transcodedData, errorCorrectionLevel, eciCode);
-    }
-
-    /// <summary>
-    /// Creates a QR Code from the provided data with the specified version and error correction level. The string is
-    /// converted to Latin-1 if possible or UTF-8 otherwise before encoding. If the QR code cannot
-    /// be created, for example because the the data is too large to fit into the QR Code, this method will return a
-    /// result with a <see cref="QrCodeCreationResult.Success"/> value of <see langword="false"/> and the reason for
-    /// the failure.
-    /// </summary>
-    public static QrCodeCreationResult TryCreate(ReadOnlySpan<char> data, QrVersion version, ErrorCorrectionLevel errorCorrectionLevel)
-    {
-        var transcodedData = TranscodeToLatin1OrUtf8(data, out var eciCode);
-        return TryCreate(transcodedData, version, errorCorrectionLevel, eciCode);
-    }
-
-    /// <inheritdoc cref="QrCode.TryCreate(ReadOnlySpan{char})" />
-    public static QrCodeCreationResult TryCreate(ReadOnlySpan<byte> data) => TryCreate(data, EciCode.Empty);
-
-    /// <summary>
-    /// Creates a QR Code from the provided data, with the format or encoding of the data specified using an ECI code.
-    /// If the QR code cannot be created, for example because the the data is too large to fit into the QR Code, this
-    /// method will return a result with a <see cref="QrCodeCreationResult.Success"/> value of <see langword="false"/>
-    /// and the reason for the failure.
-    /// </summary>
-    public static QrCodeCreationResult TryCreate(ReadOnlySpan<byte> data, EciCode eciCode)
-    {
-        QrCodeCreationResult result = null!;
-        // try default error correct level (M), then try successively lower levels as these have more space
-        // we exit out early in try create if we do not have space, so this should not attempt to encode the entire QR code
-        foreach (var ec in (ReadOnlySpan<ErrorCorrectionLevel>)[ErrorCorrectionLevel.M, ErrorCorrectionLevel.L])
+        return result.Reason switch
         {
-            result = TryCreate(data, ec, eciCode);
-            if (result.Success)
-            {
-                break;
-            }
-        }
-        return result;
-    }
-
-    /// <inheritdoc cref="QrCode.TryCreate(ReadOnlySpan{char}, ErrorCorrectionLevel)" />
-    public static QrCodeCreationResult TryCreate(ReadOnlySpan<byte> data, ErrorCorrectionLevel errorCorrectionLevel) => TryCreate(data, errorCorrectionLevel, EciCode.Empty);
-
-    /// <summary>
-    /// Creates a QR Code from the provided data with the specified error correction level, with the format or encoding
-    /// of the data specified using an ECI code. If the QR code cannot be created, for example because the the data is too
-    /// large to fit into the QR Code, this method will return a result with a <see cref="QrCodeCreationResult.Success"/>
-    /// value of <see langword="false"/> and the reason for the failure.
-    /// </summary>
-    public static QrCodeCreationResult TryCreate(ReadOnlySpan<byte> data, ErrorCorrectionLevel errorCorrectionLevel, EciCode eciCode)
-    {
-        var analysisResult = QrDataEncoder.AnalyzeSimple(data, errorCorrectionLevel, eciCode);
-        return analysisResult.Reason switch
-        {
-            AnalysisResult.DataTooLarge => new(QrCreationResult.DataTooLargeSimple),
-            AnalysisResult.Success => CreateQrCode(data, analysisResult.Value!),
-            _ => throw new InvalidOperationException("Unexpected analysis result.")
+            QrCreationResult.Success => result.Value!,
+            QrCreationResult.DataTooLargeSimple => throw new QrCodeException(QrCodeDataTooLargeMessage),
+            QrCreationResult.EciCodeNotAllowedForCharacterData => throw new QrCodeException("ECI code cannot be set when using the char method overloads. Use the byte method overloads instead if you want to pass an ECI code."),
+            _ => throw new QrCodeException(QrCodeDataTooLargeMessage)
         };
     }
 
-    /// <inheritdoc cref="QrCode.TryCreate(ReadOnlySpan{char}, QrVersion, ErrorCorrectionLevel)" />
-    public static QrCodeCreationResult TryCreate(ReadOnlySpan<byte> data, QrVersion version, ErrorCorrectionLevel errorCorrectionLevel)
-        => TryCreate(data, version, errorCorrectionLevel, EciCode.Empty);
+    /// <summary>
+    /// Creates a QR Code from the provided data with the specified options. The string is converted to Latin-1 if
+    /// possible or UTF-8 otherwise before encoding. For binary data, prefer using the
+    /// <see cref="TryCreate(ReadOnlySpan{byte}, QrCodeEncodingOptions?)"/> overload. If the QR code cannot be created,
+    /// for example because the the data is too large to fit into the QR Code, this method will return a result with a
+    /// <see cref="QrCodeCreationResult.Success"/> value of <see langword="false"/> and the reason for the failure.
+    /// 
+    /// <para>
+    /// An <see cref="EciCode"/> cannot be passed to the char method overloads - use the byte method overloads instead
+    /// if you want to pass an <see cref="EciCode"/>.
+    /// </para>
+    /// </summary>
+    public static QrCodeCreationResult TryCreate(ReadOnlySpan<char> data, QrCodeEncodingOptions? options = null)
+    {
+        options ??= QrCodeEncodingOptions.Empty;
+        if (options.EciCode != EciCode.Empty)
+        {
+            return new(QrCreationResult.EciCodeNotAllowedForCharacterData);
+        }
+        var transcodedData = TranscodeToLatin1OrUtf8(data, out var eciCode);
+        return TryCreate(transcodedData, options.Version, options.ErrorCorrectionLevel, eciCode);
+    }
 
     /// <summary>
-    /// Creates a QR Code from the provided data with the specified version and error correction level, with the
-    /// format or encoding of the data specified using an ECI code. If the QR code cannot be created, for example
-    /// because the the data is too large to fit into the QR Code, this method will return a result with a
+    /// Creates a QR Code from the provided data with the specified options. If the QR code cannot be created, for
+    /// example because the the data is too large to fit into the QR Code, this method will return a result with a
     /// <see cref="QrCodeCreationResult.Success"/> value of <see langword="false"/> and the reason for the failure.
     /// </summary>
-    /// <param name="data"></param>
-    /// <param name="version"></param>
-    /// <param name="errorCorrectionLevel"></param>
-    /// <param name="eciCode"></param>
-    /// <returns></returns>
-    public static QrCodeCreationResult TryCreate(ReadOnlySpan<byte> data, QrVersion version, ErrorCorrectionLevel errorCorrectionLevel, EciCode eciCode)
+    public static QrCodeCreationResult TryCreate(ReadOnlySpan<byte> data, QrCodeEncodingOptions? options = null)
     {
-        var mode = QrDataEncoder.DeriveMode(data);
-        if (!QrVersion.VersionCanFitData(version, data, errorCorrectionLevel, mode, eciCode))
-        {
-            return new(QrCreationResult.DataTooLargeSimple);
-        }
+        options ??= QrCodeEncodingOptions.Empty;
+        return TryCreate(data, options.Version, options.ErrorCorrectionLevel, options.EciCode);
+    }
 
-        var encoding = QrDataEncoder.CreateSimpleDataEncoding(data, version, errorCorrectionLevel, mode, eciCode);
-        return CreateQrCode(data, encoding);
+    private static QrCodeCreationResult TryCreate(ReadOnlySpan<byte> data, QrVersion? version, ErrorCorrectionLevel? errorCorrectionLevel, EciCode eciCode)
+    {
+        ReadOnlySpan<ErrorCorrectionLevel> errorLevels = errorCorrectionLevel is not null ? [errorCorrectionLevel.Value] : [ErrorCorrectionLevel.M, ErrorCorrectionLevel.L];
+        if (version is not null)
+        {
+            foreach (var error in errorLevels)
+            {
+                var mode = QrDataEncoder.DeriveMode(data);
+                if (!QrVersion.VersionCanFitData(version, data, error, mode, eciCode))
+                {
+                    continue;
+                }
+
+                var encoding = QrDataEncoder.CreateSimpleDataEncoding(data, version, error, mode, eciCode);
+                return CreateQrCode(data, encoding);
+            }
+        }
+        else
+        {
+            foreach (var error in errorLevels)
+            {
+                var analysisResult = QrDataEncoder.AnalyzeSimple(data, error, eciCode);
+                if (analysisResult.Reason == AnalysisResult.Success)
+                {
+                    return CreateQrCode(data, analysisResult.Value!);
+                }
+            }
+        }
+        return new(QrCreationResult.DataTooLargeSimple);
     }
 
     private static QrCodeCreationResult CreateQrCode(ReadOnlySpan<byte> data, QrEncodingInfo encodingInfo)
@@ -319,7 +229,11 @@ public enum QrCreationResult
     /// <summary>
     /// Based on a simple analysis of the data, the data is too large to fit into a QR Code.
     /// </summary>
-    DataTooLargeSimple = 1
+    DataTooLargeSimple = 1,
+    /// <summary>
+    /// ECI code cannot be set when using the <see cref="QrCode.TryCreate(ReadOnlySpan{char}, QrCodeEncodingOptions)"/> overload. Use the byte overload instead.
+    /// </summary>
+    EciCodeNotAllowedForCharacterData = 2,
 }
 
 /// <summary>

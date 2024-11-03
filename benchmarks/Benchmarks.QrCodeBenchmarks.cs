@@ -25,12 +25,17 @@ public partial class Benchmarks
     }
 
     public SkiaSharp.QrCode.QRCodeGenerator SkiaGenerator = null!;
+    public QrCodeEncodingOptions QuarerOptions = null!;
 
     [GlobalSetup]
-    public void Setup() => SkiaGenerator = new SkiaSharp.QrCode.QRCodeGenerator();
+    public void Setup()
+    {
+        SkiaGenerator = new SkiaSharp.QrCode.QRCodeGenerator();
+        QuarerOptions = new QrCodeEncodingOptions { ErrorCorrectionLevel = ErrorCorrectionLevel.M };
+    }
 
     [Benchmark(Description = "Quarer")]
-    public QrCode Quarer() => QrCode.Create(Version.Data, ErrorCorrectionLevel.M);
+    public QrCode Quarer() => QrCode.Create(Version.Data, QuarerOptions);
 
     [Benchmark(Description = "Apose.BarCode")]
     public void AposeCode()

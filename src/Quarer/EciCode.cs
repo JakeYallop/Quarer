@@ -29,7 +29,7 @@ public readonly record struct EciCode
     /// <summary>
     /// An empty ECI code. When encoding this will be act as if no ECI code has been specified.
     /// </summary>
-    public static EciCode Empty => new(null);
+    public static EciCode Empty => new();
 
     /// <summary>
     /// Returns <see langword="true"/> if this ECI code is empty.
